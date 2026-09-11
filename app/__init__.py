@@ -1,1 +1,0 @@
-"""StoryHour Backend Application Package."""
