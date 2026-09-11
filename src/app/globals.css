@@ -1,0 +1,224 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Primitive Brand Tokens from STORYHOUR_DESIGN_BUILD.md */
+  --color-story-red: #c9281d;
+  --color-hour-blue: #2410a4;
+  --color-deep-red: #8f1712;
+  --color-ink: #050505;
+  --color-paper: #faf8f3;
+  --color-lavender: #eef0ff;
+  --color-white: #ffffff;
+  --color-muted-ink: #696572;
+  --color-soft-border: #e8e4dc;
+
+  /* Fable Editorial Tokens */
+  --color-fable-forest: #064c37;
+  --color-fable-sky: #43a1d7;
+  --color-paper-cream: #f7f4ee;
+  --color-fable-ink: #161015;
+  --color-charcoal-plum: #292229;
+  --color-graphite: #3f383d;
+
+  /* Semantic Roles */
+  --surface-page: var(--color-paper);
+  --surface-card: var(--color-white);
+  --surface-soft: var(--color-lavender);
+  --surface-dark: var(--color-ink);
+  --surface-brand: var(--color-hour-blue);
+  --surface-story: var(--color-story-red);
+
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-muted-ink);
+  --text-on-dark: var(--color-white);
+  --text-on-brand: var(--color-white);
+
+  --action-primary: var(--color-hour-blue);
+  --action-primary-hover: #1b0c80;
+  --action-story: var(--color-story-red);
+  --border-subtle: var(--color-soft-border);
+
+  --font-manrope: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-fraunces: 'Fraunces', Georgia, serif;
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-geist-mono: 'Geist Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Smooth Cursor: Hide default browser cursor only when custom cursor is active */
+html.custom-cursor-active,
+html.custom-cursor-active * {
+  cursor: none !important;
+}
+
+html.custom-cursor-active input,
+html.custom-cursor-active textarea,
+html.custom-cursor-active select,
+html.custom-cursor-active [contenteditable="true"] {
+  cursor: text !important;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-manrope);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--surface-page);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+::selection {
+  background-color: var(--color-hour-blue);
+  color: #ffffff;
+}
+
+/* Custom minimal scrollbar for shelves */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.story-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+.story-scrollbar::-webkit-scrollbar-track {
+  background: #ede9e1;
+  border-radius: 9999px;
+}
+.story-scrollbar::-webkit-scrollbar-thumb {
+  background: #c7c1b5;
+  border-radius: 9999px;
+}
+.story-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-hour-blue);
+}
+
+/* Accessible touch targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Respect reduced motion by providing gentle pacing instead of breaking animation loops */
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-cards-left,
+  .animate-hero-cards-right {
+    animation-duration: 120s;
+  }
+}
+
+/* Hero Scrolling Cards with Subtle Upward/Vertical Parallax Undulation */
+@keyframes hero-cards-scroll-left {
+  0% {
+    transform: translate3d(0%, 0px, 0);
+  }
+  25% {
+    transform: translate3d(-12.5%, -15px, 0);
+  }
+  50% {
+    transform: translate3d(-25%, 0px, 0);
+  }
+  75% {
+    transform: translate3d(-37.5%, 15px, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0px, 0);
+  }
+}
+
+@keyframes hero-cards-scroll-right {
+  0% {
+    transform: translate3d(-50%, 0px, 0);
+  }
+  25% {
+    transform: translate3d(-37.5%, 16px, 0);
+  }
+  50% {
+    transform: translate3d(-25%, 0px, 0);
+  }
+  75% {
+    transform: translate3d(-12.5%, -16px, 0);
+  }
+  100% {
+    transform: translate3d(0%, 0px, 0);
+  }
+}
+
+.animate-hero-cards-left,
+.animate-fable-marquee-left {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: hero-cards-scroll-left 56s linear infinite;
+}
+
+.animate-hero-cards-right,
+.animate-fable-marquee-right {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: hero-cards-scroll-right 68s linear infinite;
+}
+
+.animate-hero-cards-left:hover,
+.animate-hero-cards-right:hover,
+.animate-fable-marquee-left:hover,
+.animate-fable-marquee-right:hover {
+  animation-play-state: paused;
+}
+
+/* Subtle Floating Animation for Hero Artwork */
+@keyframes hero-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(0.6deg);
+  }
+}
+
+
+.animate-hero-float {
+  animation: hero-float 6s ease-in-out infinite;
+}
+
+/* Audiobook section waveform bars */
+@keyframes waveform-pulse {
+  0%, 100% {
+    transform: scaleY(0.25);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.waveform-bar {
+  transform-origin: bottom center;
+  animation: waveform-pulse 1.4s ease-in-out infinite;
+}
+
+/* Section reveal transitions */
+.section-reveal {
+  transition: opacity 0.7s cubic-bezier(0.25, 1, 0.5, 1),
+              transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+}
