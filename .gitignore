@@ -23,8 +23,22 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+.env.development
+.env.production
+
+# Python and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.db
+.venv/
+venv/
+ENV/
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
