@@ -1,7 +1,7 @@
 """create user profiles
 
 Revision ID: 3c1c81d1cfd6
-Revises: 
+Revises:
 Create Date: 2026-09-12 18:14:36.678990
 
 """
