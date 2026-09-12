@@ -109,7 +109,6 @@ def test_user_profile_repository_crud(in_memory_session):
     user_repo = BaseRepository(UserProfile)
 
     # Create
-        # Create
     user = user_repo.create(
         in_memory_session,
         obj_in={
@@ -121,6 +120,9 @@ def test_user_profile_repository_crud(in_memory_session):
     )
     in_memory_session.commit()
 
+    assert user.id is not None
+    assert user.email == "storyteller@storyhour.com"
+
     # Read / Get
     retrieved = user_repo.get(in_memory_session, user.id)
     assert retrieved is not None
@@ -129,18 +131,30 @@ def test_user_profile_repository_crud(in_memory_session):
     # Count
     count = user_repo.count(in_memory_session)
     assert count == 1
-    count_filtered = user_repo.count(in_memory_session, filters={"email": "storyteller@storyhour.com"})
+    count_filtered = user_repo.count(
+        in_memory_session,
+        filters={"email": "storyteller@storyhour.com"},
+    )
     assert count_filtered == 1
-    count_zero = user_repo.count(in_memory_session, filters={"email": "nonexistent@storyhour.com"})
+    count_zero = user_repo.count(
+        in_memory_session,
+        filters={"email": "nonexistent@storyhour.com"},
+    )
     assert count_zero == 0
 
     # Update
     updated = user_repo.update(
         in_memory_session,
         db_obj=user,
-        obj_in={"full_name": "Adithya Goud (Updated)", "subscription_tier": "patron"},
+        obj_in={
+            "full_name": "Adithya Goud (Updated)",
+            "subscription_tier": "patron",
+        },
     )
     in_memory_session.commit()
+
+    assert updated.full_name == "Adithya Goud (Updated)"
+    assert updated.subscription_tier == "patron"
 
     # Pagination / Get Multi
     multi = user_repo.get_multi(in_memory_session, skip=0, limit=10)
@@ -149,6 +163,10 @@ def test_user_profile_repository_crud(in_memory_session):
     # Delete
     deleted = user_repo.remove(in_memory_session, id=user.id)
     in_memory_session.commit()
+
+    assert deleted is not None
+    assert user_repo.get(in_memory_session, user.id) is None
+    assert user_repo.count(in_memory_session) == 0
 
 
 def test_live_database_health_and_diagnostics():
