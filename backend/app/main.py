@@ -100,6 +100,7 @@ def root():
         "redoc": "/redoc",
         "endpoints": {
             "health": f"{settings.API_V1_STR}/health",
+            "signup": f"{settings.API_V1_STR}/auth/signup",
             "login": f"{settings.API_V1_STR}/auth/login",
             "me": f"{settings.API_V1_STR}/me",
             "library": f"{settings.API_V1_STR}/library/me",

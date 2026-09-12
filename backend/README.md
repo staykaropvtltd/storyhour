@@ -83,6 +83,8 @@ The server runs by default at `http://127.0.0.1:8001`.
 
 - **Discovery**: `GET http://127.0.0.1:8001/`
 - **Health Check**: `GET http://127.0.0.1:8001/api/health`
+- **User Sign Up**: `POST http://127.0.0.1:8001/api/auth/signup` (Strictly 4 fields: `Name:`, `email id :`, `password :`, `confirm the password :`)
+- **User Login**: `POST http://127.0.0.1:8001/api/auth/login` (with email and password)
 - **Swagger Docs**: `GET http://127.0.0.1:8001/docs`
 - **ReDoc**: `GET http://127.0.0.1:8001/redoc`
 - **Current User Profile**: `GET http://127.0.0.1:8001/api/me` (requires `Authorization: Bearer <token>`)

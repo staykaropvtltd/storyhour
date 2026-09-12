@@ -139,6 +139,97 @@ class SupabaseAuthService:
             logger.debug(f"Token verification failed: invalid token ({str(e)})")
             raise
 
+    def sign_up(self, name: str, email: str, password: str) -> Dict[str, Any]:
+        """
+        Registers a new user account with Supabase Auth and provisions their database profile.
+        Accepts strictly:
+        - name: User's Name
+        - email: User's email id
+        - password: User's password
+        Returns user details and session tokens if immediate session is issued.
+        """
+        email = email.strip().lower()
+        name = name.strip()
+
+        if self.anon_client is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication service is currently not configured",
+            )
+
+        try:
+            res = self.anon_client.auth.sign_up({
+                "email": email,
+                "password": password,
+                "options": {
+                    "data": {
+                        "full_name": name,
+                        "name": name,
+                    }
+                }
+            })
+            if not res or not res.user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to create account",
+                )
+
+            user = res.user
+
+            # Check for existing account where Supabase returns empty identities list
+            if hasattr(user, "identities") and user.identities is not None and len(user.identities) == 0:
+                logger.warning(f"Registration conflict: account with {email} already exists")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this email already exists",
+                )
+
+            session = getattr(res, "session", None)
+
+            # Sync user profile into PostgreSQL public.user_profiles
+            self._sync_user_profile(user)
+
+            access_token = session.access_token if session else None
+            refresh_token = getattr(session, "refresh_token", None) if session else None
+            expires_in = getattr(session, "expires_in", 3600) if session else None
+
+            return {
+                "message": "User registered successfully",
+                "user_id": str(user.id),
+                "email": user.email,
+                "session_active": bool(session and session.access_token),
+                "access_token": access_token,
+                "token_type": "bearer" if access_token else None,
+                "expires_in": expires_in,
+                "refresh_token": refresh_token,
+                "user": {
+                    "id": str(user.id),
+                    "email": user.email,
+                    "role": getattr(user, "role", "authenticated") or "authenticated",
+                    "user_metadata": getattr(user, "user_metadata", {}) or {},
+                    "app_metadata": getattr(user, "app_metadata", {}) or {},
+                },
+            }
+        except HTTPException:
+            raise
+        except Exception as exc:
+            err_msg = str(exc)
+            logger.warning(f"Sign up failed for email {email}: {err_msg}")
+            if "rate limit" in err_msg.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Rate limit exceeded. Please wait a few moments before trying again.",
+                )
+            if "already registered" in err_msg.lower() or "user already registered" in err_msg.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this email already exists",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Registration failed: {err_msg}",
+            )
+
     def sign_in_with_password(self, email: str, password: str) -> Dict[str, Any]:
         """
         Authenticates user with email and password against Supabase Auth.
