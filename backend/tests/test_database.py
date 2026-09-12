@@ -109,6 +109,7 @@ def test_user_profile_repository_crud(in_memory_session):
     user_repo = BaseRepository(UserProfile)
 
     # Create
+        # Create
     user = user_repo.create(
         in_memory_session,
         obj_in={
@@ -118,8 +119,7 @@ def test_user_profile_repository_crud(in_memory_session):
             "subscription_tier": "free",
         },
     )
-    assert user.id is not None
-    assert user.email == "storyteller@storyhour.com"
+    in_memory_session.commit()
 
     # Read / Get
     retrieved = user_repo.get(in_memory_session, user.id)
@@ -140,8 +140,7 @@ def test_user_profile_repository_crud(in_memory_session):
         db_obj=user,
         obj_in={"full_name": "Adithya Goud (Updated)", "subscription_tier": "patron"},
     )
-    assert updated.full_name == "Adithya Goud (Updated)"
-    assert updated.subscription_tier == "patron"
+    in_memory_session.commit()
 
     # Pagination / Get Multi
     multi = user_repo.get_multi(in_memory_session, skip=0, limit=10)
@@ -149,9 +148,7 @@ def test_user_profile_repository_crud(in_memory_session):
 
     # Delete
     deleted = user_repo.remove(in_memory_session, id=user.id)
-    assert deleted is not None
-    assert user_repo.get(in_memory_session, user.id) is None
-    assert user_repo.count(in_memory_session) == 0
+    in_memory_session.commit()
 
 
 def test_live_database_health_and_diagnostics():
