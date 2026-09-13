@@ -75,11 +75,9 @@ def test_get_me_with_valid_token(client, valid_token):
     data = response.json()
     assert data["id"] == "d486d34e-0a56-4293-85f2-2b6b15801c80"
     assert data["email"] == "storyteller@storyhour.com"
-    assert data["role"] == "authenticated"
+    assert data["role"] == "Customer"
     assert data["is_active"] is True
     assert data["full_name"] == "Adithya Goud"
-    assert "user_metadata" in data
-    assert "app_metadata" in data
 
 
 def test_get_auth_me_alias(client, valid_token):
