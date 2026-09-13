@@ -7,7 +7,20 @@ from app.config import settings
 from app.core.logging import logger
 from app.schemas.user import AuthenticatedUser
 
+def _normalize_role(role: Optional[str]) -> str:
+    """
+    Convert authentication-provider roles into application roles.
+    """
+    role_map = {
+        "authenticated": "Customer",
+        "customer": "Customer",
+        "editor": "Editor",
+        "admin": "Administrator",
+        "administrator": "Administrator",
+    }
 
+    normalized = (role or "authenticated").strip().lower()
+    return role_map.get(normalized, "Customer")
 
 class SupabaseAuthService:
     """
@@ -70,7 +83,12 @@ class SupabaseAuthService:
                     user_data = res.user
                     app_meta = getattr(user_data, "app_metadata", {}) or {}
                     user_meta = getattr(user_data, "user_metadata", {}) or {}
-                    role = app_meta.get("role") or getattr(user_data, "role", "authenticated") or "authenticated"
+                    raw_role = (
+                        app_meta.get("role")
+                        or getattr(user_data, "role", None)
+                        or "authenticated"
+                    )
+                    role = _normalize_role(raw_role)
                     return AuthenticatedUser(
                         id=str(user_data.id),
                         email=user_data.email or "",
@@ -96,11 +114,11 @@ class SupabaseAuthService:
         if not email:
             raise ValueError("Token email claim missing")
 
-        role = payload.get("role", "authenticated")
-        app_metadata = payload.get("app_metadata", {})
-        user_metadata = payload.get("user_metadata", {})
-        if "role" in app_metadata:
-            role = app_metadata["role"]
+        app_metadata = payload.get("app_metadata", {}) or {}
+        user_metadata = payload.get("user_metadata", {}) or {}
+
+        raw_role = app_metadata.get("role") or payload.get("role", "authenticated")
+        role = _normalize_role(raw_role)
 
         return AuthenticatedUser(
             id=str(user_id),

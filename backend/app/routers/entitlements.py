@@ -40,7 +40,7 @@ def get_user_library(
     status_code=status.HTTP_200_OK,
     summary="Admin overview of system entitlements",
     description="Restricted endpoint requiring admin role.",
-    dependencies=[Depends(require_role(["admin"]))]
+    dependencies=[Depends(require_role(["Administrator"]))]
 )
 def admin_entitlements_overview():
     """Admin-only endpoint demonstrating RBAC role verification."""
