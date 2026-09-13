@@ -6,6 +6,9 @@ from app.models.language import Language
 from app.models.story import Story, StoryStatus, story_categories, story_languages
 from app.models.chapter import Chapter
 from app.models.audio_asset import AudioAsset, AudioAccessType
+from app.models.product import Product
+from app.models.cart import Cart, CartItem
+from app.models.order import Order, OrderItem
 
 __all__ = [
     "UserProfile",
@@ -19,7 +22,12 @@ __all__ = [
     "story_languages",
     "Chapter",
     "AudioAsset",
+    "Product",
+    "Cart",
+    "CartItem",
     "AudioAccessType",
+    "Order",
+    "OrderItem",
 ]
 
 

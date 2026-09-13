@@ -8,11 +8,14 @@ from app.config import settings
 from app.core.logging import logger
 from app.routers import (
     auth,
+    cart,
     categories,
+    orders,
     entitlements,
     health,
     languages,
     me,
+    products,
     stories,
 )
 
@@ -104,6 +107,10 @@ app.include_router(categories.router, prefix=settings.API_V1_STR, include_in_sch
 app.include_router(languages.router, prefix=f"{settings.API_V1_STR}/v1")
 app.include_router(languages.router, prefix=settings.API_V1_STR, include_in_schema=False)
 
+
+app.include_router(products.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(cart.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(orders.router, prefix=f"{settings.API_V1_STR}/v1")
 
 @app.get("/", tags=["Health & Status"])
 def root():
