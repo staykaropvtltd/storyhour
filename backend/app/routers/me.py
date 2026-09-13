@@ -137,3 +137,22 @@ def get_auth_me(
         return _build_auth_fallback_response(current_user)
 
     return _build_user_response(current_user, profile)
+
+
+@router.get(
+    "/v1/auth/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get authenticated user profile",
+)
+def get_v1_auth_me(
+    current_user: AuthenticatedUser = Depends(require_active_user),
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    """Get the authenticated user's profile."""
+    profile = user_repository.get_by_id(db, current_user.id)
+
+    if profile is None:
+        return _build_auth_fallback_response(current_user)
+
+    return _build_user_response(current_user, profile)
