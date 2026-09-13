@@ -39,6 +39,9 @@ class StoryService:
         db: Session,
         *,
         featured: Optional[bool] = None,
+        category_slug: Optional[str] = None,
+        language_code: Optional[str] = None,
+        search: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[Story]:
@@ -47,6 +50,9 @@ class StoryService:
             db,
             status=StoryStatus.PUBLISHED,
             featured=featured,
+            category_slug=category_slug,
+            language_code=language_code,
+            search=search,
             skip=skip,
             limit=limit,
         )

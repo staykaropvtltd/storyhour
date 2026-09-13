@@ -6,7 +6,15 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.core.logging import logger
-from app.routers import health, me, entitlements, auth
+from app.routers import (
+    auth,
+    categories,
+    entitlements,
+    health,
+    languages,
+    me,
+    stories,
+)
 
 
 @asynccontextmanager
@@ -88,6 +96,14 @@ app.include_router(me.router, prefix=settings.API_V1_STR)
 app.include_router(health.router, prefix=settings.API_V1_STR)
 app.include_router(entitlements.router, prefix=settings.API_V1_STR)
 
+# Story & Content Routers (supporting both /api/v1 and /api prefix conventions)
+app.include_router(stories.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(stories.router, prefix=settings.API_V1_STR, include_in_schema=False)
+app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(categories.router, prefix=settings.API_V1_STR, include_in_schema=False)
+app.include_router(languages.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(languages.router, prefix=settings.API_V1_STR, include_in_schema=False)
+
 
 @app.get("/", tags=["Health & Status"])
 def root():
@@ -104,6 +120,9 @@ def root():
             "login": f"{settings.API_V1_STR}/auth/login",
             "me": f"{settings.API_V1_STR}/me",
             "library": f"{settings.API_V1_STR}/library/me",
+            "stories": f"{settings.API_V1_STR}/v1/stories",
+            "categories": f"{settings.API_V1_STR}/v1/categories",
+            "languages": f"{settings.API_V1_STR}/v1/languages",
         },
     }
 
