@@ -1,5 +1,6 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
-from sqlalchemy import func
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database.base import Base
@@ -9,20 +10,18 @@ ModelType = TypeVar("ModelType", bound=Base)
 
 class BaseRepository(Generic[ModelType]):
     """
-    SaaS Generic Repository pattern providing standardized CRUD operations,
-    type safety, pagination, and query isolation.
+    Generic SQLAlchemy 2.x repository.
+
+    Repositories manage persistence operations but do not own transactions.
+    The service/application layer is responsible for commit/rollback.
     """
 
     def __init__(self, model: Type[ModelType]):
-        """
-        CRUD object with default methods to Create, Read, Update, Delete (CRUD).
-        :param model: A SQLAlchemy model class
-        """
         self.model = model
 
     def get(self, db: Session, id: Any) -> Optional[ModelType]:
         """Fetch a single record by primary key."""
-        return db.query(self.model).filter(self.model.id == id).first()
+        return db.get(self.model, id)
 
     def get_multi(
         self,
@@ -32,33 +31,53 @@ class BaseRepository(Generic[ModelType]):
         limit: int = 100,
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[ModelType]:
-        """Fetch a paginated list of records with optional exact match filters."""
-        query = db.query(self.model)
-        if filters:
-            for field, val in filters.items():
-                if hasattr(self.model, field) and val is not None:
-                    query = query.filter(getattr(self.model, field) == val)
-        return query.offset(skip).limit(limit).all()
+        """Fetch paginated records with optional exact-match filters."""
+        stmt = select(self.model)
 
-    def count(self, db: Session, filters: Optional[Dict[str, Any]] = None) -> int:
-        """Count total matching records for pagination metadata."""
-        query = db.query(func.count(self.model.id))
         if filters:
-            for field, val in filters.items():
-                if hasattr(self.model, field) and val is not None:
-                    query = query.filter(getattr(self.model, field) == val)
-        return query.scalar() or 0
+            for field, value in filters.items():
+                column = getattr(self.model, field, None)
+                if column is not None and value is not None:
+                    stmt = stmt.where(column == value)
 
-    def create(self, db: Session, *, obj_in: Union[Dict[str, Any], Any]) -> ModelType:
-        """Insert and commit a new model instance."""
+        stmt = stmt.offset(skip).limit(limit)
+        return list(db.scalars(stmt).all())
+
+    def count(
+        self,
+        db: Session,
+        filters: Optional[Dict[str, Any]] = None,
+    ) -> int:
+        """Count records matching optional exact-match filters."""
+        stmt = select(func.count()).select_from(self.model)
+
+        if filters:
+            for field, value in filters.items():
+                column = getattr(self.model, field, None)
+                if column is not None and value is not None:
+                    stmt = stmt.where(column == value)
+
+        return db.scalar(stmt) or 0
+
+    def create(
+        self,
+        db: Session,
+        *,
+        obj_in: Union[Dict[str, Any], Any],
+    ) -> ModelType:
+        """Create and flush a model instance without committing."""
         if isinstance(obj_in, dict):
-            db_obj = self.model(**obj_in)
+            obj_data = obj_in
+        elif hasattr(obj_in, "model_dump"):
+            obj_data = obj_in.model_dump()
         else:
-            obj_data = obj_in.model_dump() if hasattr(obj_in, "model_dump") else obj_in.dict()
-            db_obj = self.model(**obj_data)
+            obj_data = obj_in.dict()
+
+        db_obj = self.model(**obj_data)
         db.add(db_obj)
-        db.commit()
+        db.flush()
         db.refresh(db_obj)
+
         return db_obj
 
     def update(
@@ -68,30 +87,35 @@ class BaseRepository(Generic[ModelType]):
         db_obj: ModelType,
         obj_in: Union[Dict[str, Any], Any],
     ) -> ModelType:
-        """Update an existing model instance with partial changes."""
+        """Update a model instance without committing."""
         if isinstance(obj_in, dict):
             update_data = obj_in
+        elif hasattr(obj_in, "model_dump"):
+            update_data = obj_in.model_dump(exclude_unset=True)
         else:
-            update_data = (
-                obj_in.model_dump(exclude_unset=True)
-                if hasattr(obj_in, "model_dump")
-                else obj_in.dict(exclude_unset=True)
-            )
+            update_data = obj_in.dict(exclude_unset=True)
 
         for field, value in update_data.items():
             if hasattr(db_obj, field):
                 setattr(db_obj, field, value)
 
         db.add(db_obj)
-        db.commit()
+        db.flush()
         db.refresh(db_obj)
+
         return db_obj
 
-    def remove(self, db: Session, *, id: Any) -> Optional[ModelType]:
-        """Delete a record by primary key."""
+    def remove(
+        self,
+        db: Session,
+        *,
+        id: Any,
+    ) -> Optional[ModelType]:
+        """Delete a record without committing."""
         obj = db.get(self.model, id)
-        if obj:
-            db.delete(obj)
-            db.commit()
-        return obj
 
+        if obj is not None:
+            db.delete(obj)
+            db.flush()
+
+        return obj

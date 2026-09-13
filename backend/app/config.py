@@ -1,5 +1,5 @@
-import os
 from typing import List, Union
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,19 +21,19 @@ class Settings(BaseSettings):
     ]
 
     # Database connection
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://postgres:StoryHour%401234@db.pbbmbryyncgoywappgjg.supabase.co:5432/postgres"
-    )
+    # Must be provided through environment configuration.
+    DATABASE_URL: str
 
     # Supabase credentials
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://pbbmbryyncgoywappgjg.supabase.co")
-    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
-    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    # Kept temporarily while the existing authentication implementation
+    # is migrated to local JWT + bcrypt authentication.
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
 
-    # Supabase JWT Secret (for local token signature verification)
-    # Default fallback secret for development/testing if not configured in .env
-    SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "storyhour-dev-jwt-secret-minimum-32-chars-long-2026")
+    # Supabase JWT configuration
+    # No secret is hard-coded in source code.
+    SUPABASE_JWT_SECRET: str = ""
     SUPABASE_JWT_ALGORITHM: str = "HS256"
 
     @field_validator("CORS_ORIGINS", mode="before")
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",") if i.strip()]
-        elif isinstance(v, (list, str)):
+        if isinstance(v, list):
             return v
         raise ValueError(v)
 
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
         case_sensitive=True,
         env_file=(".env", "backend/.env", "../.env"),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
 
