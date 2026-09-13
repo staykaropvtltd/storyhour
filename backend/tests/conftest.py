@@ -67,3 +67,22 @@ def admin_token(make_token):
         app_metadata={"role": "admin", "provider": "email"},
         email="admin@storyhour.com",
     )
+
+
+@pytest.fixture
+def db_session():
+    """Provides an isolated in-memory SQLite database session for unit testing."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from app.database.base import Base
+    import app.database.models  # noqa: F401
+
+    test_engine = create_engine("sqlite:///:memory:", echo=False)
+    Base.metadata.create_all(bind=test_engine)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        Base.metadata.drop_all(bind=test_engine)

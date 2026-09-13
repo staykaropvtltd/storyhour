@@ -314,4 +314,5 @@ class SupabaseAuthService:
 
 
 supabase_service = SupabaseAuthService()
+SupabaseService = SupabaseAuthService
 
