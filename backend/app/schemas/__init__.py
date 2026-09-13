@@ -1,5 +1,21 @@
-from app.schemas.auth import TokenData, ErrorResponse
-from app.schemas.user import AuthenticatedUser, UserProfileResponse
+"""
+Application API schemas.
+"""
+
+from app.schemas.auth import (
+    ErrorResponse,
+    LoginRequest,
+    LoginResponse,
+    SignUpRequest,
+    SignUpResponse,
+    TokenData,
+)
+from app.schemas.user import (
+    AuthenticatedUser,
+    UserResponse,
+    UserRole,
+    UserUpdateRequest,
+)
 from app.schemas.category import (
     CategoryBase,
     CategoryCreate,
@@ -35,31 +51,42 @@ from app.schemas.story import (
 
 __all__ = [
     # Auth & User
-    "TokenData",
-    "ErrorResponse",
     "AuthenticatedUser",
-    "UserProfileResponse",
+    "UserResponse",
+    "UserRole",
+    "UserUpdateRequest",
+    "ErrorResponse",
+    "LoginRequest",
+    "LoginResponse",
+    "SignUpRequest",
+    "SignUpResponse",
+    "TokenData",
+
     # Category
     "CategoryBase",
     "CategoryCreate",
     "CategoryUpdate",
     "CategoryResponse",
+
     # Language
     "LanguageBase",
     "LanguageCreate",
     "LanguageUpdate",
     "LanguageResponse",
+
     # Chapter
     "ChapterBase",
     "ChapterCreate",
     "ChapterUpdate",
     "ChapterResponse",
+
     # Audio
     "AudioAssetBase",
     "AudioAssetCreate",
     "AudioAssetUpdate",
     "AudioAssetResponse",
     "AudioPlaybackDescriptor",
+
     # Story
     "StoryBase",
     "StoryCreate",

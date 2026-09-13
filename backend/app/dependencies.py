@@ -78,14 +78,17 @@ def require_role(allowed_roles: List[str]) -> Callable[[AuthenticatedUser], Auth
     User role is extracted strictly from verified token claims.
 
     Example:
-        @router.get("/admin/analytics", dependencies=[Depends(require_role(["admin"]))])
+        @router.get(
+            "/admin/analytics",
+            dependencies=[Depends(require_role(["Administrator"]))])
     """
     def role_checker(
         current_user: AuthenticatedUser = Depends(require_active_user),
     ) -> AuthenticatedUser:
         if current_user.role not in allowed_roles:
             logger.warning(
-                f"User {current_user.id} with role '{current_user.role}' forbidden from resource requiring {allowed_roles}"
+                f"User {current_user.id} with role '{current_user.role}' "
+                f"forbidden from resource requiring {allowed_roles}"
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
