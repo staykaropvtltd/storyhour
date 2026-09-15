@@ -60,7 +60,7 @@ class LibraryRepository(BaseRepository[LibraryItem]):
             .first()
         )
 
-    def add_to_library(
+    def add_to_library_without_commit(
         self,
         db: Session,
         *,
@@ -69,7 +69,12 @@ class LibraryRepository(BaseRepository[LibraryItem]):
         access_type: str = "purchased",
         source_order_id: Optional[str] = None,
     ) -> LibraryItem:
-        """Add a story to the user's library or reactivate existing access."""
+        """
+        Add or reactivate library access without committing.
+
+        This is intended for service-layer transactions where library
+        entitlement must be committed atomically with other changes.
+        """
         item = (
             db.query(self.model)
             .filter(
@@ -78,6 +83,7 @@ class LibraryRepository(BaseRepository[LibraryItem]):
             )
             .first()
         )
+
         if item:
             item.is_active = True
             item.access_type = access_type
@@ -93,9 +99,34 @@ class LibraryRepository(BaseRepository[LibraryItem]):
             )
             db.add(item)
 
-        db.commit()
+        db.flush()
         db.refresh(item)
         return item
+
+    def add_to_library(
+        self,
+        db: Session,
+        *,
+        user_id: str,
+        story_id: str,
+        access_type: str = "purchased",
+        source_order_id: Optional[str] = None,
+    ) -> LibraryItem:
+        """Add a story to the user's library or reactivate existing access."""
+        try:
+            item = self.add_to_library_without_commit(
+                db,
+                user_id=user_id,
+                story_id=story_id,
+                access_type=access_type,
+                source_order_id=source_order_id,
+            )
+            db.commit()
+            db.refresh(item)
+            return item
+        except Exception:
+            db.rollback()
+            raise
 
     def check_confirmed_order_for_product(
         self,

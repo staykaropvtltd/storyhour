@@ -12,6 +12,7 @@ from app.routers import (
     cart,
     categories,
     orders,
+    payments,
     entitlements,
     health,
     languages,
@@ -114,6 +115,7 @@ app.include_router(languages.router, prefix=settings.API_V1_STR, include_in_sche
 app.include_router(products.router, prefix=f"{settings.API_V1_STR}/v1")
 app.include_router(cart.router, prefix=f"{settings.API_V1_STR}/v1")
 app.include_router(orders.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(payments.router, prefix=f"{settings.API_V1_STR}/v1")
 
 # Phase 3 Audio, Progress, and User Library Routers
 app.include_router(audio.router, prefix=f"{settings.API_V1_STR}/v1")

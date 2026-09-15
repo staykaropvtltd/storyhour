@@ -11,6 +11,7 @@ from app.models.cart import Cart, CartItem
 from app.models.order import Order, OrderItem
 from app.models.listening_progress import ListeningProgress
 from app.models.library import LibraryItem
+from app.models.payment import Payment
 
 __all__ = [
     "UserProfile",
@@ -32,6 +33,7 @@ __all__ = [
     "OrderItem",
     "ListeningProgress",
     "LibraryItem",
+    "Payment",
 ]
 
 
