@@ -8,6 +8,7 @@ from app.models.chapter import Chapter
 from app.models.audio_asset import AudioAsset, AudioAccessType
 from app.models.listening_progress import ListeningProgress
 from app.models.library import LibraryItem
+from app.models.payment import Payment
 
 __all__ = [
     "UserProfile",
@@ -22,4 +23,5 @@ __all__ = [
     "AudioAccessType",
     "ListeningProgress",
     "LibraryItem",
+    "Payment",
 ]
