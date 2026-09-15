@@ -6,6 +6,8 @@ from app.models.language import Language
 from app.models.story import Story, StoryStatus, story_categories, story_languages
 from app.models.chapter import Chapter
 from app.models.audio_asset import AudioAsset, AudioAccessType
+from app.models.listening_progress import ListeningProgress
+from app.models.library import LibraryItem
 
 __all__ = [
     "UserProfile",
@@ -18,4 +20,6 @@ __all__ = [
     "Chapter",
     "AudioAsset",
     "AudioAccessType",
+    "ListeningProgress",
+    "LibraryItem",
 ]

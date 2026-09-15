@@ -48,6 +48,15 @@ from app.schemas.story import (
     StorySummaryResponse,
     StoryResponse,
 )
+from app.schemas.listening_progress import (
+    ListeningProgressUpdate,
+    ListeningProgressResponse,
+    ResumePointResponse,
+)
+from app.schemas.library import (
+    LibraryItemResponse,
+    UserLibraryResponse,
+)
 
 __all__ = [
     # Auth & User
@@ -93,4 +102,13 @@ __all__ = [
     "StoryUpdate",
     "StorySummaryResponse",
     "StoryResponse",
+
+    # Listening Progress
+    "ListeningProgressUpdate",
+    "ListeningProgressResponse",
+    "ResumePointResponse",
+
+    # Library
+    "LibraryItemResponse",
+    "UserLibraryResponse",
 ]

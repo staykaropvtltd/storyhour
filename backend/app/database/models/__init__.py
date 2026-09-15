@@ -9,6 +9,8 @@ from app.models.audio_asset import AudioAsset, AudioAccessType
 from app.models.product import Product
 from app.models.cart import Cart, CartItem
 from app.models.order import Order, OrderItem
+from app.models.listening_progress import ListeningProgress
+from app.models.library import LibraryItem
 
 __all__ = [
     "UserProfile",
@@ -28,6 +30,8 @@ __all__ = [
     "AudioAccessType",
     "Order",
     "OrderItem",
+    "ListeningProgress",
+    "LibraryItem",
 ]
 
 
