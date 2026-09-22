@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: storyhour-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeploy: false
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+
+      - key: DATABASE_URL
+        sync: false
+
+      - key: SUPABASE_URL
+        sync: false
+
+      - key: SUPABASE_ANON_KEY
+        sync: false
+
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+
+      - key: SUPABASE_JWT_ALGORITHM
+        value: HS256
+
+      - key: CORS_ORIGINS
+        sync: false
