@@ -17,7 +17,8 @@ import {
   MapPin,
   Sparkles,
 } from "lucide-react";
-import SiteNav from "@/components/SiteNav";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 
 interface FaqItem {
   question: string;
@@ -131,25 +132,69 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F3] text-[#050505] antialiased overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F3] text-[#0F0F0F] selection:bg-[#C9281D] selection:text-white antialiased overflow-x-hidden">
       {/* ── 1. EXISTING STORYHOUR NAVBAR ── */}
-      <SiteNav theme="light" activeLink="Contact" />
+      <SiteHeader activeLink="Contact" />
+
+      {/* ── Compact Sky Hero Banner (matching Home page sky) ── */}
+      <section className="relative w-full bg-[#3b9dfb] pt-28 sm:pt-36 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden select-none">
+        {/* Background sky image matching Home hero */}
+        <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+          <Image
+            src="/images/user-hero-bg.webp"
+            alt=""
+            fill
+            className="object-cover object-top"
+            sizes="100vw"
+            aria-hidden="true"
+          />
+        </div>
+
+        {/* Hero Title */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-sm">
+            Get in Touch
+          </h1>
+          <p className="mt-3 text-white/90 font-medium text-base sm:text-lg max-w-lg leading-relaxed">
+            Bring Indian mythology, live storytelling, and culture into your community or school.
+          </p>
+        </div>
+
+        {/* Organic hill wave transition */}
+        <div
+          className="absolute -bottom-px left-0 right-0 z-10 pointer-events-none overflow-hidden leading-none select-none"
+          style={{ marginBottom: "-1px" }}
+        >
+          <svg
+            viewBox="0 0 1440 100"
+            fill="none"
+            preserveAspectRatio="none"
+            className="w-full h-12 sm:h-16 md:h-20 block"
+            aria-hidden="true"
+          >
+            <path
+              d="M0,32 C360,68 720,8 1080,44 C1260,62 1380,48 1440,38 L1440,100 L0,100 Z"
+              fill="#FAF8F3"
+            />
+          </svg>
+        </div>
+      </section>
 
       <main className="flex-1">
         {/* ── 2. CONTACT HERO & CONTACT INFORMATION + FORM ── */}
         <section className="pt-10 sm:pt-14 lg:pt-16 pb-16 sm:pb-20">
           <div className="max-w-[1320px] mx-auto px-6 sm:px-10">
             {/* Editorial Contact Header Row (Matching Virto layout proportion) */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-10 sm:pb-12 border-b border-[#E8E4DC]">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-10 sm:pb-12 border-b border-[#E7E7E7]">
               <div>
-                <span className="font-mono text-[11px] uppercase tracking-widest text-[#2410A4] block mb-3 font-semibold">
+                <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] block mb-3 font-semibold">
                   CONTACT
                 </span>
-                <h1 className="font-serif text-4xl sm:text-5xl lg:text-[68px] font-normal text-[#050505] tracking-[-0.03em] leading-[0.98] text-balance">
+                <h1 className="font-serif text-4xl sm:text-5xl lg:text-[68px] font-normal text-[#0F0F0F] tracking-[-0.03em] leading-[0.98] text-balance">
                   Let&apos;s keep the stories going.
                 </h1>
               </div>
-              <p className="font-inter text-[15px] sm:text-[16px] text-[#696572] leading-[1.65] max-w-[480px]">
+              <p className="font-sans text-[15px] sm:text-[16px] text-[#5A5A5A] leading-[1.65] max-w-[480px]">
                 Bring Indian mythology, live storytelling, and culture into your community or school. We are here to connect and collaborate.
               </p>
             </div>
@@ -158,21 +203,21 @@ export default function ContactPage() {
             <div className="mt-10 sm:mt-12 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
               
               {/* LEFT: Dark StoryHour Contact Information Card (col-span-5) */}
-              <div className="lg:col-span-5 bg-[#120A45] rounded-[24px] sm:rounded-[32px] p-8 sm:p-10 text-[#F7F4EE] shadow-xl border border-white/10 flex flex-col justify-between relative overflow-hidden">
+              <div className="lg:col-span-5 bg-[#0F0F0F] rounded-[24px] sm:rounded-[32px] p-8 sm:p-10 text-[#F7F4EE] shadow-xl border border-white/10 flex flex-col justify-between relative overflow-hidden">
                 {/* Subtle ambient lighting */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#2410A4]/40 rounded-full blur-[80px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-56 h-56 bg-[#C9281D]/20 rounded-full blur-[70px] pointer-events-none" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#C9281D]/25 rounded-full blur-[80px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-56 h-56 bg-[#C9281D]/10 rounded-full blur-[70px] pointer-events-none" />
 
                 <div className="relative z-10">
                   <span className="font-mono text-[11px] uppercase tracking-widest text-[#F7F4EE]/50 block mb-2 font-semibold">
                     DIRECT INQUIRIES
                   </span>
                   
-                  <h2 className="font-serif text-3xl sm:text-[34px] font-normal text-[#F7F4EE] tracking-tight mb-3">
+                  <h2 className="font-serif text-3xl sm:text-[34px] font-normal text-white tracking-tight mb-3">
                     StoryHour Studio
                   </h2>
 
-                  <p className="font-inter text-[14px] text-[#F7F4EE]/70 leading-relaxed mb-8">
+                  <p className="font-sans text-[14px] text-white/70 leading-relaxed mb-8">
                     Contact our creative team for audiobook enquiries, school residencies, theatre tours, and cultural partnerships.
                   </p>
 
@@ -291,22 +336,22 @@ export default function ContactPage() {
                 {isSubmitted ? (
                   /* Success Confirmation State */
                   <div className="my-auto py-12 text-center">
-                    <div className="w-16 h-16 rounded-full bg-[#FAF8F3] border border-[#2410A4]/20 flex items-center justify-center mx-auto mb-6 text-[#2410A4]">
-                      <CheckCircle2 className="w-8 h-8 text-[#2410A4]" />
+                    <div className="w-16 h-16 rounded-full bg-[#FAF8F3] border border-[#C9281D]/30 flex items-center justify-center mx-auto mb-6 text-[#C9281D]">
+                      <CheckCircle2 className="w-8 h-8 text-[#C9281D]" />
                     </div>
                     
-                    <h3 className="font-serif text-3xl sm:text-4xl font-normal text-[#050505] tracking-tight mb-3">
+                    <h3 className="font-serif text-3xl sm:text-4xl font-normal text-[#0F0F0F] tracking-tight mb-3">
                       Thank you for reaching out
                     </h3>
                     
-                    <p className="font-inter text-[15px] sm:text-[16px] text-[#696572] leading-relaxed max-w-[460px] mx-auto mb-8">
-                      Your message has been received. Our team will review your enquiry and respond to <span className="font-semibold text-[#050505]">{formData.email}</span> within 1 to 2 business days.
+                    <p className="font-sans text-[15px] sm:text-[16px] text-[#5A5A5A] leading-relaxed max-w-[460px] mx-auto mb-8">
+                      Your message has been received. Our team will review your enquiry and respond to <span className="font-semibold text-[#0F0F0F]">{formData.email}</span> within 1 to 2 business days.
                     </p>
 
                     <button
                       onClick={handleReset}
                       type="button"
-                      className="px-8 py-3.5 rounded-full bg-[#2410A4] hover:bg-[#1B0C80] text-white font-inter font-medium text-[14px] transition-colors cursor-pointer shadow-md"
+                      className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white font-sans font-medium text-[14px] transition-colors cursor-pointer shadow-md"
                     >
                       Send another message
                     </button>
@@ -316,10 +361,10 @@ export default function ContactPage() {
                   <form onSubmit={handleSubmit} noValidate className="h-full flex flex-col justify-between">
                     <div>
                       <div className="mb-8">
-                        <h2 className="font-serif text-2xl sm:text-3xl font-normal text-[#050505] tracking-tight mb-2">
+                        <h2 className="font-serif text-2xl sm:text-3xl font-normal text-[#0F0F0F] tracking-tight mb-2">
                           Send an Enquiry
                         </h2>
-                        <p className="font-inter text-[14px] text-[#696572] leading-relaxed">
+                        <p className="font-sans text-[14px] text-[#5A5A5A] leading-relaxed">
                           Fill out the form below and we will get back to you with the appropriate details.
                         </p>
                       </div>
@@ -330,7 +375,7 @@ export default function ContactPage() {
                           <div>
                             <label
                               htmlFor="name"
-                              className="block font-inter text-[13px] font-semibold text-[#050505] mb-2"
+                              className="block font-sans text-[13px] font-semibold text-[#0F0F0F] mb-2"
                             >
                               Your Name <span className="text-[#C9281D]">*</span>
                             </label>
@@ -344,11 +389,11 @@ export default function ContactPage() {
                               }}
                               placeholder="e.g. Neelima"
                               className={`w-full px-4 py-3.5 rounded-xl bg-[#FAF8F3] border ${
-                                errors.name ? "border-[#C9281D]" : "border-[#E8E4DC]"
-                              } text-[#050505] placeholder:text-[#696572]/50 font-inter text-[15px] focus:outline-none focus:border-[#2410A4] focus:ring-2 focus:ring-[#2410A4]/15 transition-all`}
+                                errors.name ? "border-[#C9281D]" : "border-[#E7E7E7]"
+                              } text-[#0F0F0F] placeholder:text-[#5A5A5A]/50 font-sans text-[15px] focus:outline-none focus:border-[#C9281D] focus:ring-2 focus:ring-[#C9281D]/15 transition-all`}
                             />
                             {errors.name && (
-                              <p className="font-inter text-[12px] text-[#C9281D] mt-1.5">
+                              <p className="font-sans text-[12px] text-[#C9281D] mt-1.5">
                                 {errors.name}
                               </p>
                             )}
@@ -357,7 +402,7 @@ export default function ContactPage() {
                           <div>
                             <label
                               htmlFor="email"
-                              className="block font-inter text-[13px] font-semibold text-[#050505] mb-2"
+                              className="block font-sans text-[13px] font-semibold text-[#0F0F0F] mb-2"
                             >
                               Email Address <span className="text-[#C9281D]">*</span>
                             </label>
@@ -371,11 +416,11 @@ export default function ContactPage() {
                               }}
                               placeholder="e.g. neelima@example.com"
                               className={`w-full px-4 py-3.5 rounded-xl bg-[#FAF8F3] border ${
-                                errors.email ? "border-[#C9281D]" : "border-[#E8E4DC]"
-                              } text-[#050505] placeholder:text-[#696572]/50 font-inter text-[15px] focus:outline-none focus:border-[#2410A4] focus:ring-2 focus:ring-[#2410A4]/15 transition-all`}
+                                errors.email ? "border-[#C9281D]" : "border-[#E7E7E7]"
+                              } text-[#0F0F0F] placeholder:text-[#5A5A5A]/50 font-sans text-[15px] focus:outline-none focus:border-[#C9281D] focus:ring-2 focus:ring-[#C9281D]/15 transition-all`}
                             />
                             {errors.email && (
-                              <p className="font-inter text-[12px] text-[#C9281D] mt-1.5">
+                              <p className="font-sans text-[12px] text-[#C9281D] mt-1.5">
                                 {errors.email}
                               </p>
                             )}
@@ -387,9 +432,9 @@ export default function ContactPage() {
                           <div>
                             <label
                               htmlFor="phone"
-                              className="block font-inter text-[13px] font-semibold text-[#050505] mb-2"
+                              className="block font-sans text-[13px] font-semibold text-[#0F0F0F] mb-2"
                             >
-                              Phone Number <span className="text-[#696572] font-normal text-[12px]">(optional)</span>
+                              Phone Number <span className="text-[#5A5A5A] font-normal text-[12px]">(optional)</span>
                             </label>
                             <input
                               id="phone"
@@ -397,14 +442,14 @@ export default function ContactPage() {
                               value={formData.phone}
                               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                               placeholder="+44 or +91..."
-                              className="w-full px-4 py-3.5 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-[#050505] placeholder:text-[#696572]/50 font-inter text-[15px] focus:outline-none focus:border-[#2410A4] focus:ring-2 focus:ring-[#2410A4]/15 transition-all"
+                              className="w-full px-4 py-3.5 rounded-xl bg-[#FAF8F3] border border-[#E7E7E7] text-[#0F0F0F] placeholder:text-[#5A5A5A]/50 font-sans text-[15px] focus:outline-none focus:border-[#C9281D] focus:ring-2 focus:ring-[#C9281D]/15 transition-all"
                             />
                           </div>
 
                           <div>
                             <label
                               htmlFor="enquiryType"
-                              className="block font-inter text-[13px] font-semibold text-[#050505] mb-2"
+                              className="block font-sans text-[13px] font-semibold text-[#0F0F0F] mb-2"
                             >
                               Enquiry Type
                             </label>
@@ -412,7 +457,7 @@ export default function ContactPage() {
                               id="enquiryType"
                               value={formData.enquiryType}
                               onChange={(e) => setFormData({ ...formData, enquiryType: e.target.value })}
-                              className="w-full px-4 py-3.5 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-[#050505] font-inter text-[15px] focus:outline-none focus:border-[#2410A4] focus:ring-2 focus:ring-[#2410A4]/15 transition-all cursor-pointer"
+                              className="w-full px-4 py-3.5 rounded-xl bg-[#FAF8F3] border border-[#E7E7E7] text-[#0F0F0F] font-sans text-[15px] focus:outline-none focus:border-[#C9281D] focus:ring-2 focus:ring-[#C9281D]/15 transition-all cursor-pointer"
                             >
                               {ENQUIRY_TYPES.map((type) => (
                                 <option key={type} value={type}>
@@ -427,7 +472,7 @@ export default function ContactPage() {
                         <div>
                           <label
                             htmlFor="message"
-                            className="block font-inter text-[13px] font-semibold text-[#050505] mb-2"
+                            className="block font-sans text-[13px] font-semibold text-[#0F0F0F] mb-2"
                           >
                             Message <span className="text-[#C9281D]">*</span>
                           </label>
@@ -441,11 +486,11 @@ export default function ContactPage() {
                             }}
                             placeholder="Tell us about your school, upcoming performance date, audience size, or questions..."
                             className={`w-full px-4 py-3.5 rounded-xl bg-[#FAF8F3] border ${
-                              errors.message ? "border-[#C9281D]" : "border-[#E8E4DC]"
-                            } text-[#050505] placeholder:text-[#696572]/50 font-inter text-[15px] focus:outline-none focus:border-[#2410A4] focus:ring-2 focus:ring-[#2410A4]/15 transition-all resize-y`}
+                              errors.message ? "border-[#C9281D]" : "border-[#E7E7E7]"
+                            } text-[#0F0F0F] placeholder:text-[#5A5A5A]/50 font-sans text-[15px] focus:outline-none focus:border-[#C9281D] focus:ring-2 focus:ring-[#C9281D]/15 transition-all resize-y`}
                           />
                           {errors.message && (
-                            <p className="font-inter text-[12px] text-[#C9281D] mt-1.5">
+                            <p className="font-sans text-[12px] text-[#C9281D] mt-1.5">
                               {errors.message}
                             </p>
                           )}
@@ -458,7 +503,7 @@ export default function ContactPage() {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full py-4 px-8 rounded-full bg-[#2410A4] hover:bg-[#1B0C80] text-white font-inter font-medium text-[15px] transition-all flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-75 cursor-pointer active:scale-[0.99]"
+                        className="w-full py-4 px-8 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#B01E14] hover:from-[#C9281D] hover:to-[#8F1712] text-white font-sans font-medium text-[15px] transition-all flex items-center justify-center gap-2.5 shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:shadow-[0_8px_25px_rgba(201,40,29,0.45)] disabled:opacity-75 cursor-pointer active:scale-[0.99]"
                       >
                         {isSubmitting ? (
                           <>
@@ -473,7 +518,7 @@ export default function ContactPage() {
                         )}
                       </button>
 
-                      <p className="font-inter text-[12px] text-[#696572] text-center mt-3">
+                      <p className="font-sans text-[12px] text-[#5A5A5A] text-center mt-3">
                         By submitting this form, you agree to hear back from our team regarding your enquiry.
                       </p>
                     </div>
@@ -486,17 +531,17 @@ export default function ContactPage() {
         </section>
 
         {/* ── 3. FULL-WIDTH LOCATION SECTION ── */}
-        <section className="py-16 sm:py-20 bg-[#F7F4EE] border-t border-[#E8E4DC]">
+        <section className="py-16 sm:py-20 bg-[#FAF8F3] border-t border-[#E7E7E7]">
           <div className="max-w-[1320px] mx-auto px-6 sm:px-10">
             {/* Section Heading & Subtitle */}
             <div className="max-w-[720px] mb-10 sm:mb-12">
-              <span className="font-mono text-[11px] uppercase tracking-widest text-[#2410A4] block mb-2 font-semibold">
+              <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] block mb-2 font-semibold">
                 GLOBAL REACH
               </span>
-              <h2 className="font-serif text-3xl sm:text-4xl lg:text-[42px] font-normal text-[#050505] tracking-tight leading-[1.1] mb-3">
+              <h2 className="font-serif text-3xl sm:text-4xl lg:text-[42px] font-normal text-[#0F0F0F] tracking-tight leading-[1.1] mb-3">
                 StoryHour across the UK &amp; India
               </h2>
-              <p className="font-inter text-[15px] text-[#696572] leading-relaxed">
+              <p className="font-sans text-[15px] text-[#5A5A5A] leading-relaxed">
                 StoryHour operates across two dedicated creative hubs, connecting traditional Indian folklore, Sanskrit epics, and participatory storytelling circles worldwide.
               </p>
             </div>
@@ -505,56 +550,56 @@ export default function ContactPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
               
               {/* United Kingdom Location Card */}
-              <div className="bg-white rounded-3xl border border-[#E8E4DC] p-8 sm:p-10 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+              <div className="bg-white rounded-3xl border border-[#E7E7E7] p-8 sm:p-10 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] font-bold">
                       UNITED KINGDOM
                     </span>
-                    <span className="font-inter text-[12px] text-[#696572] bg-[#FAF8F3] border border-[#E8E4DC] px-3 py-1 rounded-full font-medium">
+                    <span className="font-sans text-[12px] text-[#5A5A5A] bg-[#FAF8F3] border border-[#E7E7E7] px-3 py-1 rounded-full font-medium">
                       London Hub
                     </span>
                   </div>
 
-                  <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#050505] mb-3">
+                  <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#0F0F0F] mb-3">
                     London &amp; Diaspora Performances
                   </h3>
 
-                  <p className="font-inter text-[14px] text-[#696572] leading-relaxed mb-6">
+                  <p className="font-sans text-[14px] text-[#5A5A5A] leading-relaxed mb-6">
                     Creative direction, English epic narrations, school residencies (including Spanish School London), and seasonal listening circles at community cultural halls.
                   </p>
                 </div>
 
-                <div className="pt-5 border-t border-[#E8E4DC] flex items-center justify-between text-[13px] font-inter text-[#050505]">
-                  <span className="text-[#696572]">Focus Areas</span>
-                  <span className="font-medium text-[#2410A4]">Audiobooks · Schools · Festivals</span>
+                <div className="pt-5 border-t border-[#E7E7E7] flex items-center justify-between text-[13px] font-sans text-[#0F0F0F]">
+                  <span className="text-[#5A5A5A]">Focus Areas</span>
+                  <span className="font-medium text-[#C9281D]">Audiobooks · Schools · Festivals</span>
                 </div>
               </div>
 
               {/* India Location Card */}
-              <div className="bg-white rounded-3xl border border-[#E8E4DC] p-8 sm:p-10 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+              <div className="bg-white rounded-3xl border border-[#E7E7E7] p-8 sm:p-10 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between gap-4 mb-4">
-                    <span className="font-mono text-[11px] uppercase tracking-widest text-[#2410A4] font-bold">
+                    <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] font-bold">
                       INDIA
                     </span>
-                    <span className="font-inter text-[12px] text-[#696572] bg-[#FAF8F3] border border-[#E8E4DC] px-3 py-1 rounded-full font-medium">
+                    <span className="font-sans text-[12px] text-[#5A5A5A] bg-[#FAF8F3] border border-[#E7E7E7] px-3 py-1 rounded-full font-medium">
                       Hyderabad Hub
                     </span>
                   </div>
 
-                  <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#050505] mb-3">
+                  <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#0F0F0F] mb-3">
                     Hyderabad &amp; Heritage Productions
                   </h3>
 
-                  <p className="font-inter text-[14px] text-[#696572] leading-relaxed mb-6">
+                  <p className="font-sans text-[14px] text-[#5A5A5A] leading-relaxed mb-6">
                     Sanskrit textual research, Hindi &amp; Telugu ensemble recordings, traditional puppet troupe masterclasses, and Kendriya Vidyalaya educational workshops.
                   </p>
                 </div>
 
-                <div className="pt-5 border-t border-[#E8E4DC] flex items-center justify-between text-[13px] font-inter text-[#050505]">
-                  <span className="text-[#696572]">Focus Areas</span>
-                  <span className="font-medium text-[#2410A4]">Classical Research · Puppetry · Skits</span>
+                <div className="pt-5 border-t border-[#E7E7E7] flex items-center justify-between text-[13px] font-sans text-[#0F0F0F]">
+                  <span className="text-[#5A5A5A]">Focus Areas</span>
+                  <span className="font-medium text-[#C9281D]">Classical Research · Puppetry · Skits</span>
                 </div>
               </div>
 
@@ -563,39 +608,39 @@ export default function ContactPage() {
         </section>
 
         {/* ── 4. FAQ SECTION (Inspired by Virto Reference: Left CTA Card, Right Clean Accordion) ── */}
-        <section className="py-20 lg:py-24 bg-[#FAF8F3] border-t border-[#E8E4DC]">
+        <section className="py-20 lg:py-24 bg-[#FAF8F3] border-t border-[#E7E7E7]">
           <div className="max-w-[1320px] mx-auto px-6 sm:px-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
               
               {/* LEFT COLUMN: FAQ Title & StoryHour Contact CTA Card */}
               <div className="lg:col-span-5">
-                <span className="font-mono text-[11px] uppercase tracking-widest text-[#2410A4] block mb-2 font-semibold">
+                <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] block mb-2 font-semibold">
                   COMMON QUESTIONS
                 </span>
                 
-                <h2 className="font-serif text-4xl sm:text-5xl lg:text-[56px] font-normal text-[#050505] tracking-tight leading-[1] mb-4">
+                <h2 className="font-serif text-4xl sm:text-5xl lg:text-[56px] font-normal text-[#0F0F0F] tracking-tight leading-[1] mb-4">
                   FAQ
                 </h2>
                 
-                <p className="font-inter text-[15px] text-[#696572] leading-relaxed mb-8 max-w-[400px]">
+                <p className="font-sans text-[15px] text-[#5A5A5A] leading-relaxed mb-8 max-w-[400px]">
                   Everything you need to know about booking StoryHour performances, school workshops, and cultural collaborations.
                 </p>
 
                 {/* Small StoryHour Contact CTA Card (matching Virto reference "Have an idea? Let's talk") */}
-                <div className="bg-[#120A45] rounded-3xl p-7 text-[#F7F4EE] shadow-lg border border-white/10 relative overflow-hidden">
-                  <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-[#2410A4]/40 rounded-full blur-[40px] pointer-events-none" />
+                <div className="bg-[#0F0F0F] rounded-3xl p-7 text-[#F7F4EE] shadow-lg border border-white/10 relative overflow-hidden">
+                  <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-[#C9281D]/25 rounded-full blur-[40px] pointer-events-none" />
                   
                   <div className="relative z-10">
                     <p className="font-serif text-2xl font-normal text-white mb-2">
                       Have a custom idea?
                     </p>
-                    <p className="font-inter text-[13px] text-[#F7F4EE]/70 leading-relaxed mb-6">
+                    <p className="font-sans text-[13px] text-white/70 leading-relaxed mb-6">
                       Looking for a tailored festival skit, corporate cultural storytelling, or school assembly? Let&apos;s shape a bespoke session together.
                     </p>
                     <button
                       type="button"
                       onClick={scrollToForm}
-                      className="px-6 py-3 rounded-full bg-white text-[#120A45] hover:bg-[#F7F4EE] font-inter font-medium text-[13px] transition-colors cursor-pointer inline-flex items-center gap-2 shadow-sm"
+                      className="px-6 py-3 rounded-full bg-white text-[#0F0F0F] hover:bg-[#FAF8F3] font-sans font-medium text-[13px] transition-colors cursor-pointer inline-flex items-center gap-2 shadow-sm"
                     >
                       <span>Send an enquiry</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -605,7 +650,7 @@ export default function ContactPage() {
               </div>
 
               {/* RIGHT COLUMN: Clean Accordion FAQ List with Plus/Minus Toggle */}
-              <div className="lg:col-span-7 divide-y divide-[#E8E4DC] border-y border-[#E8E4DC]">
+              <div className="lg:col-span-7 divide-y divide-[#E7E7E7] border-y border-[#E7E7E7]">
                 {FAQ_ITEMS.map((item, index) => {
                   const isOpen = openFaq === index;
                   return (
@@ -616,14 +661,14 @@ export default function ContactPage() {
                         aria-expanded={isOpen}
                         className="w-full text-left flex items-center justify-between gap-4 cursor-pointer select-none group"
                       >
-                        <span className="font-serif text-[19px] sm:text-[21px] font-normal text-[#050505] tracking-tight group-hover:text-[#2410A4] transition-colors">
+                        <span className="font-serif text-[19px] sm:text-[21px] font-normal text-[#0F0F0F] tracking-tight group-hover:text-[#C9281D] transition-colors">
                           {item.question}
                         </span>
                         
                         {/* Plus / Minus Indicator Button */}
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
-                            isOpen ? "bg-[#050505] text-white" : "bg-[#FAF8F3] border border-[#E8E4DC] text-[#050505] group-hover:border-[#050505]"
+                            isOpen ? "bg-[#0F0F0F] text-white" : "bg-[#FAF8F3] border border-[#E7E7E7] text-[#0F0F0F] group-hover:border-[#0F0F0F]"
                           }`}
                         >
                           {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -632,7 +677,7 @@ export default function ContactPage() {
 
                       {isOpen && (
                         <div className="pt-4 pr-12">
-                          <p className="font-inter text-[15px] text-[#696572] leading-[1.7]">
+                          <p className="font-sans text-[15px] text-[#5A5A5A] leading-[1.7]">
                             {item.answer}
                           </p>
                         </div>
@@ -647,81 +692,8 @@ export default function ContactPage() {
         </section>
       </main>
 
-      {/* ── 5. EXISTING STORYHOUR FOOTER (Exact Match to Homepage) ── */}
-      <footer id="contact" className="bg-[#120A45] pt-16 pb-10 scroll-mt-14 mt-auto">
-        <div className="max-w-[1320px] mx-auto px-6 sm:px-10">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 pb-14 border-b border-white/10">
-            <div className="col-span-2 sm:col-span-1">
-              <div className="relative h-7 w-28 mb-5 brightness-0 invert opacity-90">
-                <Image
-                  src="https://storyhour.co.uk/wp-content/uploads/2026/01/tp-logo.png"
-                  alt="StoryHour"
-                  fill
-                  className="object-contain object-left"
-                  sizes="120px"
-                />
-              </div>
-              <p className="font-inter text-[13px] text-[#F7F4EE]/50 leading-[1.65] max-w-[200px]">
-                Indian mythology and culture brought to life through soulful storytelling.
-              </p>
-              <div className="mt-5">
-                <span className="font-mono text-[11px] text-[#F7F4EE]/35">London and Hyderabad</span>
-              </div>
-            </div>
-            <div>
-              <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Explore</p>
-              <ul className="space-y-3">
-                {["Stories", "Storytellers", "Experiences", "Events", "Journal"].map((link) => (
-                  <li key={link}>
-                    <a
-                      href={link === "Stories" ? "/stories" : link === "Storytellers" ? "/storytellers" : "#"}
-                      className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Shop</p>
-              <ul className="space-y-3">
-                {["All Audiobooks", "English Collection", "Hindi Collection", "Telugu Collection", "Shop"].map((link) => (
-                  <li key={link}>
-                    <a
-                      href="/stories"
-                      className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Info</p>
-              <ul className="space-y-3">
-                {["About", "Contact", "Privacy", "Terms", "Refunds"].map((link) => (
-                  <li key={link}>
-                    <a
-                      href={link === "Contact" ? "/contact" : link === "About" ? "/storytellers" : "#"}
-                      className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <p className="font-inter text-[13px] text-[#F7F4EE]/35">
-              © 2026 StoryHour. All rights reserved.
-            </p>
-            <p className="font-inter text-[13px] text-[#F7F4EE]/35">Available worldwide</p>
-          </div>
-        </div>
-      </footer>
+      {/* ── Standard StoryHour Site Footer ── */}
+      <SiteFooter />
     </div>
   );
 }

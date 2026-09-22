@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import SiteNav from "@/components/SiteNav";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 
 interface Storyteller {
   name: string;
@@ -131,18 +132,18 @@ const COL_C = [TESTIMONIALS[2], TESTIMONIALS[5], TESTIMONIALS[8]];
 // ── Single scrolling testimonial card ──────────────────────────────────────
 function TestimonialCard({ item }: { item: Testimonial }) {
   return (
-    <div className="bg-white rounded-2xl border border-[#E8E4DC] shadow-[0_2px_16px_rgba(5,5,5,0.06)] p-7 mb-5 flex-shrink-0">
+    <div className="bg-white rounded-2xl border border-[#E7E7E7] shadow-[0_2px_16px_rgba(15,15,15,0.06)] p-7 mb-5 flex-shrink-0">
       {item.context && (
-        <p className="font-mono text-[10px] text-[#2410A4]/70 mb-4 tracking-widest uppercase">
+        <p className="font-mono text-[10px] text-[#C9281D] mb-4 tracking-widest uppercase">
           {item.context}
         </p>
       )}
-      <blockquote className="font-serif text-[17px] text-[#050505] leading-[1.65] tracking-[-0.01em] mb-6">
+      <blockquote className="font-serif text-[17px] text-[#0F0F0F] leading-[1.65] tracking-[-0.01em] mb-6">
         &ldquo;{item.quote}&rdquo;
       </blockquote>
-      <div className="border-t border-[#E8E4DC] pt-4">
-        <p className="font-manrope font-semibold text-[14px] text-[#050505]">{item.author}</p>
-        <p className="font-inter text-[12px] text-[#696572] mt-0.5">{item.credentials}</p>
+      <div className="border-t border-[#E7E7E7] pt-4">
+        <p className="font-sans font-semibold text-[14px] text-[#0F0F0F]">{item.author}</p>
+        <p className="font-sans text-[12px] text-[#5A5A5A] mt-0.5">{item.credentials}</p>
       </div>
     </div>
   );
@@ -227,7 +228,51 @@ export default function StorytellersPage() {
 
       <div className="min-h-screen flex flex-col bg-[#FAF8F3] overflow-x-hidden">
         {/* ── Navbar ── */}
-        <SiteNav theme="light" activeLink="Storyteller / About" />
+        <SiteHeader activeLink="About Us" />
+
+        {/* ── Compact Sky Hero Banner (matching Home page sky) ── */}
+        <section className="relative w-full bg-[#3b9dfb] pt-28 sm:pt-36 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden select-none">
+          {/* Background sky image matching Home hero */}
+          <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+            <Image
+              src="/images/user-hero-bg.webp"
+              alt=""
+              fill
+              className="object-cover object-top"
+              sizes="100vw"
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* Hero Title */}
+          <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-sm">
+              Our Storytellers
+            </h1>
+            <p className="mt-3 text-white/90 font-medium text-base sm:text-lg max-w-lg leading-relaxed">
+              The voices, musicians, and creators behind StoryHour&apos;s cultural storytelling.
+            </p>
+          </div>
+
+          {/* Organic hill wave transition */}
+          <div
+            className="absolute -bottom-px left-0 right-0 z-10 pointer-events-none overflow-hidden leading-none select-none"
+            style={{ marginBottom: "-1px" }}
+          >
+            <svg
+              viewBox="0 0 1440 100"
+              fill="none"
+              preserveAspectRatio="none"
+              className="w-full h-12 sm:h-16 md:h-20 block"
+              aria-hidden="true"
+            >
+              <path
+                d="M0,32 C360,68 720,8 1080,44 C1260,62 1380,48 1440,38 L1440,100 L0,100 Z"
+                fill="#FAF8F3"
+              />
+            </svg>
+          </div>
+        </section>
 
         {/* ── §1 Animated Storyteller Showcase ── */}
         <main className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-8 sm:py-12 md:py-16 pb-16 sm:pb-20 md:pb-20">
@@ -275,13 +320,13 @@ export default function StorytellersPage() {
                     exit={{ y: -16, opacity: 0 }}
                     transition={{ duration: 0.25, ease: "easeInOut" }}
                   >
-                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-fraunces text-[#050505] tracking-tight">
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-fraunces text-[#0F0F0F] tracking-tight">
                       {current.name}
                     </h2>
-                    <p className="text-sm sm:text-base font-manrope font-semibold text-[#c9281d] mt-1.5 tracking-wide">
+                    <p className="text-sm sm:text-base font-sans font-semibold text-[#C9281D] mt-1.5 tracking-wide">
                       {current.role}
                     </p>
-                    <motion.p className="text-base sm:text-lg font-manrope text-[#050505]/75 mt-6 sm:mt-8 leading-relaxed">
+                    <motion.p className="text-base sm:text-lg font-sans text-[#0F0F0F]/75 mt-6 sm:mt-8 leading-relaxed">
                       {current.bio.split(" ").map((word, i) => (
                         <motion.span
                           key={i}
@@ -304,14 +349,14 @@ export default function StorytellersPage() {
                     aria-label="Previous storyteller"
                     className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-[#EAE5D9] hover:bg-[#DED7C7] active:scale-95 flex items-center justify-center group/btn transition-all duration-200 cursor-pointer shadow-sm border border-black/5"
                   >
-                    <ArrowLeft className="h-5 w-5 text-[#050505] group-hover/btn:-translate-x-0.5 transition-transform duration-200" />
+                    <ArrowLeft className="h-5 w-5 text-[#0F0F0F] group-hover/btn:-translate-x-0.5 transition-transform duration-200" />
                   </button>
                   <button
                     onClick={handleNext}
                     aria-label="Next storyteller"
                     className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-[#EAE5D9] hover:bg-[#DED7C7] active:scale-95 flex items-center justify-center group/btn transition-all duration-200 cursor-pointer shadow-sm border border-black/5"
                   >
-                    <ArrowRight className="h-5 w-5 text-[#050505] group-hover/btn:translate-x-0.5 transition-transform duration-200" />
+                    <ArrowRight className="h-5 w-5 text-[#0F0F0F] group-hover/btn:translate-x-0.5 transition-transform duration-200" />
                   </button>
                 </div>
               </div>
@@ -321,17 +366,17 @@ export default function StorytellersPage() {
         </main>
 
         {/* ── §2 Testimonials / Voices ── */}
-        <section className="bg-[#F7F4EE] border-t border-[#E8E4DC] py-20 lg:py-28 overflow-hidden">
+        <section className="bg-[#FAF8F3] border-t border-[#E7E7E7] py-20 lg:py-28 overflow-hidden">
           <div className="max-w-[1340px] mx-auto px-6 sm:px-10">
             {/* Section Header */}
             <div className="mb-14 lg:mb-18 text-center">
-              <span className="inline-block font-mono text-[11px] tracking-widest uppercase text-[#2410A4] mb-4 border border-[#2410A4]/20 rounded-full px-4 py-1.5">
+              <span className="inline-block font-mono text-[11px] tracking-widest uppercase text-[#C9281D] mb-4 border border-[#C9281D]/30 rounded-full px-4 py-1.5">
                 Voices
               </span>
-              <h2 className="font-serif text-4xl sm:text-5xl lg:text-[60px] font-normal text-[#050505] tracking-[-0.03em] leading-[0.96] text-balance mb-5">
+              <h2 className="font-serif text-4xl sm:text-5xl lg:text-[60px] font-normal text-[#0F0F0F] tracking-[-0.03em] leading-[0.96] text-balance mb-5">
                 Stories That Stay With You
               </h2>
-              <p className="font-inter text-[16px] text-[#696572] max-w-[480px] mx-auto leading-[1.65]">
+              <p className="font-sans text-[16px] text-[#5A5A5A] max-w-[480px] mx-auto leading-[1.65]">
                 Heard by educators, families, cultural voices, and communities from London to Hyderabad — this is how StoryHour's work has been experienced.
               </p>
             </div>
@@ -339,8 +384,8 @@ export default function StorytellersPage() {
             {/* Three-Column Scrolling Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 h-[620px] sm:h-[680px] lg:h-[720px] relative">
               {/* Fade masks top and bottom */}
-              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#F7F4EE] to-transparent z-10 pointer-events-none" />
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#F7F4EE] to-transparent z-10 pointer-events-none" />
+              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#FAF8F3] to-transparent z-10 pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#FAF8F3] to-transparent z-10 pointer-events-none" />
 
               {/* Column A — scrolls up, normal speed */}
               <TestimonialColumn
@@ -370,10 +415,10 @@ export default function StorytellersPage() {
         </section>
 
         {/* ── §3 Featured Quote — Dr. Shashi Tharoor ── */}
-        <section className="bg-[#120A45] py-20 lg:py-28">
+        <section className="bg-[#0F0F0F] py-20 lg:py-28">
           <div className="max-w-[900px] mx-auto px-6 sm:px-10 text-center">
             <div className="border-l-[3px] border-[#C9281D] pl-8 text-left max-w-[760px] mx-auto">
-              <blockquote className="font-serif text-[22px] sm:text-[26px] lg:text-[30px] text-[#F7F4EE] font-normal leading-[1.4] tracking-[-0.02em] text-balance">
+              <blockquote className="font-serif text-[22px] sm:text-[26px] lg:text-[30px] text-white font-normal leading-[1.4] tracking-[-0.02em] text-balance">
                 &ldquo;The research is commendable, and the ability to present a long and complex story in simple language is truly engaging. These stories make history and mythology accessible, meaningful, and memorable for listeners of all ages.&rdquo;
               </blockquote>
               <div className="mt-8 flex items-center gap-4">
@@ -387,84 +432,16 @@ export default function StorytellersPage() {
                   />
                 </div>
                 <div>
-                  <p className="font-inter font-semibold text-[15px] text-[#F7F4EE]">Dr. Shashi Tharoor</p>
-                  <p className="font-inter text-[13px] text-[#F7F4EE]/60">Author · Historian · Parliamentarian</p>
+                  <p className="font-sans font-semibold text-[15px] text-white">Dr. Shashi Tharoor</p>
+                  <p className="font-sans text-[13px] text-white/60">Author · Historian · Parliamentarian</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── StoryHour Footer ── */}
-        <footer id="contact" className="bg-[#120A45] pt-16 pb-10 scroll-mt-14 mt-auto border-t border-white/10">
-          <div className="max-w-[1320px] mx-auto px-6 sm:px-10">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 pb-14 border-b border-white/10">
-              <div className="col-span-2 sm:col-span-1">
-                <div className="relative h-7 w-28 mb-5 brightness-0 invert opacity-90">
-                  <Image
-                    src="https://storyhour.co.uk/wp-content/uploads/2026/01/tp-logo.png"
-                    alt="StoryHour"
-                    fill
-                    className="object-contain object-left"
-                    sizes="120px"
-                  />
-                </div>
-                <p className="font-inter text-[13px] text-[#F7F4EE]/50 leading-[1.65] max-w-[200px]">
-                  Indian mythology and culture brought to life through soulful storytelling.
-                </p>
-                <div className="mt-5">
-                  <span className="font-mono text-[11px] text-[#F7F4EE]/35">London and Hyderabad</span>
-                </div>
-              </div>
-              <div>
-                <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Explore</p>
-                <ul className="space-y-3">
-                  {["Stories", "Storytellers", "Experiences", "Events", "Journal"].map((link) => (
-                    <li key={link}>
-                      <a
-                        href={link === "Stories" ? "/stories" : link === "Storytellers" ? "/storytellers" : "#"}
-                        className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Shop</p>
-                <ul className="space-y-3">
-                  {["All Audiobooks", "English Collection", "Hindi Collection", "Telugu Collection", "Shop"].map((link) => (
-                    <li key={link}>
-                      <a href="#" className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors">
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Connect</p>
-                <ul className="space-y-3">
-                  {["Contact Us", "School Residencies", "Festival Bookings", "Press & Media", "Careers"].map((link) => (
-                    <li key={link}>
-                      <a
-                        href={link === "Contact Us" ? "/contact" : "#"}
-                        className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="font-inter text-[12px] text-[#F7F4EE]/35">© 2026 StoryHour Ltd. All rights reserved.</p>
-              <p className="font-inter text-[12px] text-[#F7F4EE]/35">Bringing Indian mythology to young minds worldwide.</p>
-            </div>
-          </div>
-        </footer>
+        {/* ── StoryHour Standard Site Footer ── */}
+        <SiteFooter />
       </div>
     </>
   );

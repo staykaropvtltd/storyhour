@@ -9,6 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          red: "#C9281D",
+          "red-hover": "#B52218",
+          "red-dark": "#8F1712",
+          "red-light": "#FDF2F0",
+          navy: "#0E1638",
+          "navy-hover": "#16204E",
+          "navy-light": "#EEF2F8",
+          "navy-border": "#233067",
+        },
         story: {
           blue: "#2410A4",
           "blue-hover": "#1B0C80",
@@ -39,8 +49,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-manrope)", "Manrope", "system-ui", "sans-serif"],
-        display: ["var(--font-manrope)", "Manrope", "system-ui", "sans-serif"],
+        sans: ["var(--font-plus-jakarta)", "Plus Jakarta Sans", "system-ui", "sans-serif"],
+        display: ["var(--font-plus-jakarta)", "Plus Jakarta Sans", "system-ui", "sans-serif"],
         serif: ["var(--font-fraunces)", "Fraunces", "Georgia", "serif"],
         inter: ["var(--font-inter)", "Inter", "-apple-system", "sans-serif"],
         mono: ["var(--font-geist-mono)", "Geist Mono", "monospace"],

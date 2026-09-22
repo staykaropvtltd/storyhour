@@ -83,14 +83,14 @@ export default function RollingList({
                   >
                     {/* State 1: Normal Title */}
                     <div className="flex h-[60px] sm:h-[76px] md:h-[88px] lg:h-[96px] xl:h-[108px] items-center">
-                      <h2 className="font-serif font-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[54px] text-[#050505] uppercase tracking-tight leading-[1] select-none whitespace-nowrap">
+                      <h2 className="font-serif font-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[54px] text-[#0F0F0F] uppercase tracking-tight leading-[1] select-none whitespace-nowrap">
                         {item.title}
                       </h2>
                     </div>
 
-                    {/* State 2: Hovered Rolling Title (Italic + StoryHour Royal Indigo Accent) */}
+                    {/* State 2: Hovered Rolling Title (Italic + StoryHour Red Accent) */}
                     <div className="flex h-[60px] sm:h-[76px] md:h-[88px] lg:h-[96px] xl:h-[108px] items-center">
-                      <h2 className="font-serif italic font-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[54px] text-[#2410A4] uppercase tracking-tight leading-[1] select-none whitespace-nowrap">
+                      <h2 className="font-serif italic font-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[54px] text-[#C9281D] uppercase tracking-tight leading-[1] select-none whitespace-nowrap">
                         {item.title}
                       </h2>
                     </div>
@@ -164,15 +164,15 @@ export default function RollingList({
                   isHovered ? "opacity-40" : "opacity-100"
                 )}
               >
-                <span className="font-mono text-[11px] sm:text-[12px] uppercase tracking-wider text-[#050505] font-semibold">
+                <span className="font-mono text-[11px] sm:text-[12px] uppercase tracking-wider text-[#0F0F0F] font-semibold">
                   {item.category}
                 </span>
-                <span className="font-mono text-[10px] sm:text-[11px] uppercase tracking-widest text-[#696572] mt-0.5">
+                <span className="font-mono text-[10px] sm:text-[11px] uppercase tracking-widest text-[#5A5A5A] mt-0.5">
                   {item.language}
                 </span>
 
                 {hasVideo && (
-                  <span className="inline-flex items-center gap-1 font-mono text-[10px] text-[#2410A4] uppercase tracking-wider font-semibold mt-1.5">
+                  <span className="inline-flex items-center gap-1 font-mono text-[10px] text-[#C9281D] uppercase tracking-wider font-semibold mt-1.5">
                     <Play className="w-2.5 h-2.5 fill-current" />
                     <span>Watch Preview</span>
                   </span>

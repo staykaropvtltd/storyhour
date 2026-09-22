@@ -1,18 +1,27 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AudioProvider } from "@/context/AudioContext";
 import { LibraryCartProvider } from "@/context/LibraryCartContext";
+import SmoothScrollProvider from "@/components/layout/SmoothScrollProvider";
 import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
 import Toast from "@/components/Toast";
-import { SmoothCursor } from "@/components/ui/smooth-cursor";
+import AgentationProvider from "@/components/AgentationProvider";
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "StoryHour — Digital Storytelling Platform for Children, Families & Parents",
-  description: "Discover, listen to, and explore Indian mythology, culture, history, audiobooks, skits, and puppet storytelling crafted across generations.",
+  title: "StoryHour — The Magical Storytelling Platform for Kids & Families",
+  description: "Discover Indian mythology, culture, and history through soulful audiobooks, live puppet storytelling, and screen-free calm bedtimes. In Hindi, English & Telugu.",
   openGraph: {
     title: "StoryHour — Stories That Live Beyond Time",
-    description: "Bringing Indian mythology, culture, and history to life through soulful audiobooks, skits, and puppet storytelling.",
+    description: "Bringing Indian mythology, culture, and history to life through soulful audiobooks and puppet storytelling.",
     url: "https://storyhour.co.uk",
     siteName: "StoryHour",
     images: [
@@ -37,17 +46,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="bg-[#F7F4EE] text-[#120A45] antialiased selection:bg-story-blue selection:text-white min-h-screen flex flex-col font-sans overflow-x-hidden">
-        <AudioProvider>
-          <LibraryCartProvider>
-            <SmoothCursor />
-            {children}
-            <SearchModal />
-            <CartDrawer />
-            <Toast />
-          </LibraryCartProvider>
-        </AudioProvider>
+    <html lang="en" className={plusJakarta.variable}>
+      <body className={`${plusJakarta.className} bg-[#FAF8F3] text-[#0f0f0f] antialiased selection:bg-[#C9281D] selection:text-white min-h-screen flex flex-col overflow-x-hidden font-sans`}>
+        <SmoothScrollProvider>
+          <AudioProvider>
+            <LibraryCartProvider>
+              {children}
+              <SearchModal />
+              <CartDrawer />
+              <Toast />
+              <AgentationProvider />
+            </LibraryCartProvider>
+          </AudioProvider>
+        </SmoothScrollProvider>
       </body>
     </html>
   );

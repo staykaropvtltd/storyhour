@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
-import SiteNav from "@/components/SiteNav";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import RollingList, { TrailerItem } from "@/components/ui/rolling-list";
 import { MagneticText } from "@/components/ui/morphing-cursor";
 
@@ -91,25 +92,69 @@ export default function TrailersPage() {
   }, [selectedTrailer]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F3] text-[#050505] antialiased overflow-x-hidden selection:bg-[#2410A4] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F3] text-[#0F0F0F] antialiased overflow-x-hidden selection:bg-[#C9281D] selection:text-white">
       {/* Existing StoryHour Navbar */}
-      <SiteNav theme="light" activeLink="Trailer" />
+      <SiteHeader activeLink="Trailer" />
+
+      {/* ── Compact Sky Hero Banner (matching Home page sky) ── */}
+      <section className="relative w-full bg-[#3b9dfb] pt-28 sm:pt-36 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden select-none">
+        {/* Background sky image matching Home hero */}
+        <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+          <Image
+            src="/images/user-hero-bg.webp"
+            alt=""
+            fill
+            className="object-cover object-top"
+            sizes="100vw"
+            aria-hidden="true"
+          />
+        </div>
+
+        {/* Hero Title */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-sm">
+            StoryHour Trailers
+          </h1>
+          <p className="mt-3 text-white/90 font-medium text-base sm:text-lg max-w-lg leading-relaxed">
+            Step into the world of StoryHour through voices, performances, puppetry, and timeless stories.
+          </p>
+        </div>
+
+        {/* Organic hill wave transition */}
+        <div
+          className="absolute -bottom-px left-0 right-0 z-10 pointer-events-none overflow-hidden leading-none select-none"
+          style={{ marginBottom: "-1px" }}
+        >
+          <svg
+            viewBox="0 0 1440 100"
+            fill="none"
+            preserveAspectRatio="none"
+            className="w-full h-12 sm:h-16 md:h-20 block"
+            aria-hidden="true"
+          >
+            <path
+              d="M0,32 C360,68 720,8 1080,44 C1260,62 1380,48 1440,38 L1440,100 L0,100 Z"
+              fill="#FAF8F3"
+            />
+          </svg>
+        </div>
+      </section>
 
       <main className="flex-1 flex flex-col justify-start">
         {/* ── 1. Compact Page Header ── */}
-        <section className="pt-10 sm:pt-14 md:pt-16 pb-8 sm:pb-12 text-center max-w-[800px] mx-auto px-6">
-          <span className="font-mono text-[11px] uppercase tracking-widest text-[#2410A4] font-semibold block mb-2">
-            TRAILERS
+        <section className="pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-12 text-center max-w-[800px] mx-auto px-6">
+          <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] font-semibold block mb-2">
+            PREVIEW EXPERIENCE
           </span>
-          <h1 className="mb-3">
+          <div className="mb-3">
             <MagneticText
               text="Stories come alive."
               hoverText="Stories unfold."
-              className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-[66px] font-normal text-[#050505] tracking-tight leading-[1.05]"
+              className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-[66px] font-normal text-[#0F0F0F] tracking-tight leading-[1.05]"
             />
-          </h1>
-          <p className="font-inter text-[15px] sm:text-[16px] text-[#696572] leading-relaxed max-w-[560px] mx-auto">
-            Step into the world of StoryHour through voices, performances, puppetry, and timeless stories.
+          </div>
+          <p className="font-sans text-[15px] sm:text-[16px] text-[#5A5A5A] leading-relaxed max-w-[560px] mx-auto">
+            Experience our rich multi-language audiobooks, ceremonial puppets, and dramatic voice performances.
           </p>
         </section>
 
@@ -140,9 +185,9 @@ export default function TrailersPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 bg-[#0E0738] border-b border-white/10 text-white">
+            <div className="flex items-center justify-between px-6 py-4 bg-[#0F0F0F] border-b border-white/10 text-white">
               <div>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-[#F6C445] font-semibold block">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-[#C9281D] font-semibold block">
                   {selectedTrailer.category} · {selectedTrailer.language}
                 </span>
                 <h3 className="font-serif text-lg sm:text-xl font-normal text-white">
@@ -153,7 +198,7 @@ export default function TrailersPage() {
                 type="button"
                 onClick={() => setSelectedTrailer(null)}
                 aria-label="Close video player"
-                className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-inter text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer border border-white/15"
+                className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-sans text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer border border-white/15"
               >
                 <X className="w-4 h-4" />
                 <span>Close</span>
@@ -174,81 +219,8 @@ export default function TrailersPage() {
         </div>
       )}
 
-      {/* ── 4. Existing StoryHour Footer ── */}
-      <footer id="contact" className="bg-[#120A45] pt-16 pb-10 scroll-mt-14 mt-auto">
-        <div className="max-w-[1320px] mx-auto px-6 sm:px-10">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 pb-14 border-b border-white/10">
-            <div className="col-span-2 sm:col-span-1">
-              <div className="relative h-7 w-28 mb-5 brightness-0 invert opacity-90">
-                <Image
-                  src="https://storyhour.co.uk/wp-content/uploads/2026/01/tp-logo.png"
-                  alt="StoryHour"
-                  fill
-                  className="object-contain object-left"
-                  sizes="120px"
-                />
-              </div>
-              <p className="font-inter text-[13px] text-[#F7F4EE]/50 leading-[1.65] max-w-[200px]">
-                Indian mythology and culture brought to life through soulful storytelling.
-              </p>
-              <div className="mt-5">
-                <span className="font-mono text-[11px] text-[#F7F4EE]/35">London and Hyderabad</span>
-              </div>
-            </div>
-            <div>
-              <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Explore</p>
-              <ul className="space-y-3">
-                {["Stories", "Storytellers", "Experiences", "Events", "Journal"].map((link) => (
-                  <li key={link}>
-                    <a
-                      href={link === "Stories" ? "/stories" : link === "Storytellers" ? "/storytellers" : "#"}
-                      className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Shop</p>
-              <ul className="space-y-3">
-                {["All Audiobooks", "English Collection", "Hindi Collection", "Telugu Collection", "Shop"].map((link) => (
-                  <li key={link}>
-                    <a
-                      href="/stories"
-                      className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="font-inter text-[11px] font-medium text-[#F7F4EE]/35 mb-5">Info</p>
-              <ul className="space-y-3">
-                {["About", "Contact", "Privacy", "Terms", "Refunds"].map((link) => (
-                  <li key={link}>
-                    <a
-                      href={link === "Contact" ? "/contact" : link === "About" ? "/storytellers" : "#"}
-                      className="font-inter text-[14px] text-[#F7F4EE]/65 hover:text-white transition-colors"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <p className="font-inter text-[13px] text-[#F7F4EE]/35">
-              © 2026 StoryHour. All rights reserved.
-            </p>
-            <p className="font-inter text-[13px] text-[#F7F4EE]/35">Available worldwide</p>
-          </div>
-        </div>
-      </footer>
+      {/* ── Standard StoryHour Site Footer ── */}
+      <SiteFooter />
     </div>
   );
 }

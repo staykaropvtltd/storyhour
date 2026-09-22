@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import SiteNav from "@/components/SiteNav";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
+import BookReader from "@/components/BookReader";
+import AudiobookModal from "@/components/AudiobookModal";
+import { EDITIONS, Edition, AUDIOBOOKS, Audiobook } from "@/data/editions-data";
 import { useAudio } from "@/context/AudioContext";
 import { useLibraryCart } from "@/context/LibraryCartContext";
 import {
@@ -21,252 +24,18 @@ import {
   ArrowUpRight,
   Headphones,
   Check,
+  Disc,
 } from "lucide-react";
-
-/* ─── 9 Authentic Editions (4 Top Shelf, 5 Bottom Shelf) ─── */
-interface Edition {
-  id: string;
-  year: string;
-  season: string;
-  codeName: string;
-  title: string;
-  nativeTitle?: string;
-  subtitle: string;
-  language: "English" | "Hindi" | "Telugu" | "Multilingual";
-  bookFormat: string;
-  category: string;
-  pagesCount: number;
-  chaptersCount: number;
-  duration: string;
-  coverImage: string;
-  badge?: string;
-  isFeatured?: boolean;
-  isNowPlaying?: boolean;
-  description: string;
-  audioPreviewUrl: string;
-  storyteller: string;
-  price: number;
-  productId?: string;
-  culturalNote?: string;
-  accentColor: string;
-}
-
-const EDITIONS: Edition[] = [
-  // ── Top Shelf (4 Masterpieces) ──
-  {
-    id: "ed-spring-2026",
-    year: "2026",
-    season: "Spring",
-    codeName: "Everywhere",
-    title: "Ramayana — Valmiki's Epic",
-    subtitle: "Complete Signature Narration in English",
-    language: "English",
-    bookFormat: "Hardcover Edition",
-    category: "Ancient Epic",
-    pagesCount: 384,
-    chaptersCount: 40,
-    duration: "14h 20m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.28.53.jpeg",
-    badge: "SPECIAL EDITION",
-    isFeatured: true,
-    description: "Experience the timeless epic of Rama, Sita, and Lakshmana through expressive performance-driven narration, authentic classical poetry, and evocative Indian acoustic instruments.",
-    audioPreviewUrl: "https://www.youtube.com/embed/4up2VdHiO5I?autoplay=1",
-    storyteller: "StoryHour Lead Performer & Ensemble",
-    price: 84.99,
-    productId: "prod-english-ramayana",
-    culturalNote: "Based on the classical Adikavya of Sage Valmiki, adapted for clear intergenerational listening.",
-    accentColor: "#2410A4",
-  },
-  {
-    id: "ed-winter-2026",
-    year: "2026",
-    season: "Winter",
-    codeName: "Renaissance",
-    title: "सम्पूर्ण रामायण",
-    nativeTitle: "प्राचीन भारतीय महाकाव्य",
-    subtitle: "सम्पूर्ण स्वरबद्ध कथावाचन — शास्त्रीय हिन्दी",
-    language: "Hindi",
-    bookFormat: "Hardcover Volume",
-    category: "Classical Epic",
-    pagesCount: 416,
-    chaptersCount: 42,
-    duration: "15h 10m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.30.26.jpeg",
-    badge: "BESTSELLER",
-    description: "मर्यादा पुरुषोत्तम भगवान श्री राम का अमर चरित्र, त्याग, धर्म और मानवीय मूल्यों की पावन गाथा — भावपूर्ण स्वर और पारंपरिक भारतीय संगीत के संगम के साथ।",
-    audioPreviewUrl: "https://www.youtube.com/embed/arzOYkbxwX8?autoplay=1",
-    storyteller: "StoryHour मुख्य कथावाचक",
-    price: 74.99,
-    productId: "prod-hindi-ramayan",
-    culturalNote: "हृदयस्पर्शी संवाद और प्रामाणिक सांस्कृतिक संदर्भों के साथ सम्पूर्ण परिवार के लिए।",
-    accentColor: "#C9281D",
-  },
-  {
-    id: "ed-summer-2025",
-    year: "2025",
-    season: "Summer",
-    codeName: "Horizons",
-    title: "శ్రీరామాయణం ప్రాచీన కావ్యం",
-    nativeTitle: "దివ్య కావ్యం — శ్రవ్య రూపకం",
-    subtitle: "Classical Telugu Oral Tradition & Melody",
-    language: "Telugu",
-    bookFormat: "Heritage Folio",
-    category: "Sacred Lore",
-    pagesCount: 360,
-    chaptersCount: 38,
-    duration: "13h 45m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.28.56.jpeg",
-    badge: "HERITAGE",
-    description: "శ్రీరాముని ధర్మమార్గం, సత్యపాలన మరియు సీతారాముల పవిత్ర బంధం — తేటతెలుగు పలుకులలో, హృదయాన్ని హత్తుకునే సంగీత నేపథ్యంతో.",
-    audioPreviewUrl: "https://www.youtube.com/embed/gR3TuESZXos?autoplay=1",
-    storyteller: "StoryHour Telugu Ensemble",
-    price: 64.99,
-    productId: "prod-telugu-ramayanam",
-    culturalNote: "సాంప్రదాయ విలువలను భావి తరాలకు అందించే విశిష్ట ఆడియో ప్రయాణం.",
-    accentColor: "#064C37",
-  },
-  {
-    id: "ed-winter-2025",
-    year: "2025",
-    season: "Winter",
-    codeName: "Devotion",
-    title: "Hanuman’s Mighty Leap",
-    subtitle: "Sundarakanda & Pure Devotion Across The Ocean",
-    language: "English",
-    bookFormat: "Illustrated Folio",
-    category: "Sundarakanda",
-    pagesCount: 144,
-    chaptersCount: 12,
-    duration: "1h 45m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/Hanuman-2-1024x683.jpg",
-    badge: "PERFORMANCE",
-    description: "Discover how Hanuman conquered doubt and giant sea demons to reach Lanka, teaching children that quiet devotion and purpose can cross any ocean.",
-    audioPreviewUrl: "https://www.youtube.com/embed/vcZeX0jPYg4?autoplay=1",
-    storyteller: "StoryHour Puppet Troupe & Lead Performer",
-    price: 34.99,
-    culturalNote: "Accompanied by traditional live puppet gestures and percussive rhythm.",
-    accentColor: "#8F1712",
-  },
-
-  // ── Bottom Shelf (5 Cultural & Oral Lore Editions) ──
-  {
-    id: "ed-summer-2024",
-    year: "2024",
-    season: "Summer",
-    codeName: "Unified",
-    title: "The Clever Hare & The Lion",
-    subtitle: "Panchatantra: Wisdom Over Force",
-    language: "English",
-    bookFormat: "Illustrated Fables",
-    category: "Panchatantra",
-    pagesCount: 96,
-    chaptersCount: 6,
-    duration: "48m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/Grand-Finale-5-scaled.jpg",
-    badge: "FOLK TALE",
-    description: "When the proud king of the jungle demands daily sacrifice, a tiny rabbit uses intellect and the illusion of a well to save every forest creature.",
-    audioPreviewUrl: "https://www.youtube.com/embed/1otr4iUMGbU?autoplay=1",
-    storyteller: "StoryHour Folk Narrator",
-    price: 24.99,
-    culturalNote: "From ancient India's premier compendium of moral and political fables.",
-    accentColor: "#F6C445",
-  },
-  {
-    id: "ed-winter-2024",
-    year: "2024",
-    season: "Winter",
-    codeName: "Foundations",
-    title: "Stories of Truth: Mohandas",
-    subtitle: "Lessons in Conscience & Heritage",
-    language: "Multilingual",
-    bookFormat: "Archival Folio",
-    category: "Moral History",
-    pagesCount: 128,
-    chaptersCount: 8,
-    duration: "1h 15m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/Gandhi-Prayers-STudents-1024x683.jpg",
-    badge: "HISTORY",
-    description: "How a young student grappled with truth, confession, and moral courage before leading a nation through the power of peaceful conviction.",
-    audioPreviewUrl: "https://www.youtube.com/embed/4up2VdHiO5I?autoplay=1",
-    storyteller: "StoryHour History Ensemble",
-    price: 29.99,
-    culturalNote: "Performed with youth drama students across Kendriya Vidyalaya and UK schools.",
-    accentColor: "#3F383D",
-  },
-  {
-    id: "ed-summer-2023",
-    year: "2023",
-    season: "Summer",
-    codeName: "Imagine",
-    title: "Lighting the Sacred Lamp",
-    subtitle: "Fireside Tales & Bedtime Lore",
-    language: "English",
-    bookFormat: "Bedtime Volume",
-    category: "Fireside Lore",
-    pagesCount: 112,
-    chaptersCount: 10,
-    duration: "1h 30m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/Lighting-The-Lamp-3-1024x683.jpg",
-    badge: "BEDTIME",
-    description: "Gentle cultural myths and moral stories told around evening lamps, connecting children to quiet reflection and timeless virtues.",
-    audioPreviewUrl: "https://www.youtube.com/embed/arzOYkbxwX8?autoplay=1",
-    storyteller: "StoryHour Cultural Troupe",
-    price: 29.99,
-    culturalNote: "Created specifically for calming screen-free bedtime listening.",
-    accentColor: "#C9281D",
-  },
-  {
-    id: "ed-winter-2023",
-    year: "2023",
-    season: "Winter",
-    codeName: "Built to Last",
-    title: "Classroom Residencies UK",
-    subtitle: "Spanish School London Performance Archive",
-    language: "Multilingual",
-    bookFormat: "Residency Archive",
-    category: "London Outreach",
-    pagesCount: 160,
-    chaptersCount: 12,
-    duration: "2h 10m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/SpanishSchool-London-1-1024x1024.jpeg",
-    badge: "RESIDENCY",
-    description: "Immersive school workshops bridging multilingual oral storytelling and cross-cultural heritage across classrooms in London.",
-    audioPreviewUrl: "https://www.youtube.com/embed/gR3TuESZXos?autoplay=1",
-    storyteller: "StoryHour Education Faculty",
-    price: 39.99,
-    culturalNote: "Recorded live during StoryHour London school outreach.",
-    accentColor: "#2410A4",
-  },
-  {
-    id: "ed-summer-2022",
-    year: "2022",
-    season: "Summer",
-    codeName: "Connect",
-    title: "KV Youth Ensemble Festival",
-    subtitle: "Live Puppetry & Skits from Uppal",
-    language: "Hindi",
-    bookFormat: "Festival Edition",
-    category: "Puppet & Theatre",
-    pagesCount: 120,
-    chaptersCount: 10,
-    duration: "1h 50m",
-    coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/KV-Uppal-1024x768.jpeg",
-    badge: "ARCHIVE",
-    description: "Energetic student performances, puppet theatre, and mythological skits celebrating ancient values with modern youthful enthusiasm.",
-    audioPreviewUrl: "https://www.youtube.com/embed/1otr4iUMGbU?autoplay=1",
-    storyteller: "Kendriya Vidyalaya & StoryHour Ensemble",
-    price: 29.99,
-    culturalNote: "Annual youth storytelling showcase.",
-    accentColor: "#064C37",
-  },
-];
 
 export default function StoriesEditionsPage() {
   const [selectedEdition, setSelectedEdition] = useState<Edition | null>(null);
+  const [selectedAudiobook, setSelectedAudiobook] = useState<Audiobook | null>(null);
   const [hoveredEditionId, setHoveredEditionId] = useState<string | null>(null);
+  const [hoveredAudiobookId, setHoveredAudiobookId] = useState<string | null>(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [bookReaderEdition, setBookReaderEdition] = useState<Edition | null>(null);
   const { isPlaying, togglePlay, playStory } = useAudio();
-  const { addToCart, showToast, setIsSearchOpen } = useLibraryCart();
+  const { addToCart, showToast, setIsSearchOpen, isBookUnlocked } = useLibraryCart();
 
   const topShelf = EDITIONS.slice(0, 4);
   const bottomShelf = EDITIONS.slice(4, 9);
@@ -302,43 +71,71 @@ export default function StoriesEditionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F3] text-[#050505] font-sans selection:bg-[#2410A4] selection:text-white flex flex-col justify-between overflow-x-hidden">
-      {/* ── Studio Architectural Lighting Background ── */}
-      <div
-        className="fixed inset-0 pointer-events-none -z-10"
-        style={{
-          background: "radial-gradient(ellipse at 50% 30%, #FFFFFF 0%, #FAF8F3 60%, #EFEAE0 100%)",
-        }}
-      />
-
+    <div className="min-h-screen bg-[#FAF8F3] text-[#0F0F0F] font-sans selection:bg-[#C9281D] selection:text-white flex flex-col justify-between overflow-x-hidden">
       {/* ── Official StoryHour Integrated Navbar (from Home page) ── */}
-      <SiteNav theme="dark" activeLink="Books / Stories" />
+      <SiteHeader activeLink="Shop" />
 
-      {/* ── Subtitle Editorial Left Align with Narration Audio Control ── */}
-      <div className="w-full max-w-[1520px] mx-auto px-6 sm:px-10 lg:px-14 pt-4 sm:pt-6 pb-2 flex items-center justify-between z-20">
-        <div>
-          <h1 className="font-serif text-[20px] sm:text-[24px] font-normal text-[#050505] leading-[1.15] tracking-[-0.025em]">
+      {/* ── Compact Sky Hero Banner (matching Home page sky) ── */}
+      <section className="relative w-full bg-[#3b9dfb] pt-28 sm:pt-36 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden select-none">
+        {/* Background sky image matching Home hero */}
+        <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+          <Image
+            src="/images/user-hero-bg.webp"
+            alt=""
+            fill
+            className="object-cover object-top"
+            sizes="100vw"
+            aria-hidden="true"
+          />
+        </div>
+
+        {/* Hero Title */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-sm">
             StoryHour Editions
           </h1>
-          <p className="font-inter text-[13px] sm:text-[14px] text-[#696572] leading-[1.4] mt-0.5">
+          <p className="mt-3 text-white/90 font-medium text-base sm:text-lg max-w-lg leading-relaxed">
             Collectible books &amp; archival volumes. Preserved across English, Hindi, and Telugu.
           </p>
         </div>
+
+        {/* Organic hill wave transition */}
+        <div
+          className="absolute -bottom-px left-0 right-0 z-10 pointer-events-none overflow-hidden leading-none select-none"
+          style={{ marginBottom: "-1px" }}
+        >
+          <svg
+            viewBox="0 0 1440 100"
+            fill="none"
+            preserveAspectRatio="none"
+            className="w-full h-12 sm:h-16 md:h-20 block"
+            aria-hidden="true"
+          >
+            <path
+              d="M0,32 C360,68 720,8 1080,44 C1260,62 1380,48 1440,38 L1440,100 L0,100 Z"
+              fill="#FAF8F3"
+            />
+          </svg>
+        </div>
+      </section>
+
+      {/* ── Audio Companion Toolbar ── */}
+      <div className="w-full max-w-[1520px] mx-auto px-6 sm:px-10 lg:px-14 pt-4 sm:pt-6 pb-2 flex items-center justify-end z-20">
 
         {/* Ambient Audio Companion Toggle */}
         <button
           onClick={handleToggleSound}
           aria-label="Toggle audio companion preview"
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-[#EEF0FF] border border-[#E8E4DC] hover:border-[#2410A4] text-[13px] font-inter font-medium text-[#050505] hover:text-[#2410A4] transition-all shadow-subtle cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-[#FDF2F0] border border-[#E7E7E7] hover:border-[#C9281D] text-[13px] font-sans font-medium text-[#0F0F0F] hover:text-[#C9281D] transition-all shadow-subtle cursor-pointer"
         >
           {isPlaying || isAudioPlaying ? (
             <>
-              <Volume2 className="w-4 h-4 text-[#2410A4] animate-pulse" />
-              <span className="text-[#2410A4]">Audio Sample Playing</span>
+              <Volume2 className="w-4 h-4 text-[#C9281D] animate-pulse" />
+              <span className="text-[#C9281D]">Audio Sample Playing</span>
             </>
           ) : (
             <>
-              <Headphones className="w-4 h-4 text-[#696572]" />
+              <Headphones className="w-4 h-4 text-[#5A5A5A]" />
               <span>Audio Companion Sample</span>
             </>
           )}
@@ -380,7 +177,7 @@ export default function StoriesEditionsPage() {
                   key={ed.id}
                   onMouseEnter={() => setHoveredEditionId(ed.id)}
                   onMouseLeave={() => setHoveredEditionId(null)}
-                  onClick={() => setSelectedEdition(ed)}
+                  onClick={() => setBookReaderEdition(ed)}
                   className="group cursor-pointer flex flex-col items-center select-none"
                   style={{ perspective: "1200px" }}
                 >
@@ -436,23 +233,56 @@ export default function StoriesEditionsPage() {
                     {/* Top Shelf 1: StoryHour Collector's Edition Seal */}
                     {ed.isFeatured && (
                       <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-20 pointer-events-none">
-                        <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#FFF9E6] via-[#F6C445] to-[#E5AC20] text-[#120A45] flex flex-col items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.25)] border border-white/60 -rotate-6 group-hover:rotate-0 transition-transform duration-300">
-                          <span className="font-mono text-[6.5px] sm:text-[7px] font-black uppercase tracking-wider text-[#2410A4] leading-none">
+                        <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#FDF2F0] via-[#DE3124] to-[#C9281D] text-white flex flex-col items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.25)] border border-white/60 -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                          <span className="font-mono text-[6.5px] sm:text-[7px] font-black uppercase tracking-wider text-[#0F0F0F] leading-none">
                             SPECIAL
                           </span>
-                          <span className="font-mono text-[6.5px] sm:text-[7px] font-black uppercase tracking-wider text-[#120A45] leading-none mt-0.5">
+                          <span className="font-mono text-[6.5px] sm:text-[7px] font-black uppercase tracking-wider text-[#0F0F0F] leading-none mt-0.5">
                             EDITION
                           </span>
                         </div>
                       </div>
                     )}
 
-                    {/* Centered Hover Book Action (Replaces circular play button) */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/35 backdrop-blur-[1.5px]">
-                      <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#050505] font-inter text-[11px] sm:text-[12px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300">
-                        <BookOpen className="w-3.5 h-3.5 text-[#2410A4]" />
-                        <span>View Edition</span>
+                    {/* Unlocked Badge */}
+                    {isBookUnlocked(ed.id) && (
+                      <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-20 pointer-events-none">
+                        <div className="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-mono text-[7.5px] sm:text-[8.5px] font-black uppercase tracking-wider shadow-md flex items-center gap-1">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          <span>UNLOCKED</span>
+                        </div>
                       </div>
+                    )}
+
+                    {/* Centered Hover Book Action */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/35 backdrop-blur-[1.5px] gap-2 px-2">
+                      <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[11px] sm:text-[12px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300">
+                        <BookOpen className="w-3.5 h-3.5 text-[#C9281D]" />
+                        <span>{isBookUnlocked(ed.id) ? "Read Book" : "View"}</span>
+                      </div>
+                      {!isBookUnlocked(ed.id) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart({
+                              id: ed.id,
+                              title: ed.title,
+                              nativeTitle: ed.nativeTitle,
+                              subtitle: ed.subtitle,
+                              authorOrNarrator: ed.storyteller,
+                              coverImage: ed.coverImage,
+                              price: ed.price,
+                              format: ed.bookFormat || "Hardcover Edition",
+                              language: ed.language,
+                              type: "book",
+                            });
+                          }}
+                          title="Add to Cart"
+                          className="w-8 h-8 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white flex items-center justify-center shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+                        >
+                          <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Bottom Title Overlay Tag */}
@@ -526,7 +356,7 @@ export default function StoriesEditionsPage() {
                   key={ed.id}
                   onMouseEnter={() => setHoveredEditionId(ed.id)}
                   onMouseLeave={() => setHoveredEditionId(null)}
-                  onClick={() => setSelectedEdition(ed)}
+                  onClick={() => setBookReaderEdition(ed)}
                   className="group cursor-pointer flex flex-col items-center select-none"
                   style={{ perspective: "1200px" }}
                 >
@@ -578,12 +408,45 @@ export default function StoriesEditionsPage() {
                       }}
                     />
 
-                    {/* Centered Hover Book Action (Replaces circular play button) */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/35 backdrop-blur-[1.5px]">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full bg-white text-[#050505] font-inter text-[10px] sm:text-[11px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300">
-                        <BookOpen className="w-3 h-3 text-[#2410A4]" />
-                        <span>View Edition</span>
+                    {/* Unlocked Badge */}
+                    {isBookUnlocked(ed.id) && (
+                      <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20 pointer-events-none">
+                        <div className="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white font-mono text-[7px] sm:text-[8px] font-black uppercase tracking-wider shadow-md flex items-center gap-1">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          <span>UNLOCKED</span>
+                        </div>
                       </div>
+                    )}
+
+                    {/* Centered Hover Book Action */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/35 backdrop-blur-[1.5px] gap-1.5 px-1.5">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[10px] sm:text-[11px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300">
+                        <BookOpen className="w-3 h-3 text-[#C9281D]" />
+                        <span>{isBookUnlocked(ed.id) ? "Read Book" : "View"}</span>
+                      </div>
+                      {!isBookUnlocked(ed.id) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart({
+                              id: ed.id,
+                              title: ed.title,
+                              nativeTitle: ed.nativeTitle,
+                              subtitle: ed.subtitle,
+                              authorOrNarrator: ed.storyteller,
+                              coverImage: ed.coverImage,
+                              price: ed.price,
+                              format: ed.bookFormat || "Illustrated Folio",
+                              language: ed.language,
+                              type: "book",
+                            });
+                          }}
+                          title="Add to Cart"
+                          className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white flex items-center justify-center shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5 stroke-[2.2]" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Bottom Title Overlay Tag */}
@@ -639,59 +502,502 @@ export default function StoriesEditionsPage() {
             />
           </div>
         </section>
-      </main>
 
-      {/* ═══════════════════════════════════════════════════════════
-          BOTTOM TIMELINE BAR (Shopify Editions Exact Layout)
-          ═══════════════════════════════════════════════════════════ */}
-      <footer className="w-full border-t border-[#E8E4DC] bg-[#FAF8F3]/90 backdrop-blur-sm z-20">
-        <div className="max-w-[1520px] mx-auto px-4 sm:px-8 lg:px-12 py-5 sm:py-6">
-          <div className="grid grid-cols-5 sm:grid-cols-9 gap-2 sm:gap-4 items-start">
-            {EDITIONS.map((ed) => {
-              const isHovered = hoveredEditionId === ed.id;
-              const isSelected = selectedEdition?.id === ed.id;
+        {/* ═══════════════════════════════════════════════════════════
+            AUDIOBOOKS SECTION (3D CD SHELF COLLECTION)
+            ═══════════════════════════════════════════════════════════ */}
+        <section className="relative mt-8 sm:mt-12 mb-16 sm:mb-20">
+          {/* Section Header */}
+          <div className="mb-8 sm:mb-12 px-4 sm:px-8 border-b border-[#EAE7E0] pb-4">
+            <h2 className="font-serif text-[24px] sm:text-[30px] font-normal text-[#0F0F0F] tracking-[-0.025em]">
+              Audiobooks
+            </h2>
+            <p className="font-sans text-[13px] sm:text-[14px] text-[#5A5A5A] mt-1 max-w-[680px]">
+              Full-cast audio dramatizations &amp; signature oral narrations recorded with live Indian sitar, flute, and traditional percussive accompaniment.
+            </p>
+          </div>
+
+          {/* Ambient Spotlight Halos for Discs */}
+          <div className="absolute inset-0 top-16 flex justify-around pointer-events-none -z-10 px-4 sm:px-8">
+            {AUDIOBOOKS.map((ab) => (
+              <div
+                key={`cd-halo-${ab.id}`}
+                className="w-[150px] sm:w-[200px] md:w-[240px] h-[180px] sm:h-[230px] rounded-full blur-[45px] opacity-75 sm:opacity-90 transition-opacity duration-500"
+                style={{
+                  background:
+                    hoveredAudiobookId === ab.id
+                      ? `radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,200,100,0.4) 40%, transparent 80%)`
+                      : `radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.3) 60%, transparent 80%)`,
+                  transform: "translateY(-15%)",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* CDs Row (Horizontal Architectural Display) */}
+          <div
+            className="flex items-end justify-center gap-3 sm:gap-6 md:gap-8 lg:gap-10 px-2 sm:px-6 relative z-10 overflow-x-auto pb-4 pt-10 no-scrollbar"
+            style={{ perspective: "1400px" }}
+          >
+            {AUDIOBOOKS.map((ab) => {
+              const isHovered = hoveredAudiobookId === ab.id;
+              const isPlayingPreview = isPlaying && selectedAudiobook?.id === ab.id;
               return (
-                <button
-                  key={`timeline-${ed.id}`}
-                  onMouseEnter={() => setHoveredEditionId(ed.id)}
-                  onMouseLeave={() => setHoveredEditionId(null)}
-                  onClick={() => setSelectedEdition(ed)}
-                  className={`text-left group cursor-pointer transition-all duration-200 py-1 ${
-                    isHovered || isSelected ? "opacity-100" : "opacity-70 hover:opacity-100"
-                  }`}
+                <div
+                  key={ab.id}
+                  onMouseEnter={() => setHoveredAudiobookId(ab.id)}
+                  onMouseLeave={() => setHoveredAudiobookId(null)}
+                  onClick={() => setSelectedAudiobook(ab)}
+                  className="group relative flex flex-col items-center flex-shrink-0 cursor-pointer"
+                  style={{ width: "clamp(130px, 14vw, 190px)" }}
                 >
-                  {/* Top Line: Year */}
-                  <p className="font-mono text-[10px] sm:text-[11px] text-[#696572] leading-none mb-1">
-                    {ed.year}
-                  </p>
-                  {/* Middle Line: Season */}
-                  <p className="font-inter text-[10px] sm:text-[11px] text-[#696572] leading-none mb-1.5">
-                    {ed.season}
-                  </p>
-                  {/* Bottom Line: Title/Codename (Bold) */}
-                  <p
-                    className={`font-inter text-[12px] sm:text-[13px] font-semibold leading-[1.2] transition-colors truncate ${
-                      isHovered || isSelected ? "text-[#2410A4]" : "text-[#050505]"
-                    }`}
-                  >
-                    {ed.codeName}
-                  </p>
-                  {/* Subtle Active Indicator Line */}
+                  {/* 3D CD Disc Floating Container */}
                   <div
-                    className={`h-[1.5px] mt-1.5 transition-all duration-300 rounded-full ${
-                      isSelected
-                        ? "bg-[#2410A4] w-full"
-                        : isHovered
-                        ? "bg-[#050505] w-2/3"
-                        : "bg-transparent w-0"
-                    }`}
+                    className="relative w-full aspect-square transition-all duration-500 ease-out"
+                    style={{
+                      transform: isHovered
+                        ? "translateY(-18px) scale(1.06) rotateX(8deg)"
+                        : "translateY(0px) scale(1) rotateX(16deg)",
+                      transformStyle: "preserve-3d",
+                    }}
+                  >
+                    {/* The Physical CD Disc Body */}
+                    <div
+                      className={`relative w-full h-full rounded-full overflow-hidden flex items-center justify-center transition-transform duration-700 ease-out ${
+                        isHovered || isPlayingPreview ? "animate-[spin_12s_linear_infinite]" : ""
+                      }`}
+                      style={{
+                        boxShadow: isHovered
+                          ? "0 24px 45px -8px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.7) inset"
+                          : "0 14px 28px -6px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.5) inset",
+                        background:
+                          "conic-gradient(from 45deg, #e4e2dd, #d8d4cb, #f0eee9, #cbc6ba, #e4e2dd, #f8f6f0, #d8d4cb, #e4e2dd)",
+                      }}
+                    >
+                      {/* Holographic / Iridescent Refractive Sheen */}
+                      <div
+                        className="absolute inset-0 rounded-full pointer-events-none opacity-45 mix-blend-color-dodge transition-opacity duration-300"
+                        style={{
+                          background:
+                            "conic-gradient(from 120deg, rgba(255,0,128,0.35) 0deg, rgba(0,255,255,0.45) 75deg, rgba(255,255,0,0.35) 150deg, rgba(0,255,128,0.45) 225deg, rgba(255,0,128,0.35) 360deg)",
+                        }}
+                      />
+
+                      {/* Micro-groove Audio Tracks (Concentric circular grooves) */}
+                      <div
+                        className="absolute inset-[3px] rounded-full pointer-events-none opacity-30"
+                        style={{
+                          background:
+                            "repeating-radial-gradient(circle at center, transparent 0, transparent 2px, rgba(0,0,0,0.15) 3px, transparent 4px)",
+                        }}
+                      />
+
+                      {/* Outer Disc Rim Reflection */}
+                      <div className="absolute inset-0 rounded-full border-[1.5px] border-white/70 pointer-events-none" />
+
+                      {/* CD Printed Label Artwork (Inner 62% circular zone) */}
+                      <div
+                        className="relative w-[62%] h-[62%] rounded-full overflow-hidden shadow-[0_0_12px_rgba(0,0,0,0.4)] border border-black/20 z-10 flex items-center justify-center"
+                        style={{
+                          transform: "rotate(0deg)",
+                        }}
+                      >
+                        <Image
+                          src={ab.cdArtwork}
+                          alt={ab.title}
+                          fill
+                          className="object-cover scale-110"
+                          sizes="160px"
+                        />
+
+                        {/* Subtle print overlay on artwork */}
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(0,0,0,0.35) 100%)",
+                          }}
+                        />
+
+                        {/* Disc Label Badge / Logo */}
+                        <div className="absolute bottom-1.5 inset-x-0 flex justify-center pointer-events-none">
+                          <span className="px-1.5 py-0.2 rounded-full bg-black/60 backdrop-blur-sm text-[7px] font-mono text-white/90 font-medium">
+                            {ab.badge || "AUDIOBOOK"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Center Spindle Mechanism (Transparent Hub + Spindle Hole) */}
+                      <div className="absolute w-[24%] h-[24%] rounded-full bg-gradient-to-br from-white/90 via-white/50 to-white/70 backdrop-blur-md border border-white/80 shadow-[0_0_8px_rgba(0,0,0,0.25)_inset] z-20 flex items-center justify-center pointer-events-none">
+                        {/* Metallic Clamping Ring */}
+                        <div className="w-[72%] h-[72%] rounded-full border border-black/25 bg-[#FAF8F3]/60 shadow-inner flex items-center justify-center">
+                          {/* Spindle Center Hole (See-through to shelf) */}
+                          <div className="w-[45%] h-[45%] rounded-full bg-[#E5DFD5] border border-black/30 shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)]" />
+                        </div>
+                      </div>
+
+                      {/* Dynamic Light Sheen / Glass Glare */}
+                      <div
+                        className="absolute inset-0 rounded-full pointer-events-none z-30"
+                        style={{
+                          background:
+                            "linear-gradient(125deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.05) 38%, transparent 55%, rgba(255,255,255,0.2) 100%)",
+                        }}
+                      />
+                    </div>
+
+                    {/* Hover Play / Action Badge Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-40 pointer-events-none">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-[#0F0F0F] font-sans text-[11px] font-semibold shadow-xl transform scale-90 group-hover:scale-100 transition-all duration-300 border border-black/5">
+                        <Play className="w-3.5 h-3.5 fill-[#C9281D] text-[#C9281D]" />
+                        <span>Play Audiobook</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Disc Metadata Tag Underneath */}
+                  <div className="mt-3 text-center w-full px-1">
+                    <p className="font-sans font-semibold text-[11px] sm:text-[12.5px] text-[#0F0F0F] truncate group-hover:text-[#C9281D] transition-colors">
+                      {ab.title}
+                    </p>
+                    <p className="font-sans text-[9px] sm:text-[10px] text-[#6A6A6A] truncate mt-0.5">
+                      {ab.language} · {ab.duration}
+                    </p>
+                    <div className="mt-1 flex items-center justify-center gap-1.5">
+                      <span className="font-mono text-[9px] font-bold text-[#C9281D]">
+                        ${ab.price}
+                      </span>
+                      <span className="text-[8px] font-mono text-[#8C867A] px-1.5 py-0.5 rounded bg-black/5">
+                        {ab.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Contact Shadow on the Shelf Surface */}
+                  <div
+                    className="w-[85%] h-[6px] rounded-full bg-black/25 blur-[3px] transition-all duration-500 mt-1"
+                    style={{
+                      transform: isHovered ? "scale(0.85) translateY(4px)" : "scale(1)",
+                      opacity: isHovered ? 0.35 : 0.65,
+                    }}
                   />
-                </button>
+                </div>
               );
             })}
           </div>
+
+          {/* ── AUDIOBOOKS SHELF SLAB (Floating Pure White Architectural Shelf) ── */}
+          <div className="relative w-full mt-[-3px]">
+            <div
+              className="w-full h-[10px] sm:h-[12px] rounded-t-sm"
+              style={{
+                background: "linear-gradient(to bottom, #FFFFFF 0%, #F5F4F0 70%, #E8E6E0 100%)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.06)",
+              }}
+            />
+            <div
+              className="w-full h-[12px] sm:h-[15px] bg-white rounded-b-sm border-t border-[#EAE7E0]"
+              style={{
+                boxShadow: "0 2px 0 rgba(0,0,0,0.04)",
+              }}
+            />
+            <div
+              className="w-full h-[35px] sm:h-[50px] pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.06) 45%, transparent 75%)",
+              }}
+            />
+          </div>
+        </section>
+      </main>
+
+      {/* ═══════════════════════════════════════════════════════════
+          BOTTOM COLLECTION BAR: ALL BOOKS & AUDIOBOOKS WITH HOVER POPUP
+          ═══════════════════════════════════════════════════════════ */}
+      <div className="w-full border-t border-[#E8E4DC] bg-[#FAF8F3]/95 backdrop-blur-md z-30 relative">
+        <div className="max-w-[1520px] mx-auto px-4 sm:px-8 lg:px-12 py-5 sm:py-6 space-y-6">
+          
+          {/* ── Row 1: Books (9 Editions) ── */}
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#C9281D]" />
+                <span className="font-mono text-[10.5px] uppercase tracking-wider text-[#7A756D] font-bold">
+                  Books &amp; Editions (9)
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-[#A29C91] hidden sm:inline">
+                Hover on any book to pop up preview
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2 sm:gap-3 items-start relative">
+              {EDITIONS.map((ed, idx) => {
+                const isHovered = hoveredEditionId === ed.id;
+                const isSelected = selectedEdition?.id === ed.id;
+                const popupAlign =
+                  idx === 0
+                    ? "left-0 translate-x-0"
+                    : idx === EDITIONS.length - 1
+                    ? "right-0 translate-x-0"
+                    : "left-1/2 -translate-x-1/2";
+                const arrowAlign =
+                  idx === 0
+                    ? "left-6 translate-x-0"
+                    : idx === EDITIONS.length - 1
+                    ? "right-6 translate-x-0"
+                    : "left-1/2 -translate-x-1/2";
+
+                return (
+                  <div key={`timeline-${ed.id}`} className="relative">
+                    <button
+                      onMouseEnter={() => setHoveredEditionId(ed.id)}
+                      onMouseLeave={() => setHoveredEditionId(null)}
+                      onClick={() => setSelectedEdition(ed)}
+                      className={`w-full text-left group cursor-pointer transition-all duration-200 py-1 ${
+                        isHovered || isSelected ? "opacity-100" : "opacity-75 hover:opacity-100"
+                      }`}
+                    >
+                      {/* Top Line: Year & Season */}
+                      <p className="font-mono text-[9.5px] sm:text-[10px] text-[#7A756D] leading-none mb-1">
+                        {ed.year} · {ed.season}
+                      </p>
+                      {/* Middle Line: Codename */}
+                      <p
+                        className={`font-sans text-[11.5px] sm:text-[12.5px] font-bold leading-[1.2] transition-colors truncate ${
+                          isHovered || isSelected ? "text-[#C9281D]" : "text-[#0F0F0F]"
+                        }`}
+                      >
+                        {ed.codeName}
+                      </p>
+                      {/* Third Line: Full Book Title */}
+                      <p className="font-sans text-[10px] text-[#6A6A6A] leading-tight truncate mt-0.5">
+                        {ed.title}
+                      </p>
+                      {/* Active Indicator Line */}
+                      <div
+                        className={`h-[2px] mt-1.5 transition-all duration-300 rounded-full ${
+                          isSelected
+                            ? "bg-[#C9281D] w-full"
+                            : isHovered
+                            ? "bg-[#C9281D] w-full"
+                            : "bg-transparent w-0"
+                        }`}
+                      />
+                    </button>
+
+                    {/* ── HOVER POPUP PREVIEW CARD ── */}
+                    {isHovered && (
+                      <div
+                        className={`absolute bottom-[calc(100%+14px)] ${popupAlign} z-50 w-[260px] bg-[#FAF8F3] rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35),0_0_0_1px_rgba(0,0,0,0.08)] p-3.5 pointer-events-none animate-in fade-in zoom-in-95 duration-200`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {/* Book Cover Thumbnail */}
+                          <div className="relative w-[75px] h-[75px] rounded-lg overflow-hidden flex-shrink-0 shadow-md border border-black/10">
+                            <Image
+                              src={ed.coverImage}
+                              alt={ed.title}
+                              fill
+                              className="object-cover"
+                              sizes="80px"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/20" />
+                          </div>
+
+                          {/* Info */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="px-1.5 py-0.2 rounded bg-[#C9281D] text-white font-mono text-[8px] font-bold uppercase tracking-wider">
+                                {ed.codeName}
+                              </span>
+                              <span className="text-[9px] font-mono text-[#7A756D]">
+                                {ed.year}
+                              </span>
+                            </div>
+                            <p className="font-serif text-[12.5px] font-bold text-[#0F0F0F] leading-snug line-clamp-2">
+                              {ed.title}
+                            </p>
+                            <p className="font-sans text-[10px] text-[#6A6A6A] mt-0.5 truncate">
+                              {ed.bookFormat} · {ed.pagesCount}p
+                            </p>
+                            <p className="font-mono text-[11px] font-bold text-[#C9281D] mt-1">
+                              ${ed.price}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-2.5 pt-2 border-t border-[#EAE7E0] flex items-center justify-between text-[10px]">
+                          <span className="font-sans text-[#7A756D]">
+                            {ed.language}
+                          </span>
+                          <span className="font-sans font-semibold text-[#C9281D] flex items-center gap-0.5">
+                            {isBookUnlocked(ed.id) ? "Read Full Book →" : "View Edition →"}
+                          </span>
+                        </div>
+
+                        {/* Pointer Arrow */}
+                        <div
+                          className={`absolute -bottom-1.5 ${arrowAlign} w-3 h-3 bg-[#FAF8F3] border-r border-b border-black/10 rotate-45`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="w-full h-px bg-[#EAE7E0]" />
+
+          {/* ── Row 2: Audiobooks (6 Discs) ── */}
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <Disc
+                  className="w-3.5 h-3.5 text-[#C9281D] animate-spin"
+                  style={{ animationDuration: "10s" }}
+                />
+                <span className="font-mono text-[10.5px] uppercase tracking-wider text-[#7A756D] font-bold">
+                  Audiobooks &amp; Discs (6)
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-[#A29C91] hidden sm:inline">
+                Hover on any audiobook to pop up preview
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 items-start relative">
+              {AUDIOBOOKS.map((ab, idx) => {
+                const isHovered = hoveredAudiobookId === ab.id;
+                const isSelected = selectedAudiobook?.id === ab.id;
+                const popupAlign =
+                  idx === 0
+                    ? "left-0 translate-x-0"
+                    : idx === AUDIOBOOKS.length - 1
+                    ? "right-0 translate-x-0"
+                    : "left-1/2 -translate-x-1/2";
+                const arrowAlign =
+                  idx === 0
+                    ? "left-6 translate-x-0"
+                    : idx === AUDIOBOOKS.length - 1
+                    ? "right-6 translate-x-0"
+                    : "left-1/2 -translate-x-1/2";
+
+                return (
+                  <div key={`timeline-audio-${ab.id}`} className="relative">
+                    <button
+                      onMouseEnter={() => setHoveredAudiobookId(ab.id)}
+                      onMouseLeave={() => setHoveredAudiobookId(null)}
+                      onClick={() => setSelectedAudiobook(ab)}
+                      className={`w-full text-left group cursor-pointer transition-all duration-200 py-1 ${
+                        isHovered || isSelected ? "opacity-100" : "opacity-75 hover:opacity-100"
+                      }`}
+                    >
+                      {/* Top Line: Badge & Language (Gray like book one) */}
+                      <p className="font-mono text-[9.5px] sm:text-[10px] text-[#7A756D] font-semibold leading-none mb-1 flex items-center gap-1">
+                        <Disc className="w-2.5 h-2.5 text-[#7A756D]" />
+                        {ab.badge || "AUDIO"} · {ab.language}
+                      </p>
+                      {/* Middle Line: Audiobook Title */}
+                      <p
+                        className={`font-sans text-[11.5px] sm:text-[12.5px] font-bold leading-[1.2] transition-colors truncate ${
+                          isHovered || isSelected ? "text-[#C9281D]" : "text-[#0F0F0F]"
+                        }`}
+                      >
+                        {ab.title}
+                      </p>
+                      {/* Third Line: Duration & Narrator */}
+                      <p className="font-sans text-[10px] text-[#6A6A6A] leading-tight truncate mt-0.5">
+                        {ab.duration} · {ab.narrator}
+                      </p>
+                      {/* Active Indicator Line */}
+                      <div
+                        className={`h-[2px] mt-1.5 transition-all duration-300 rounded-full ${
+                          isSelected
+                            ? "bg-[#C9281D] w-full"
+                            : isHovered
+                            ? "bg-[#C9281D] w-full"
+                            : "bg-transparent w-0"
+                        }`}
+                      />
+                    </button>
+
+                    {/* ── HOVER POPUP PREVIEW CARD ── */}
+                    {isHovered && (
+                      <div
+                        className={`absolute bottom-[calc(100%+14px)] ${popupAlign} z-50 w-[270px] bg-[#FAF8F3] rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35),0_0_0_1px_rgba(0,0,0,0.08)] p-3.5 pointer-events-none animate-in fade-in zoom-in-95 duration-200`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {/* Spinning CD Thumbnail */}
+                          <div className="relative w-[75px] h-[75px] rounded-full overflow-hidden flex-shrink-0 shadow-lg border border-black/15 bg-neutral-900 flex items-center justify-center animate-[spin_10s_linear_infinite]">
+                            <Image
+                              src={ab.cdArtwork}
+                              alt={ab.title}
+                              fill
+                              className="object-cover rounded-full"
+                              sizes="80px"
+                            />
+                            {/* Holographic Iridescent Sheen */}
+                            <div
+                              className="absolute inset-0 rounded-full opacity-40 mix-blend-screen pointer-events-none"
+                              style={{
+                                background:
+                                  "conic-gradient(from 45deg, rgba(255,255,255,0.4) 0deg, rgba(255,100,100,0.3) 90deg, rgba(100,255,150,0.3) 180deg, rgba(100,200,255,0.4) 270deg, rgba(255,255,255,0.4) 360deg)",
+                              }}
+                            />
+                            {/* Spindle hole */}
+                            <div className="absolute w-4 h-4 rounded-full bg-[#FAF8F3] border border-black/30 flex items-center justify-center">
+                              <div className="w-1.5 h-1.5 rounded-full bg-black/40" />
+                            </div>
+                          </div>
+
+                          {/* Info */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="px-1.5 py-0.2 rounded bg-[#C9281D]/20 text-[#C9281D] font-mono text-[8px] font-bold uppercase tracking-wider">
+                                {ab.badge || "AUDIO"}
+                              </span>
+                              <span className="text-[9px] font-mono text-[#7A756D]">
+                                {ab.language}
+                              </span>
+                            </div>
+                            <p className="font-serif text-[12.5px] font-bold text-[#0F0F0F] leading-snug line-clamp-2">
+                              {ab.title}
+                            </p>
+                            <p className="font-sans text-[10px] text-[#6A6A6A] mt-0.5 truncate">
+                              {ab.duration} · {ab.chaptersCount} Chapters
+                            </p>
+                            <p className="font-mono text-[11px] font-bold text-[#C9281D] mt-1">
+                              ${ab.price}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-2.5 pt-2 border-t border-[#EAE7E0] flex items-center justify-between text-[10px]">
+                          <span className="font-sans text-[#7A756D] truncate max-w-[130px]">
+                            {ab.narrator}
+                          </span>
+                          <span className="font-sans font-semibold text-[#C9281D] flex items-center gap-0.5 flex-shrink-0">
+                            Play &amp; Unlock →
+                          </span>
+                        </div>
+
+                        {/* Pointer Arrow */}
+                        <div
+                          className={`absolute -bottom-1.5 ${arrowAlign} w-3 h-3 bg-[#FAF8F3] border-r border-b border-black/10 rotate-45`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
-      </footer>
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════
           INTERACTIVE EDITION DETAIL MODAL / DRAWER
@@ -702,7 +1008,7 @@ export default function StoriesEditionsPage() {
           onClick={() => setSelectedEdition(null)}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-[#050505]/70 backdrop-blur-md transition-opacity" />
+          <div className="absolute inset-0 bg-[#0F0F0F]/70 backdrop-blur-md transition-opacity" />
 
           {/* Dialog Container */}
           <div
@@ -713,15 +1019,15 @@ export default function StoriesEditionsPage() {
             <button
               onClick={() => setSelectedEdition(null)}
               aria-label="Close edition preview"
-              className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center text-[#050505] transition-colors cursor-pointer"
+              className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center text-[#0F0F0F] transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Left Column: 3D Edition Artwork Stage */}
-            <div className="relative w-full lg:w-[380px] bg-gradient-to-br from-[#120A45] via-[#1B0C6E] to-[#2410A4] p-8 flex flex-col items-center justify-center flex-shrink-0">
+            <div className="relative w-full lg:w-[380px] bg-gradient-to-br from-[#0F0F0F] via-[#1A1A1A] to-[#262626] p-8 flex flex-col items-center justify-center flex-shrink-0">
               {/* Diffuse glow */}
-              <div className="absolute w-[240px] h-[240px] rounded-full bg-[#2410A4] blur-[70px] opacity-60 pointer-events-none" />
+              <div className="absolute w-[240px] h-[240px] rounded-full bg-[#C9281D]/30 blur-[70px] pointer-events-none" />
 
               {/* 3D Box Artwork */}
               <div
@@ -745,7 +1051,7 @@ export default function StoriesEditionsPage() {
 
               {/* Badge & Season */}
               <div className="mt-6 flex items-center gap-2 z-10">
-                <span className="px-3 py-1 rounded-full bg-[#F6C445] text-[#120A45] text-[10px] font-mono font-bold uppercase tracking-wider">
+                <span className="px-3 py-1 rounded-full bg-[#C9281D] text-white text-[10px] font-mono font-bold uppercase tracking-wider">
                   {selectedEdition.year} · {selectedEdition.season} Edition
                 </span>
                 <span className="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white text-[10px] font-mono">
@@ -757,57 +1063,57 @@ export default function StoriesEditionsPage() {
             {/* Right Column: Information, Audio Preview & Purchase */}
             <div className="p-7 sm:p-9 flex-1 overflow-y-auto space-y-5">
               <div>
-                <span className="font-mono text-[11px] uppercase tracking-widest text-[#2410A4] font-semibold">
+                <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] font-semibold">
                   StoryHour Collector&apos;s Edition
                 </span>
-                <h2 className="mt-1 font-serif text-[26px] sm:text-[32px] font-normal text-[#050505] leading-[1.05] tracking-[-0.025em]">
+                <h2 className="mt-1 font-serif text-[26px] sm:text-[32px] font-normal text-[#0F0F0F] leading-[1.05] tracking-[-0.025em]">
                   {selectedEdition.title}
                 </h2>
                 {selectedEdition.nativeTitle && (
-                  <p className="mt-1 font-serif text-[18px] text-[#696572] italic">
+                  <p className="mt-1 font-serif text-[18px] text-[#5A5A5A] italic">
                     {selectedEdition.nativeTitle}
                   </p>
                 )}
-                <p className="mt-1.5 font-inter text-[14px] text-[#696572]">
+                <p className="mt-1.5 font-sans text-[14px] text-[#5A5A5A]">
                   {selectedEdition.subtitle}
                 </p>
               </div>
 
               {/* Metadata Badges */}
-              <div className="flex flex-wrap gap-3 font-mono text-[11px] text-[#696572] py-2 border-y border-[#E8E4DC]">
+              <div className="flex flex-wrap gap-3 font-mono text-[11px] text-[#5A5A5A] py-2 border-y border-[#E7E7E7]">
                 <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-[#2410A4]" />
+                  <BookOpen className="w-3.5 h-3.5 text-[#C9281D]" />
                   {selectedEdition.bookFormat}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-[#2410A4]" />
+                  <BookOpen className="w-3.5 h-3.5 text-[#C9281D]" />
                   {selectedEdition.pagesCount} Pages ({selectedEdition.chaptersCount} Chapters)
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-[#2410A4]" />
+                  <Globe className="w-3.5 h-3.5 text-[#C9281D]" />
                   {selectedEdition.language}
                 </span>
                 {selectedEdition.duration && (
                   <span className="flex items-center gap-1.5">
-                    <Headphones className="w-3.5 h-3.5 text-[#2410A4]" />
+                    <Headphones className="w-3.5 h-3.5 text-[#C9281D]" />
                     Audio Companion ({selectedEdition.duration})
                   </span>
                 )}
               </div>
 
               {/* Synopsis */}
-              <p className="font-inter text-[14px] text-[#3F383D] leading-[1.65]">
+              <p className="font-sans text-[14px] text-[#2F2F2F] leading-[1.65]">
                 {selectedEdition.description}
               </p>
 
               {selectedEdition.culturalNote && (
-                <div className="p-3.5 rounded-lg bg-[#FAF8F3] border-l-2 border-[#2410A4] text-[12.5px] font-inter text-[#696572] italic">
+                <div className="p-3.5 rounded-lg bg-[#FAF8F3] border-l-2 border-[#C9281D] text-[12.5px] font-sans text-[#5A5A5A] italic">
                   {selectedEdition.culturalNote}
                 </div>
               )}
 
               {/* Secondary Audio Companion Sample Player */}
-              <div className="p-4 rounded-xl bg-[#EEF0FF] flex items-center gap-4">
+              <div className="p-4 rounded-xl bg-[#FDF2F0] flex items-center gap-4 border border-[#C9281D]/20">
                 <button
                   onClick={() => {
                     playStory({
@@ -829,19 +1135,19 @@ export default function StoriesEditionsPage() {
                     });
                     showToast(`Playing audio companion sample: ${selectedEdition.title}`);
                   }}
-                  className="w-11 h-11 rounded-full bg-[#2410A4] hover:bg-[#1B0C80] text-white flex items-center justify-center flex-shrink-0 shadow-md cursor-pointer transition-colors"
+                  className="w-11 h-11 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white flex items-center justify-center flex-shrink-0 shadow-md cursor-pointer transition-colors"
                 >
                   <Play className="w-4 h-4 fill-white ml-0.5" />
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p className="font-inter text-[13px] font-semibold text-[#050505]">
+                  <p className="font-sans text-[13px] font-semibold text-[#0F0F0F]">
                     Audio Companion Preview
                   </p>
-                  <p className="font-inter text-[11px] text-[#696572] truncate">
+                  <p className="font-sans text-[11px] text-[#5A5A5A] truncate">
                     Studio narration · Performed by {selectedEdition.storyteller}
                   </p>
                 </div>
-                <span className="font-mono text-[11px] text-[#2410A4] font-medium flex-shrink-0">
+                <span className="font-mono text-[11px] text-[#C9281D] font-medium flex-shrink-0">
                   Audio Included
                 </span>
               </div>
@@ -849,10 +1155,10 @@ export default function StoriesEditionsPage() {
               {/* Purchase / Action Row */}
               <div className="flex items-center justify-between pt-2">
                 <div>
-                  <span className="font-mono text-[11px] text-[#696572] block">
+                  <span className="font-mono text-[11px] text-[#5A5A5A] block">
                     Collector&apos;s Book Edition
                   </span>
-                  <span className="font-serif text-[24px] font-bold text-[#050505]">
+                  <span className="font-serif text-[24px] font-bold text-[#0F0F0F]">
                     ${selectedEdition.price}
                   </span>
                 </div>
@@ -874,7 +1180,7 @@ export default function StoriesEditionsPage() {
                       });
                       showToast(`${selectedEdition.title} added to cart`);
                     }}
-                    className="px-6 py-3 rounded-full bg-[#2410A4] hover:bg-[#1B0C80] text-white font-inter text-[13px] font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer"
+                    className="px-6 py-3 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#B01E14] hover:from-[#C9281D] hover:to-[#8F1712] text-white font-sans text-[13px] font-medium transition-all shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:shadow-[0_8px_25px_rgba(201,40,29,0.45)] flex items-center gap-2 cursor-pointer"
                   >
                     <ShoppingBag className="w-4 h-4" />
                     Add edition to cart
@@ -885,6 +1191,40 @@ export default function StoriesEditionsPage() {
           </div>
         </div>
       )}
+
+      {/* ── Interactive Audiobook Modal (Spinning 3D Disc, Chapters, Audio Preview, Buy & Unlock) ── */}
+      {selectedAudiobook && (
+        <AudiobookModal
+          audiobook={selectedAudiobook}
+          onClose={() => setSelectedAudiobook(null)}
+          onAddToCart={(ab) => {
+            addToCart({
+              id: ab.id,
+              slug: ab.id,
+              title: ab.title,
+              language: ab.language,
+              price: ab.price,
+              currency: "$",
+              coverImage: ab.cdArtwork,
+              format: "Audiobook Edition (CD & Digital)",
+              description: ab.description,
+              chaptersCount: ab.chaptersCount,
+            });
+            showToast(`${ab.title} Audiobook added to cart`);
+          }}
+        />
+      )}
+
+      {/* ── Book Reader Overlay ── */}
+      {bookReaderEdition && (
+        <BookReader
+          edition={bookReaderEdition}
+          onClose={() => setBookReaderEdition(null)}
+        />
+      )}
+
+      {/* ── Standard Site Footer ── */}
+      <SiteFooter />
     </div>
   );
 }

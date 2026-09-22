@@ -82,9 +82,14 @@ export function MagneticText({
     };
   }, []);
 
-  // RAF loop with smooth lerp interpolation
+  // RAF loop with smooth lerp interpolation - runs only when element is hovered
   useEffect(() => {
-    if (isReducedMotion || isTouch) return;
+    if (isReducedMotion || isTouch || !isHovered) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      return;
+    }
 
     const lerp = (start: number, end: number, factor: number) =>
       start + (end - start) * factor;
@@ -119,7 +124,7 @@ export function MagneticText({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isReducedMotion, isTouch]);
+  }, [isReducedMotion, isTouch, isHovered]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -189,7 +194,7 @@ export function MagneticText({
           aria-hidden="true"
           className={cn(
             "pointer-events-none absolute top-0 left-0 overflow-hidden rounded-full z-20 shadow-2xl",
-            circleClassName || "bg-[#120A45]",
+            circleClassName || "bg-[#0F0F0F]",
           )}
           style={{
             width: isHovered && !isReducedMotion ? circleSize : 0,

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { createContext, useContext, useState, useRef, useEffect } from "react";
 import { Story, STORIES } from "@/data/storyhour-data";
@@ -17,8 +17,6 @@ interface AudioContextType {
   setVolume: (vol: number) => void;
   toggleMute: () => void;
   setActiveLanguage: (lang: string) => void;
-  isMiniPlayerVisible: boolean;
-  setIsMiniPlayerVisible: (visible: boolean) => void;
   isVideoModalOpen: boolean;
   setIsVideoModalOpen: (open: boolean) => void;
 }
@@ -26,20 +24,17 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
-  // Default to the featured English Ramayana story
   const [currentStory, setCurrentStory] = useState<Story>(STORIES[0]);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(180); // Sample 3 minute preview
+  const [duration, setDuration] = useState<number>(180);
   const [volume, setVolumeState] = useState<number>(0.85);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [activeLanguage, setActiveLanguage] = useState<string>("English");
-  const [isMiniPlayerVisible, setIsMiniPlayerVisible] = useState<boolean>(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState<boolean>(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Simulated continuous playback timer for preview mode
   useEffect(() => {
     if (isPlaying) {
       timerRef.current = setInterval(() => {
@@ -67,23 +62,13 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     setIsPlaying(true);
   };
 
-  const togglePlay = () => {
-    setIsPlaying((prev) => !prev);
-  };
-
-  const seekTo = (time: number) => {
-    setCurrentTime(time);
-  };
-
+  const togglePlay = () => setIsPlaying((prev) => !prev);
+  const seekTo = (time: number) => setCurrentTime(time);
   const setVolume = (vol: number) => {
     setVolumeState(vol);
-    if (vol === 0) setIsMuted(true);
-    else setIsMuted(false);
+    setIsMuted(vol === 0);
   };
-
-  const toggleMute = () => {
-    setIsMuted((prev) => !prev);
-  };
+  const toggleMute = () => setIsMuted((prev) => !prev);
 
   return (
     <AudioContext.Provider
@@ -101,8 +86,6 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         setVolume,
         toggleMute,
         setActiveLanguage,
-        isMiniPlayerVisible,
-        setIsMiniPlayerVisible,
         isVideoModalOpen,
         setIsVideoModalOpen,
       }}
