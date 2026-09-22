@@ -1,17 +1,17 @@
 # dependencies
-node_modules/
+/node_modules
 /.pnp
 .pnp.js
 
 # testing
-coverage/
+/coverage
 
 # next.js
-.next/
-out/
+/.next/
+/out/
 
 # production
-build/
+/build
 
 # misc
 .DS_Store
@@ -27,16 +27,6 @@ yarn-error.log*
 .env*.local
 .env.development
 .env.production
-
-# Python and virtual environments
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-*.db
-.venv/
-venv/
-ENV/
 
 # typescript
 *.tsbuildinfo
