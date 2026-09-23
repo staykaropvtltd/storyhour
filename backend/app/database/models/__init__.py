@@ -12,6 +12,9 @@ from app.models.order import Order, OrderItem
 from app.models.listening_progress import ListeningProgress
 from app.models.library import LibraryItem
 from app.models.payment import Payment
+from app.models.event import Event, EventStatus
+from app.models.journal import JournalArticle, JournalStatus
+from app.models.contact import ContactSubmission
 
 __all__ = [
     "UserProfile",
@@ -34,6 +37,11 @@ __all__ = [
     "ListeningProgress",
     "LibraryItem",
     "Payment",
+    "Event",
+    "EventStatus",
+    "JournalArticle",
+    "JournalStatus",
+    "ContactSubmission",
 ]
 
 

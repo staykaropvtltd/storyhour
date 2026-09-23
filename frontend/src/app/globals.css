@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-red: #C9281D;
+  --brand-red-hover: #B52218;
+  --brand-red-dark: #8F1712;
+  --brand-red-light: #FDF2F0;
+  --brand-red-glow: rgba(201, 40, 29, 0.35);
+
+  --brand-navy: #0E1638;
+  --brand-navy-hover: #16204E;
+  --brand-navy-light: #EEF2F8;
+  --brand-navy-border: #233067;
+  --brand-navy-glow: rgba(14, 22, 56, 0.25);
+
+  --papumba: #C9281D;
+  --papumba-dark: #8F1712;
+  --energy: #fbe05d;
+  --black: #0f0f0f;
+  --white: #ffffff;
+  --concrete: #f3f3f3;
+  --mercury: #e7e7e7;
+  --flamingo: #f5663e;
+  --amethyst: #d366e0;
+  --malibu: #73bcf3;
+  --yellow-green: #68dc18;
+}
+
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Custom marquee keyframes */
+@keyframes marqueeLeft {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marqueeRight {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
+}
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1.5deg); }
+}
+
+@keyframes bounceSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes waveform {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.animate-marquee-left {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeft 28s linear infinite;
+}
+
+.animate-marquee-left:hover {
+  animation-play-state: paused;
+}
+
+.animate-marquee-right {
+  display: flex;
+  width: max-content;
+  animation: marqueeRight 28s linear infinite;
+}
+
+.animate-marquee-right:hover {
+  animation-play-state: paused;
+}
+
+.animate-hero-float {
+  animation: heroFloat 5s ease-in-out infinite;
+}
+
+.animate-bounce-soft {
+  animation: bounceSoft 2s ease-in-out infinite;
+}
+
+.waveform-bar {
+  animation: waveform 1.2s ease-in-out infinite alternate;
+  transform-origin: bottom;
+}
+
+/* Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Tactile 3D Button Shadows (StoryHour signature tactile styles) */
+.btn-tactile-red {
+  background: linear-gradient(135deg, #DE3124 0%, #C9281D 55%, #B01E14 100%);
+  box-shadow: 0 5px 0 #8F1712, 0 8px 20px rgba(201, 40, 29, 0.32);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-tactile-red:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #8F1712, 0 12px 26px rgba(201, 40, 29, 0.45);
+  filter: brightness(1.04);
+}
+.btn-tactile-red:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #8F1712, 0 4px 10px rgba(201, 40, 29, 0.22);
+}
+
+.btn-tactile-navy {
+  background: linear-gradient(135deg, #182456 0%, #0E1638 55%, #070B1E 100%);
+  box-shadow: 0 5px 0 #050818, 0 8px 20px rgba(14, 22, 56, 0.28);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-tactile-navy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #050818, 0 12px 26px rgba(14, 22, 56, 0.38);
+  filter: brightness(1.08);
+}
+.btn-tactile-navy:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #050818, 0 4px 10px rgba(14, 22, 56, 0.2);
+}
+
+.btn-tactile-dark {
+  background-color: #0f0f0f;
+  box-shadow: 0 5px 0 #27272a;
+  transition: all 0.15s ease;
+}
+.btn-tactile-dark:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #27272a;
+}
+.btn-tactile-dark:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #27272a;
+}
+
+/* Yellow marker highlight */
+.marker-highlight {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+}
+.marker-highlight::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  bottom: 4px;
+  height: 38%;
+  background-color: #fbe05d;
+  z-index: -1;
+  border-radius: 4px;
+  transform: rotate(-1deg);
+}

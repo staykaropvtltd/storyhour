@@ -11,13 +11,16 @@ from app.routers import (
     auth,
     cart,
     categories,
-    orders,
-    payments,
+    contact,
     entitlements,
+    events,
     health,
+    journal,
     languages,
     library,
     me,
+    orders,
+    payments,
     products,
     progress,
     stories,
@@ -124,6 +127,14 @@ app.include_router(progress.router, prefix=f"{settings.API_V1_STR}/v1")
 app.include_router(progress.router, prefix=settings.API_V1_STR, include_in_schema=False)
 app.include_router(library.router, prefix=f"{settings.API_V1_STR}/v1")
 
+# Phase 4 Events, Journal, and Contact Routers
+app.include_router(events.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(events.router, prefix=settings.API_V1_STR, include_in_schema=False)
+app.include_router(journal.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(journal.router, prefix=settings.API_V1_STR, include_in_schema=False)
+app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(contact.router, prefix=settings.API_V1_STR, include_in_schema=False)
+
 @app.get("/", tags=["Health & Status"])
 def root():
     """Root health and discovery endpoint."""
@@ -142,6 +153,9 @@ def root():
             "stories": f"{settings.API_V1_STR}/v1/stories",
             "categories": f"{settings.API_V1_STR}/v1/categories",
             "languages": f"{settings.API_V1_STR}/v1/languages",
+            "events": f"{settings.API_V1_STR}/v1/events",
+            "journal": f"{settings.API_V1_STR}/v1/journal",
+            "contact": f"{settings.API_V1_STR}/v1/contact",
         },
     }
 
