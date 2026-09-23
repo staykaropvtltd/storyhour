@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { submitContactEnquiry } from "@/lib/api";
 
 interface FaqItem {
   question: string;
@@ -74,6 +75,8 @@ export default function ContactPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submissionConfirmation, setSubmissionConfirmation] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
@@ -99,15 +102,32 @@ export default function ContactPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setApiError(null);
+
+    try {
+      const response = await submitContactEnquiry({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        enquiryType: formData.enquiryType,
+        message: formData.message.trim(),
+      });
+      setSubmissionConfirmation(response.confirmation);
       setIsSubmitted(true);
-    }, 500);
+    } catch (err: any) {
+      console.error("Contact submission error:", err);
+      setApiError(
+        err?.message ||
+          "We could not reach the StoryHour server. Please check your connection or contact info@storyhourglobal.com."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -119,6 +139,8 @@ export default function ContactPage() {
       message: "",
     });
     setErrors({});
+    setApiError(null);
+    setSubmissionConfirmation(null);
     setIsSubmitted(false);
   };
 
@@ -345,7 +367,8 @@ export default function ContactPage() {
                     </h3>
                     
                     <p className="font-sans text-[15px] sm:text-[16px] text-[#5A5A5A] leading-relaxed max-w-[460px] mx-auto mb-8">
-                      Your message has been received. Our team will review your enquiry and respond to <span className="font-semibold text-[#0F0F0F]">{formData.email}</span> within 1 to 2 business days.
+                      {submissionConfirmation ||
+                        `Your message has been received. Our team will review your enquiry and respond to ${formData.email} within 1 to 2 business days.`}
                     </p>
 
                     <button
@@ -365,9 +388,16 @@ export default function ContactPage() {
                           Send an Enquiry
                         </h2>
                         <p className="font-sans text-[14px] text-[#5A5A5A] leading-relaxed">
-                          Fill out the form below and we will get back to you with the appropriate details.
+                          Fill out the form below and our team will get back to you directly.
                         </p>
                       </div>
+
+                      {apiError && (
+                        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2.5">
+                          <span className="font-semibold text-red-800">Error:</span>
+                          <span>{apiError}</span>
+                        </div>
+                      )}
 
                       <div className="space-y-6">
                         {/* Name & Email Row */}
