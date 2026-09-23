@@ -106,6 +106,9 @@ def test_case_3_unregistered_email(client):
     Input: Email doesn't exist + any password
     Expected: Login rejected (401 Unauthorized) with identical error; does not reveal whether account exists.
     """
+    if not supabase_service.anon_client:
+        pytest.skip("Supabase client not configured for live auth tests")
+
     response = client.post(
         "/api/auth/login",
         json={
@@ -138,7 +141,7 @@ def test_case_4_empty_email(client):
     assert "errors" in data or "detail" in data
 
 
-def test_case_5_empty_password(client, registered_user):
+def test_case_5_empty_password(client):
     """
     Test Case 5: Empty password
     Input: Password = empty ("")
@@ -147,7 +150,7 @@ def test_case_5_empty_password(client, registered_user):
     response = client.post(
         "/api/auth/login",
         json={
-            "email": registered_user["email"],
+            "email": "user@example.com",
             "password": "",
         },
     )

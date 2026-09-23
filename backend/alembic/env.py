@@ -14,8 +14,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Use the application's DATABASE_URL rather than storing credentials in
-# alembic.ini.
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# alembic.ini. ConfigParser requires % to be escaped as %%.
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
 # Alembic will compare the database against all registered SQLAlchemy models.
 target_metadata = Base.metadata
