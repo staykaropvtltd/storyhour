@@ -30,7 +30,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/storyhour_ci
-      SUPABASE_JWT_SECRET: ci-test-secret-key-32-characters-long
+      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
       SUPABASE_JWT_ALGORITHM: HS256
       ENVIRONMENT: test
 
