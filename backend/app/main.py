@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.core.logging import logger
 from app.routers import (
+    admin,
+    analytics,
     audio,
     auth,
     cart,
@@ -135,6 +137,12 @@ app.include_router(journal.router, prefix=settings.API_V1_STR, include_in_schema
 app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/v1")
 app.include_router(contact.router, prefix=settings.API_V1_STR, include_in_schema=False)
 
+# Phase 5 Admin & CMS, Media Management, and Analytics Routers
+app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(admin.router, prefix=settings.API_V1_STR, include_in_schema=False)
+app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/v1")
+app.include_router(analytics.router, prefix=settings.API_V1_STR, include_in_schema=False)
+
 @app.get("/", tags=["Health & Status"])
 def root():
     """Root health and discovery endpoint."""
@@ -156,6 +164,8 @@ def root():
             "events": f"{settings.API_V1_STR}/v1/events",
             "journal": f"{settings.API_V1_STR}/v1/journal",
             "contact": f"{settings.API_V1_STR}/v1/contact",
+            "admin": f"{settings.API_V1_STR}/v1/admin",
+            "analytics": f"{settings.API_V1_STR}/v1/analytics/events",
         },
     }
 

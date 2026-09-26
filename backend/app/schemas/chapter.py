@@ -13,7 +13,7 @@ class ChapterBase(BaseModel):
 
 class ChapterCreate(ChapterBase):
     """Payload schema for creating a new Chapter under a story."""
-    story_id: str = Field(..., description="UUID of the parent story")
+    story_id: Optional[str] = Field(None, description="UUID of the parent story")
 
 
 class ChapterUpdate(BaseModel):

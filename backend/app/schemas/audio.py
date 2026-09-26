@@ -9,6 +9,7 @@ class AudioAssetBase(BaseModel):
     storage_key: str = Field(..., max_length=512, description="Safe storage path reference")
     duration: int = Field(0, ge=0, description="Audio duration in seconds")
     mime_type: str = Field("audio/mpeg", max_length=64, description="Media MIME type")
+    file_size: Optional[int] = Field(None, ge=0, description="File size in bytes")
     access_type: AudioAccessType = Field(
         AudioAccessType.PROTECTED,
         description="Public preview or protected access policy",
@@ -26,6 +27,7 @@ class AudioAssetUpdate(BaseModel):
     storage_key: Optional[str] = Field(None, max_length=512)
     duration: Optional[int] = Field(None, ge=0)
     mime_type: Optional[str] = Field(None, max_length=64)
+    file_size: Optional[int] = Field(None, ge=0)
     access_type: Optional[AudioAccessType] = None
     chapter_id: Optional[str] = None
 

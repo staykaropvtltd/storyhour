@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class ContactCreate(BaseModel):
@@ -46,3 +46,16 @@ class ContactResponse(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ContactStatusUpdate(BaseModel):
+    """Payload schema for administrative status transition of contact submissions."""
+    status: str = Field(..., max_length=32, description="Target status ('unread', 'read', 'in_progress', 'resolved', 'archived')")
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        valid_statuses = {"unread", "read", "in_progress", "resolved", "archived"}
+        if v not in valid_statuses:
+            raise ValueError(f"Invalid status '{v}'. Allowed values are: {sorted(valid_statuses)}")
+        return v

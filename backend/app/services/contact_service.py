@@ -31,5 +31,50 @@ class ContactService:
             db.rollback()
             raise
 
+    def get_submission_by_id(self, db: Session, submission_id: str) -> Optional[ContactSubmission]:
+        """Fetch contact submission by primary key UUID."""
+        return self.contact_repo.get_by_id(db, submission_id)
+
+    def list_submissions(
+        self,
+        db: Session,
+        *,
+        status: Optional[str] = None,
+        enquiry_type: Optional[str] = None,
+        search: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> list[ContactSubmission]:
+        """Retrieve paginated contact enquiries for authorized staff."""
+        return self.contact_repo.list_submissions(
+            db,
+            status=status,
+            enquiry_type=enquiry_type,
+            search=search,
+            skip=skip,
+            limit=limit,
+        )
+
+    def update_status(
+        self,
+        db: Session,
+        submission: ContactSubmission,
+        status: str,
+    ) -> ContactSubmission:
+        """Update enquiry lifecycle status and commit."""
+        updated = self.contact_repo.update_status(db, submission, status)
+        db.commit()
+        db.refresh(updated)
+        return updated
+
+    def delete_submission(
+        self,
+        db: Session,
+        submission: ContactSubmission,
+    ) -> None:
+        """Delete a contact submission record and commit."""
+        self.contact_repo.delete_submission(db, submission)
+        db.commit()
+
 
 contact_service = ContactService()

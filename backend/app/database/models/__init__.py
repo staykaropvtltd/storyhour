@@ -15,6 +15,7 @@ from app.models.payment import Payment
 from app.models.event import Event, EventStatus
 from app.models.journal import JournalArticle, JournalStatus
 from app.models.contact import ContactSubmission
+from app.models.analytics import AnalyticsEvent, AnalyticsEventType
 
 __all__ = [
     "UserProfile",
@@ -42,6 +43,8 @@ __all__ = [
     "JournalArticle",
     "JournalStatus",
     "ContactSubmission",
+    "AnalyticsEvent",
+    "AnalyticsEventType",
 ]
 
 

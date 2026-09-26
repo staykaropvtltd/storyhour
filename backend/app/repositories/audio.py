@@ -41,3 +41,23 @@ class AudioRepository(BaseRepository[AudioAsset]):
             )
             .first()
         )
+
+    def list_assets(
+        self,
+        db: Session,
+        *,
+        story_id: Optional[str] = None,
+        chapter_id: Optional[str] = None,
+        access_type: Optional[AudioAccessType] = None,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> List[AudioAsset]:
+        """List audio assets with optional story, chapter, or access tier filters."""
+        query = db.query(self.model)
+        if story_id:
+            query = query.filter(self.model.story_id == story_id)
+        if chapter_id:
+            query = query.filter(self.model.chapter_id == chapter_id)
+        if access_type:
+            query = query.filter(self.model.access_type == access_type)
+        return query.order_by(self.model.created_at.desc()).offset(skip).limit(limit).all()

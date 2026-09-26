@@ -31,7 +31,7 @@ class EventService:
         event = self.event_repo.get_by_slug(db, slug)
         if not event:
             return None
-        if published_only and event.status != EventStatus.PUBLISHED:
+        if published_only and (event.status != EventStatus.PUBLISHED or event.is_deleted):
             return None
         return event
 
@@ -59,6 +59,73 @@ class EventService:
             skip=skip,
             limit=limit,
         )
+
+    def list_admin_events(
+        self,
+        db: Session,
+        *,
+        status: Optional[EventStatus] = None,
+        event_type: Optional[str] = None,
+        is_online: Optional[bool] = None,
+        featured: Optional[bool] = None,
+        search: Optional[str] = None,
+        include_deleted: bool = False,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> List[Event]:
+        """List events across all statuses for administrative management."""
+        return self.event_repo.list(
+            db,
+            status=status,
+            event_type=event_type,
+            is_online=is_online,
+            featured=featured,
+            search=search,
+            include_deleted=include_deleted,
+            skip=skip,
+            limit=limit,
+        )
+
+    def create_event(self, db: Session, payload: "EventCreate") -> Event:
+        """Create a new event and persist."""
+        event_data = payload.model_dump()
+        event = Event(**event_data)
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        return event
+
+    def update_event(self, db: Session, event: Event, payload: "EventUpdate") -> Event:
+        """Update existing event properties and persist."""
+        update_data = payload.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(event, key, value)
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        return event
+
+    def delete_event(self, db: Session, event: Event) -> None:
+        """Soft-delete an event."""
+        event.soft_delete()
+        db.add(event)
+        db.commit()
+
+    def publish_event(self, db: Session, event: Event) -> Event:
+        """Publish an event."""
+        event.status = EventStatus.PUBLISHED
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        return event
+
+    def unpublish_event(self, db: Session, event: Event) -> Event:
+        """Move an event back to DRAFT."""
+        event.status = EventStatus.DRAFT
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        return event
 
 
 event_service = EventService()
