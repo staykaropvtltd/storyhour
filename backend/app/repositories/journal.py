@@ -29,11 +29,15 @@ class JournalRepository(BaseRepository[JournalArticle]):
         tag: Optional[str] = None,
         featured: Optional[bool] = None,
         search: Optional[str] = None,
+        include_deleted: bool = False,
         skip: int = 0,
         limit: int = 20,
     ) -> List[JournalArticle]:
         """List articles with optional category, tag, featured, and text search filters."""
         query = db.query(self.model)
+
+        if not include_deleted:
+            query = query.filter(self.model.is_deleted.is_(False))
 
         if status is not None:
             query = query.filter(self.model.status == status)

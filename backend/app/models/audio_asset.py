@@ -42,6 +42,7 @@ class AudioAsset(BaseSaaSModel):
     # Playback duration in seconds
     duration = Column(Integer, default=0, nullable=False)
     mime_type = Column(String(64), default="audio/mpeg", nullable=False)
+    file_size = Column(Integer, nullable=True)
 
     access_type = Column(
         SAEnum(AudioAccessType, native_enum=False, length=32),

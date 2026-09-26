@@ -31,11 +31,15 @@ class EventRepository(BaseRepository[Event]):
         featured: Optional[bool] = None,
         upcoming_only: Optional[bool] = None,
         search: Optional[str] = None,
+        include_deleted: bool = False,
         skip: int = 0,
         limit: int = 20,
     ) -> List[Event]:
         """List events with optional filtering and pagination."""
         query = db.query(self.model)
+
+        if not include_deleted:
+            query = query.filter(self.model.is_deleted.is_(False))
 
         if status is not None:
             query = query.filter(self.model.status == status)

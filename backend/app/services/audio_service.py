@@ -61,3 +61,47 @@ class AudioService:
             is_accessible=accessible,
             stream_url=safe_stream_url,
         )
+
+    def list_assets(
+        self,
+        db: Session,
+        *,
+        story_id: Optional[str] = None,
+        chapter_id: Optional[str] = None,
+        access_type: Optional[AudioAccessType] = None,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> list[AudioAsset]:
+        """List audio media assets for administrative management."""
+        return self.audio_repo.list_assets(
+            db,
+            story_id=story_id,
+            chapter_id=chapter_id,
+            access_type=access_type,
+            skip=skip,
+            limit=limit,
+        )
+
+    def create_asset(self, db: Session, payload: "AudioAssetCreate") -> AudioAsset:
+        """Register a new audio asset record and commit."""
+        asset_data = payload.model_dump()
+        asset = AudioAsset(**asset_data)
+        db.add(asset)
+        db.commit()
+        db.refresh(asset)
+        return asset
+
+    def update_asset(self, db: Session, asset: AudioAsset, payload: "AudioAssetUpdate") -> AudioAsset:
+        """Update existing audio asset metadata and commit."""
+        update_data = payload.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(asset, key, value)
+        db.add(asset)
+        db.commit()
+        db.refresh(asset)
+        return asset
+
+    def delete_asset(self, db: Session, asset: AudioAsset) -> None:
+        """Permanently delete an audio asset record and commit."""
+        db.delete(asset)
+        db.commit()

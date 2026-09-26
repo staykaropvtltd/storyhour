@@ -57,6 +57,16 @@ from app.schemas.library import (
     LibraryItemResponse,
     UserLibraryResponse,
 )
+from app.schemas.analytics import (
+    AnalyticsEventCreate,
+    AnalyticsEventResponse,
+    AnalyticsSummaryResponse,
+)
+from app.schemas.contact import (
+    ContactCreate,
+    ContactResponse,
+    ContactStatusUpdate,
+)
 
 __all__ = [
     # Auth & User
@@ -111,4 +121,14 @@ __all__ = [
     # Library
     "LibraryItemResponse",
     "UserLibraryResponse",
+
+    # Analytics
+    "AnalyticsEventCreate",
+    "AnalyticsEventResponse",
+    "AnalyticsSummaryResponse",
+
+    # Contact
+    "ContactCreate",
+    "ContactResponse",
+    "ContactStatusUpdate",
 ]
