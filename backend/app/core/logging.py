@@ -5,16 +5,27 @@ import sys
 
 class SensitiveDataFilter(logging.Filter):
     """
-    Filter to sanitize sensitive patterns (passwords, JWT tokens, Bearer headers, API keys)
-    from log records to prevent credentials leaks in production logs.
+    Filter to sanitize sensitive patterns (passwords, JWT tokens, Bearer headers,
+    API keys, payment card numbers, CVV/PINs) from log records to prevent credentials
+    or cardholder data leaks in production application logs.
     """
-    BEARER_PATTERN = re.compile(r"(Bearer\s+)[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_.+/=]*", re.IGNORECASE)
-    KEY_PATTERN = re.compile(r"(['\"]?(?:password|access_token|secret_key|api_key|service_role_key)['\"]?\s*[:=]\s*['\"])[^'\"]+(['\"])", re.IGNORECASE)
+    BEARER_PATTERN = re.compile(
+        r"(Bearer\s+)[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_.+/=]*",
+        re.IGNORECASE,
+    )
+    JWT_PATTERN = re.compile(
+        r"\beyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_.-]*\b"
+    )
+    KEY_PATTERN = re.compile(
+        r"(['\"]?(?:password|access_token|refresh_token|secret_key|api_key|service_role_key|jwt_secret|card_number|card|cvv|cvc|pin|private_key)['\"]?\s*[:=]\s*['\"])[^'\"]+(['\"])",
+        re.IGNORECASE,
+    )
 
     def filter(self, record: logging.LogRecord) -> bool:
         if isinstance(record.msg, str):
             record.msg = self.BEARER_PATTERN.sub(r"\1[REDACTED]", record.msg)
             record.msg = self.KEY_PATTERN.sub(r"\1[REDACTED]\2", record.msg)
+            record.msg = self.JWT_PATTERN.sub("[REDACTED_JWT]", record.msg)
         return True
 
 
