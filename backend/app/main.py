@@ -1,10 +1,13 @@
+import uuid
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import settings
+from app.core.caching import ResponseCachingMiddleware
 from app.core.logging import logger
 from app.routers import (
     admin,
@@ -28,6 +31,81 @@ from app.routers import (
     stories,
 )
 
+OPENAPI_TAGS = [
+    {
+        "name": "Health & Status",
+        "description": "System health verification and API catalog discovery endpoints.",
+    },
+    {
+        "name": "Authentication",
+        "description": "User registration and credential authentication issuing verified JWT access tokens.",
+    },
+    {
+        "name": "User Profiles",
+        "description": "Authenticated user profile inspection (/api/me) and account state.",
+    },
+    {
+        "name": "Stories",
+        "description": "Public story exploration, folklore, epics, chapter hierarchy, and multilingual catalog.",
+    },
+    {
+        "name": "Categories",
+        "description": "Taxonomy classification for cultural and thematic story categorisation.",
+    },
+    {
+        "name": "Languages",
+        "description": "Localization metadata and vernacular language script catalog.",
+    },
+    {
+        "name": "Audio & Streaming",
+        "description": "Free preview audio descriptors and entitlement-protected audio playback endpoints.",
+    },
+    {
+        "name": "Listening Progress",
+        "description": "User playback timestamp synchronization, resume points, and 90% auto-completion tracking.",
+    },
+    {
+        "name": "User Library",
+        "description": "Personal story access entitlements originating from verified purchases or grants.",
+    },
+    {
+        "name": "Events",
+        "description": "Public storytelling performances, workshops, circles, and cultural festival listings.",
+    },
+    {
+        "name": "Journal",
+        "description": "Editorial essays, cultural commentaries, storyteller interviews, and literary publications.",
+    },
+    {
+        "name": "Contact",
+        "description": "Public enquiries, school residencies, and performance booking requests.",
+    },
+    {
+        "name": "Products",
+        "description": "Commerce product catalog and audiobook pricing.",
+    },
+    {
+        "name": "Cart",
+        "description": "Shopping cart management and cart item operations.",
+    },
+    {
+        "name": "Orders",
+        "description": "Order creation, snapshotting, and checkout workflows.",
+    },
+    {
+        "name": "Payments",
+        "description": "Three-stage payment completion pipeline and webhook processing.",
+    },
+    {
+        "name": "Admin & CMS",
+        "description": "Role-protected editorial CMS for Stories, Chapters, Taxonomies, Events, Journal, Media, and Enquiries.",
+    },
+    {
+        "name": "Analytics & Telemetry",
+        "description": "Privacy-safe user telemetry ingestion and aggregated administrative metric reporting.",
+    },
+]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,6 +124,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
+    openapi_tags=OPENAPI_TAGS,
 )
 
 # Configure CORS for Next.js frontend (e.g. http://localhost:3000)
@@ -57,11 +136,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# HTTP Response Caching & ETag Validation for Safe Public Content
+app.add_middleware(ResponseCachingMiddleware)
+
+
+# Request Context & Correlation ID Middleware
+@app.middleware("http")
+async def request_context_middleware(request: Request, call_next):
+    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
 
 # Global Exception Handlers for Secure and Consistent Error Responses
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    headers = getattr(exc, "headers", None)
+    headers = dict(exc.headers) if exc.headers else {}
+    req_id = getattr(request.state, "request_id", None)
+    if req_id and "X-Request-ID" not in headers:
+        headers["X-Request-ID"] = req_id
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -79,6 +174,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     for err in exc.errors():
         field = " -> ".join(str(loc) for loc in err.get("loc", []))
         errors.append({"field": field, "message": err.get("msg")})
+    req_id = getattr(request.state, "request_id", None)
+    headers = {"X-Request-ID": req_id} if req_id else None
     return JSONResponse(
         status_code=422,
         content={
@@ -86,19 +183,37 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "errors": errors,
             "status_code": 422,
         },
+        headers=headers,
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def database_exception_handler(request: Request, exc: SQLAlchemyError):
+    req_id = getattr(request.state, "request_id", "unknown")
+    logger.error(f"[Req {req_id}] Database operation error at {request.method} {request.url.path}: {str(exc)}")
+    headers = {"X-Request-ID": req_id} if req_id != "unknown" else None
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": "Database error occurred. Please try again later.",
+            "status_code": 500,
+        },
+        headers=headers,
     )
 
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    # Log the internal error safely
-    logger.error(f"Unhandled server error at {request.method} {request.url.path}: {str(exc)}")
+    req_id = getattr(request.state, "request_id", "unknown")
+    logger.error(f"[Req {req_id}] Unhandled server error at {request.method} {request.url.path}: {str(exc)}")
+    headers = {"X-Request-ID": req_id} if req_id != "unknown" else None
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "detail": "Internal server error. Please try again later.",
             "status_code": 500,
         },
+        headers=headers,
     )
 
 

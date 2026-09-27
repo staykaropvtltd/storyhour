@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.core.rate_limit import contact_rate_limiter
 from app.database import get_db
 from app.schemas.contact import ContactCreate, ContactResponse
 from app.services.contact_service import contact_service
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/contact", tags=["Contact"])
     response_model=ContactResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Submit a contact or booking enquiry",
+    dependencies=[Depends(contact_rate_limiter)],
 )
 def submit_contact_enquiry(
     payload: ContactCreate,

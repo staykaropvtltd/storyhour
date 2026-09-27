@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.core.rate_limit import analytics_rate_limiter
 from app.database import get_db
 from app.dependencies import get_optional_user
 from app.schemas.analytics import AnalyticsEventCreate, AnalyticsEventResponse
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/analytics", tags=["Analytics & Telemetry"])
     response_model=AnalyticsEventResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Ingest telemetry event",
+    dependencies=[Depends(analytics_rate_limiter)],
 )
 def ingest_analytics_event(
     payload: AnalyticsEventCreate,

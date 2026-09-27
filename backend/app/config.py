@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str = ""
     SUPABASE_JWT_ALGORITHM: str = "HS256"
 
+    # Phase 6 Rate Limiting
+    RATE_LIMIT_ENABLED: bool = True
+    CONTACT_RATE_LIMIT_PER_MINUTE: int = 30
+    AUTH_RATE_LIMIT_PER_MINUTE: int = 30
+    ANALYTICS_RATE_LIMIT_PER_MINUTE: int = 120
+
+    # Phase 6 HTTP Caching
+    HTTP_CACHE_MAX_AGE_SECONDS: int = 60
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
