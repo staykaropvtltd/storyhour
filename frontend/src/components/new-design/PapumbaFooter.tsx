@@ -270,11 +270,7 @@ export default function PapumbaFooter() {
                       Privacy Policy
                     </a>
                   </li>
-                  <li>
-                    <a href="#child-safety" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
-                      Child Safety &amp; COPPA
-                    </a>
-                  </li>
+                  
                 </ul>
               </div>
             </div>
