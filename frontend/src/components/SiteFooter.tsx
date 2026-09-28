@@ -291,9 +291,9 @@ export default function SiteFooter() {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    {/* <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Child Safety &amp; COPPA
-                    </Link>
+                    </Link> */}
                   </li>
                 </ul>
               </div>
