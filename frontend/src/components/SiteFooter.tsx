@@ -290,11 +290,7 @@ export default function SiteFooter() {
                       Privacy Policy
                     </Link>
                   </li>
-                  <li>
-                    {/* <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
-                      Child Safety &amp; COPPA
-                    </Link> */}
-                  </li>
+                  
                 </ul>
               </div>
             </div>
