@@ -214,11 +214,6 @@ export default function SiteFooter() {
                       Master Storytellers
                     </Link>
                   </li>
-                  <li>
-                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
-                      School Workshops
-                    </Link>
-                  </li>
                 </ul>
               </div>
 
@@ -245,11 +240,6 @@ export default function SiteFooter() {
                   <li>
                     <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Parent FAQs
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/stories" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
-                      Free Sampler
                     </Link>
                   </li>
                   <li>
@@ -290,7 +280,6 @@ export default function SiteFooter() {
                       Privacy Policy
                     </Link>
                   </li>
-                  
                 </ul>
               </div>
             </div>

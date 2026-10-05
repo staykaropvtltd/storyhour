@@ -183,7 +183,7 @@ export default function CheckoutPage() {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleCompletePayment} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <form onSubmit={handleCompletePayment} action="javascript:void(0);" noValidate className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Customer Details, Billing Details, Payment (8 cols on lg) */}
             <div className="lg:col-span-8 space-y-6">
               {/* Error banner if any */}
@@ -209,11 +209,13 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
+                    <label htmlFor="fullName" className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
                       Full Name <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <input
+                        id="fullName"
+                        name="fullName"
                         type="text"
                         required
                         value={fullName}
@@ -226,11 +228,13 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
+                    <label htmlFor="email" className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
                       Email Address <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <input
+                        id="email"
+                        name="email"
                         type="email"
                         required
                         value={email}
@@ -472,28 +476,33 @@ export default function CheckoutPage() {
 
                 {/* Mini Item List */}
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                  {cartItems.map((item: CartItem) => (
-                    <div key={item.id} className="flex items-center gap-3 py-1">
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-[#FAF8F3] border border-black/10 shadow-xs">
-                        <Image
-                          src={item.coverImage}
-                          alt={item.title}
-                          fill
-                          className="object-cover"
-                          sizes="48px"
-                        />
+                  {cartItems.map((item: CartItem) => {
+                    const itemImage = item.coverImage || item.product?.coverImage || "/images/covers/cover-ramayana.png";
+                    const itemTitle = item.title || item.product?.title || "StoryHour Edition";
+                    const itemPrice = typeof item.price === "number" ? item.price : (item.product?.price ?? 18.5);
+                    return (
+                      <div key={item.id} className="flex items-center gap-3 py-1">
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-[#FAF8F3] border border-black/10 shadow-xs">
+                          <Image
+                            src={itemImage}
+                            alt={itemTitle}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-[#0f0f0f] truncate">{itemTitle}</p>
+                          <p className="text-[10px] text-[#7A756D]">
+                            Qty: {item.quantity} · {item.format}
+                          </p>
+                        </div>
+                        <span className="font-mono text-xs font-bold text-[#0f0f0f] flex-shrink-0">
+                          ${(itemPrice * item.quantity).toFixed(2)}
+                        </span>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-[#0f0f0f] truncate">{item.title}</p>
-                        <p className="text-[10px] text-[#7A756D]">
-                          Qty: {item.quantity} · {item.format}
-                        </p>
-                      </div>
-                      <span className="font-mono text-xs font-bold text-[#0f0f0f] flex-shrink-0">
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="pt-3 border-t border-black/5 space-y-2.5 font-sans text-xs">

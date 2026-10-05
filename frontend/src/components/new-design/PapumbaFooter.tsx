@@ -180,24 +180,19 @@ export default function PapumbaFooter() {
               <div>
                 <ul className="space-y-2 sm:space-y-2.5 text-sm sm:text-[15px] font-semibold text-white/95">
                   <li>
-                    <a href="#about" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/storytellers" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       About Us
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#audiobooks" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/stories" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Explore Stories
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#storytellers" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/storytellers" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Master Storytellers
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#workshops" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
-                      School Workshops
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </div>
@@ -218,24 +213,19 @@ export default function PapumbaFooter() {
 
                 <ul className="space-y-2 sm:space-y-2.5 text-sm sm:text-[15px] font-semibold text-white/95">
                   <li>
-                    <a href="#help" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Help Center
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#faqs" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Parent FAQs
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#sampler" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
-                      Free Sampler
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Contact Support
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </div>
@@ -256,21 +246,20 @@ export default function PapumbaFooter() {
 
                 <ul className="space-y-2 sm:space-y-2.5 text-sm sm:text-[15px] font-semibold text-white/95">
                   <li>
-                    <a href="#puppet-theatre" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/trailers" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Puppet Theatre
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#terms" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Terms of Use
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#privacy" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Privacy Policy
-                    </a>
+                    </Link>
                   </li>
-                  
                 </ul>
               </div>
             </div>

@@ -134,7 +134,45 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
     try {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
       if (storedCart) {
-        setCartItems(JSON.parse(storedCart));
+        const parsed = JSON.parse(storedCart);
+        if (Array.isArray(parsed)) {
+          const normalized: CartItem[] = parsed.map((item: any) => {
+            const prod = item.product || {};
+            const id = item.id || prod.id || "edition-1";
+            const title = item.title || prod.title || "StoryHour Edition";
+            const coverImage = item.coverImage || prod.coverImage || "/images/covers/cover-ramayana.png";
+            const price = typeof item.price === "number" ? item.price : (typeof prod.price === "number" ? prod.price : 18.5);
+            const format = item.format || prod.format || "Digital Collector Edition";
+            const language = item.language || prod.language || "English";
+            const quantity = typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1;
+            const type = item.type || (id.startsWith("ab-") ? "audiobook" : "book");
+            const authorOrNarrator = item.authorOrNarrator || "StoryHour Ensemble";
+            return {
+              id,
+              title,
+              nativeTitle: item.nativeTitle,
+              subtitle: item.subtitle,
+              authorOrNarrator,
+              coverImage,
+              price,
+              currency: item.currency || prod.currency || "£",
+              format,
+              language,
+              type,
+              quantity,
+              product: {
+                id,
+                title,
+                coverImage,
+                price,
+                currency: item.currency || prod.currency || "£",
+                format,
+                language,
+              },
+            };
+          });
+          setCartItems(normalized);
+        }
       }
 
       const storedUnlocked = localStorage.getItem(UNLOCKED_STORAGE_KEY);
@@ -144,7 +182,23 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
 
       const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
       if (storedOrders) {
-        setOrders(JSON.parse(storedOrders));
+        const parsedOrders = JSON.parse(storedOrders);
+        if (Array.isArray(parsedOrders)) {
+          const normalizedOrders: Order[] = parsedOrders.map((o: any) => ({
+            ...o,
+            total: typeof o.total === "number" ? o.total : (o.subtotal || 18.5),
+            subtotal: typeof o.subtotal === "number" ? o.subtotal : (o.total || 18.5),
+            tax: typeof o.tax === "number" ? o.tax : 0,
+            items: Array.isArray(o.items)
+              ? o.items.map((it: any) => ({
+                  ...it,
+                  coverImage: it.coverImage || "/images/covers/cover-ramayana.png",
+                  title: it.title || "StoryHour Edition",
+                }))
+              : [],
+          }));
+          setOrders(normalizedOrders);
+        }
       }
 
       const storedSaved = localStorage.getItem(SAVED_STORIES_KEY);

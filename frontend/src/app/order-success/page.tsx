@@ -140,8 +140,8 @@ function OrderSuccessContent() {
                     <div className="flex items-center gap-3.5 min-w-0 flex-1">
                       <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white border border-black/10 shadow-sm">
                         <Image
-                          src={item.coverImage}
-                          alt={item.title}
+                          src={item.coverImage || "/images/covers/cover-ramayana.png"}
+                          alt={item.title || "StoryHour Edition"}
                           fill
                           className="object-cover"
                           sizes="80px"
@@ -162,8 +162,17 @@ function OrderSuccessContent() {
                       onClick={() => handleOpenBook(item.id)}
                       className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#B01E14] hover:from-[#EA3A2D] hover:via-[#D6281D] hover:to-[#BC2218] text-white font-sans text-xs sm:text-sm font-bold shadow-[0_4px_14px_rgba(201,40,29,0.3)] hover:shadow-[0_6px_18px_rgba(201,40,29,0.45)] transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
                     >
-                      <BookOpen className="w-4 h-4" />
-                      <span>Read Book</span>
+                      {item.type === "audiobook" || item.id.startsWith("ab-") ? (
+                        <>
+                          <Headphones className="w-4 h-4" />
+                          <span>Listen</span>
+                        </>
+                      ) : (
+                        <>
+                          <BookOpen className="w-4 h-4" />
+                          <span>Read Book</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 ))}
@@ -213,7 +222,7 @@ function OrderSuccessContent() {
                     Total Amount Paid
                   </span>
                   <p className="font-serif text-2xl font-black text-[#0f0f0f]">
-                    ${currentOrder.total.toFixed(2)}
+                    ${(currentOrder.total ?? currentOrder.subtotal ?? 0).toFixed(2)}
                   </p>
                   <p className="text-[#7A756D]">USD · One-Time Lifetime License</p>
                 </div>

@@ -77,10 +77,24 @@ export default function ContactPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
-  const handleCopyEmail = () => {
-    navigator.clipboard.writeText("info@storyhourglobal.com");
-    setCopiedEmail(true);
-    setTimeout(() => setCopiedEmail(false), 2000);
+  const handleCopyEmail = async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText("info@storyhourglobal.com");
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = "info@storyhourglobal.com";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2000);
+    } catch {
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2000);
+    }
   };
 
   const validateForm = () => {
@@ -358,7 +372,7 @@ export default function ContactPage() {
                   </div>
                 ) : (
                   /* Active Form */
-                  <form onSubmit={handleSubmit} noValidate className="h-full flex flex-col justify-between">
+                  <form onSubmit={handleSubmit} action="javascript:void(0);" noValidate className="h-full flex flex-col justify-between">
                     <div>
                       <div className="mb-8">
                         <h2 className="font-serif text-2xl sm:text-3xl font-normal text-[#0F0F0F] tracking-tight mb-2">

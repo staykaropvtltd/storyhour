@@ -2,10 +2,12 @@
 
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { X, Trash2, ArrowRight } from "lucide-react";
 import { useLibraryCart } from "@/context/LibraryCartContext";
 
 export default function CartDrawer() {
+  const router = useRouter();
   const {
     isCartDrawerOpen,
     setIsCartDrawerOpen,
@@ -80,6 +82,10 @@ export default function CartDrawer() {
               <span>£{cartTotal.toFixed(2)}</span>
             </div>
             <button
+              onClick={() => {
+                setIsCartDrawerOpen(false);
+                router.push("/checkout");
+              }}
               disabled={cartItems.length === 0}
               className="w-full py-4 rounded-full bg-[#0E1638] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] active:scale-[0.98] text-white font-sans font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(14,22,56,0.25)] hover:shadow-[0_8px_24px_rgba(201,40,29,0.35)] cursor-pointer disabled:opacity-50"
             >

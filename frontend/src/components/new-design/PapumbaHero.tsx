@@ -14,8 +14,11 @@ export default function PapumbaHero() {
 
   const handleStartListening = () => {
     if (STORIES && STORIES.length > 0) {
-      playStory(STORIES[0]);
-      if (!isPlaying) togglePlay();
+      if (isPlaying) {
+        togglePlay();
+      } else {
+        playStory(STORIES[0]);
+      }
     }
   };
 
