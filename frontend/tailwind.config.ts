@@ -52,8 +52,31 @@ const config: Config = {
         sans: ["var(--font-plus-jakarta)", "Plus Jakarta Sans", "system-ui", "sans-serif"],
         display: ["var(--font-plus-jakarta)", "Plus Jakarta Sans", "system-ui", "sans-serif"],
         serif: ["var(--font-fraunces)", "Fraunces", "Georgia", "serif"],
+        fraunces: ["var(--font-fraunces)", "Fraunces", "Georgia", "serif"],
         inter: ["var(--font-inter)", "Inter", "-apple-system", "sans-serif"],
         mono: ["var(--font-geist-mono)", "Geist Mono", "monospace"],
+      },
+      keyframes: {
+        spinSlow: {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
+        fadeIn: {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        zoomIn95: {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        slideInTop4: {
+          from: { opacity: "0", transform: "translateY(-16px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "spin-slow": "spinSlow 8s linear infinite",
+        "fade-in": "fadeIn 0.3s ease-out forwards",
       },
       boxShadow: {
         subtle: "0 2px 10px rgba(5, 5, 5, 0.04)",

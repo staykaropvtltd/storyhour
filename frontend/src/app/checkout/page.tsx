@@ -45,8 +45,20 @@ export default function CheckoutPage() {
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvc, setCardCvc] = useState("");
 
+  // Consent & Waiver states (C-07)
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeWaiver, setAgreeWaiver] = useState(false);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const subtotal = cartTotal;
   const tax = 0.0;
@@ -55,13 +67,60 @@ export default function CheckoutPage() {
   const handleCompletePayment = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!fullName.trim() || !email.trim()) {
-      setErrorMessage("Please enter your name and email address to receive your digital book access.");
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setErrorMessage("Please enter your full name.");
       return;
     }
 
-    if (!email.includes("@") || !email.includes(".")) {
+    // RFC-compliant email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
       setErrorMessage("Please provide a valid email address.");
+      return;
+    }
+
+    // Card number validation (15-16 digits, rejects invalid text; fixes FT-11)
+    const cleanCardNum = cardNumber.replace(/[\s-]/g, "");
+    if (!/^\d{15,16}$/.test(cleanCardNum)) {
+      setErrorMessage("Please enter a valid 15 or 16-digit card number.");
+      return;
+    }
+
+    if (!cardName.trim()) {
+      setErrorMessage("Please enter the name appearing on your payment card.");
+      return;
+    }
+
+    // Expiry validation (MM/YY future date)
+    const expiryMatch = cardExpiry.trim().match(/^(0[1-9]|1[0-2])\/(\d{2})$/);
+    if (!expiryMatch) {
+      setErrorMessage("Please enter a valid expiration date in MM/YY format.");
+      return;
+    }
+    const expMonth = parseInt(expiryMatch[1], 10);
+    const expYear = 2000 + parseInt(expiryMatch[2], 10);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+      setErrorMessage("The card expiration date cannot be in the past.");
+      return;
+    }
+
+    // CVC validation (3-4 digits)
+    if (!/^\d{3,4}$/.test(cardCvc.trim())) {
+      setErrorMessage("Please enter a valid 3 or 4-digit security code (CVC).");
+      return;
+    }
+
+    // Terms of service and 14-day digital waiver validation (C-07)
+    if (!agreeTerms) {
+      setErrorMessage("Please agree to the Terms of Service and Privacy Policy to proceed.");
+      return;
+    }
+
+    if (!agreeWaiver) {
+      setErrorMessage("Please acknowledge the 14-day statutory right of withdrawal waiver for instant digital access.");
       return;
     }
 
@@ -80,20 +139,20 @@ export default function CheckoutPage() {
     }));
 
     // Simulate safe transaction processing (1.4s)
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       try {
         const order = createOrder({
           customer: {
             fullName: fullName.trim(),
             email: email.trim(),
-            phone: phone.trim() || "Not provided",
+            phone: phone.trim() || "N/A",
           },
           billing: {
-            address: address.trim() || "Digital Delivery Address",
-            city: city.trim() || "London",
-            state: stateProvince.trim() || "Greater London",
+            address: address.trim() || "Digital Delivery",
+            city: city.trim() || "N/A",
+            state: stateProvince.trim() || "N/A",
             country,
-            postalCode: postalCode.trim() || "W8 4PT",
+            postalCode: postalCode.trim() || "N/A",
           },
           items: orderItems,
           subtotal,
@@ -188,7 +247,7 @@ export default function CheckoutPage() {
             <div className="lg:col-span-8 space-y-6">
               {/* Error banner if any */}
               {errorMessage && (
-                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center gap-3">
+                <div role="alert" aria-live="assertive" className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center gap-3">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600" />
                   <span>{errorMessage}</span>
                 </div>
@@ -218,6 +277,7 @@ export default function CheckoutPage() {
                         name="fullName"
                         type="text"
                         required
+                        autoComplete="name"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="e.g. Aarav & Priya Sharma"
@@ -237,6 +297,7 @@ export default function CheckoutPage() {
                         name="email"
                         type="email"
                         required
+                        autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
@@ -250,12 +311,15 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
+                    <label htmlFor="phone" className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
                       Phone Number (Optional)
                     </label>
                     <div className="relative">
                       <input
+                        id="phone"
+                        name="phone"
                         type="tel"
+                        autoComplete="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+44 7700 900077"
@@ -283,12 +347,15 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
+                    <label htmlFor="address" className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
                       Street Address
                     </label>
                     <div className="relative">
                       <input
+                        id="address"
+                        name="address"
                         type="text"
+                        autoComplete="street-address"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         placeholder="House / Flat / Street address"
@@ -299,11 +366,14 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
+                    <label htmlFor="city" className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
                       City
                     </label>
                     <input
+                      id="city"
+                      name="city"
                       type="text"
+                      autoComplete="address-level2"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="e.g. London"
@@ -312,11 +382,14 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
+                    <label htmlFor="stateProvince" className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
                       State / Province
                     </label>
                     <input
+                      id="stateProvince"
+                      name="stateProvince"
                       type="text"
+                      autoComplete="address-level1"
                       value={stateProvince}
                       onChange={(e) => setStateProvince(e.target.value)}
                       placeholder="e.g. Greater London"
@@ -325,11 +398,14 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
+                    <label htmlFor="country" className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
                       Country
                     </label>
                     <div className="relative">
                       <select
+                        id="country"
+                        name="country"
+                        autoComplete="country-name"
                         value={country}
                         onChange={(e) => setCountry(e.target.value)}
                         className="w-full px-4 py-3 rounded-xl bg-[#FAF8F3] border border-black/10 text-sm font-sans text-[#0f0f0f] focus:outline-none focus:ring-2 focus:ring-[#C9281D] focus:bg-white transition-colors cursor-pointer appearance-none"
@@ -348,14 +424,17 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
+                    <label htmlFor="postalCode" className="block text-xs font-bold text-[#0f0f0f] uppercase tracking-wider mb-1.5">
                       Postal / PIN Code
                     </label>
                     <input
+                      id="postalCode"
+                      name="postalCode"
                       type="text"
+                      autoComplete="postal-code"
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
-                      placeholder="e.g. W8 4PT"
+                      placeholder="e.g. SW1A 1AA"
                       className="w-full px-4 py-3 rounded-xl bg-[#FAF8F3] border border-black/10 text-sm font-sans text-[#0f0f0f] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9281D] focus:bg-white transition-colors"
                     />
                   </div>
@@ -412,11 +491,14 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-[#5A5A5A] uppercase tracking-wider mb-1">
+                    <label htmlFor="cardName" className="block text-[11px] font-bold text-[#5A5A5A] uppercase tracking-wider mb-1">
                       Name on Card
                     </label>
                     <input
+                      id="cardName"
+                      name="cardName"
                       type="text"
+                      autoComplete="cc-name"
                       value={cardName}
                       onChange={(e) => setCardName(e.target.value)}
                       placeholder="e.g. Aarav Sharma"
@@ -425,11 +507,14 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-[#5A5A5A] uppercase tracking-wider mb-1">
+                    <label htmlFor="cardNumber" className="block text-[11px] font-bold text-[#5A5A5A] uppercase tracking-wider mb-1">
                       Card Number
                     </label>
                     <input
+                      id="cardNumber"
+                      name="cardNumber"
                       type="text"
+                      autoComplete="cc-number"
                       value={cardNumber}
                       onChange={(e) => setCardNumber(e.target.value)}
                       placeholder="4242 •••• •••• 4242"
@@ -439,11 +524,14 @@ export default function CheckoutPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-[#5A5A5A] uppercase tracking-wider mb-1">
+                      <label htmlFor="cardExpiry" className="block text-[11px] font-bold text-[#5A5A5A] uppercase tracking-wider mb-1">
                         Expires (MM/YY)
                       </label>
                       <input
+                        id="cardExpiry"
+                        name="cardExpiry"
                         type="text"
+                        autoComplete="cc-exp"
                         value={cardExpiry}
                         onChange={(e) => setCardExpiry(e.target.value)}
                         placeholder="12/28"
@@ -451,17 +539,72 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-[#5A5A5A] uppercase tracking-wider mb-1">
+                      <label htmlFor="cardCvc" className="block text-[11px] font-bold text-[#5A5A5A] uppercase tracking-wider mb-1">
                         Security Code (CVC)
                       </label>
                       <input
+                        id="cardCvc"
+                        name="cardCvc"
                         type="text"
+                        autoComplete="cc-csc"
                         value={cardCvc}
                         onChange={(e) => setCardCvc(e.target.value)}
                         placeholder="789"
                         className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-black/10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#C9281D]/30 focus:border-[#C9281D]"
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Terms & Digital Content Consent Card (C-07) */}
+              <div className="bg-white rounded-3xl border border-black/5 shadow-[0_8px_30px_rgba(0,0,0,0.05)] p-6 sm:p-8 space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-black/5">
+                  <div className="w-8 h-8 rounded-full bg-[#FDF2F0] text-[#C9281D] border border-[#C9281D]/20 flex items-center justify-center font-bold text-sm shadow-xs">
+                    4
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold text-[#0f0f0f]">
+                    Terms &amp; Digital Content Consent
+                  </h2>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <label htmlFor="agreeTerms" className="flex items-start gap-3 cursor-pointer text-xs leading-relaxed text-[#3a3a3a]">
+                    <input
+                      id="agreeTerms"
+                      type="checkbox"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-[#C9281D] focus:ring-[#C9281D] border-gray-300 cursor-pointer"
+                    />
+                    <span>
+                      I agree to the{" "}
+                      <Link href="/terms" target="_blank" className="text-[#C9281D] underline font-semibold">
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link href="/privacy" target="_blank" className="text-[#C9281D] underline font-semibold">
+                        Privacy Policy
+                      </Link>
+                      . <span className="text-rose-500">*</span>
+                    </span>
+                  </label>
+
+                  <label htmlFor="agreeWaiver" className="flex items-start gap-3 cursor-pointer text-xs leading-relaxed text-[#3a3a3a]">
+                    <input
+                      id="agreeWaiver"
+                      type="checkbox"
+                      checked={agreeWaiver}
+                      onChange={(e) => setAgreeWaiver(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-[#C9281D] focus:ring-[#C9281D] border-gray-300 cursor-pointer"
+                    />
+                    <span>
+                      I consent to immediate access to this digital content and acknowledge that by starting access, I expressly waive my statutory 14-day right of withdrawal. <span className="text-rose-500">*</span>
+                    </span>
+                  </label>
+
+                  <div className="mt-2 p-3 rounded-xl bg-[#FAF8F3] border border-black/5 text-[11px] text-[#7A756D] leading-relaxed">
+                    <strong>Parental &amp; Age Guidance:</strong> Digital purchases must be completed by an adult (18+) or under parental/guardian supervision.
                   </div>
                 </div>
               </div>

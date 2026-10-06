@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ShoppingBag } from "lucide-react";
+import { Menu, X, ShoppingBag, Search } from "lucide-react";
 import { useLibraryCart } from "@/context/LibraryCartContext";
 
 interface SiteHeaderProps {
@@ -17,7 +17,7 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
   const isHomePage = pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { cartCount } = useLibraryCart();
+  const { cartCount, setIsSearchOpen, setIsCartDrawerOpen } = useLibraryCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +27,17 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Escape key closes mobile menu
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
 
   // Determine active item based on current pathname or explicit prop
   let activeLink = activeLinkProp;
@@ -120,12 +131,24 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
             })}
           </nav>
 
-          {/* 3. Right: Cart Button & High-Contrast Pill CTA Button */}
+          {/* 3. Right: Search Button, Cart Button & High-Contrast Pill CTA Button */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Cart Button */}
-            <Link
-              href="/cart"
-              className="relative inline-flex items-center justify-center w-11 h-11 rounded-full bg-white hover:bg-gray-50 border border-black/10 text-[#0f0f0f] hover:text-[#C9281D] transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#C9281D]"
+            {/* Search Button (fixes F-07) */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="relative inline-flex items-center justify-center w-11 h-11 rounded-full bg-white hover:bg-gray-50 border border-black/10 text-[#0f0f0f] hover:text-[#C9281D] transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#C9281D] cursor-pointer"
+              aria-label="Search stories and audiobooks"
+              title="Search (Press / or Ctrl+K)"
+            >
+              <Search className="w-5 h-5 transition-transform duration-200" />
+            </button>
+
+            {/* Cart Button (opens CartDrawer, fixes C-04 / FT-22) */}
+            <button
+              type="button"
+              onClick={() => setIsCartDrawerOpen(true)}
+              className="relative inline-flex items-center justify-center w-11 h-11 rounded-full bg-white hover:bg-gray-50 border border-black/10 text-[#0f0f0f] hover:text-[#C9281D] transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#C9281D] cursor-pointer"
               aria-label={`View Cart (${cartCount} items)`}
             >
               <ShoppingBag className="w-5 h-5 transition-transform duration-200" />
@@ -134,7 +157,7 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             <Link
               href={ctaHref}
@@ -144,11 +167,21 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
             </Link>
           </div>
 
-          {/* 4. Mobile Menu Trigger & Mobile Cart */}
+          {/* 4. Mobile Menu Trigger & Mobile Cart & Mobile Search */}
           <div className="flex md:hidden items-center gap-2">
-            <Link
-              href="/cart"
-              className="relative w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none"
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="relative w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none cursor-pointer"
+              aria-label="Search stories"
+            >
+              <Search className="w-4.5 h-4.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCartDrawerOpen(true)}
+              className="relative w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none cursor-pointer"
               aria-label={`View Cart (${cartCount} items)`}
             >
               <ShoppingBag className="w-4.5 h-4.5" />
@@ -157,11 +190,15 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
+            {/* Mobile menu button with aria-expanded (fixes FT-24) */}
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
+              className="w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none cursor-pointer"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -171,7 +208,10 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
 
         {/* 5. Mobile Slide-Down Drawer Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-x-0 top-[64px] sm:top-[68px] bg-white border-b border-gray-200 shadow-xl px-6 py-6 transition-all duration-300 animate-in slide-in-from-top-4 z-50">
+          <div
+            id="mobile-navigation"
+            className="md:hidden fixed inset-x-0 top-[64px] sm:top-[68px] bg-white border-b border-gray-200 shadow-xl px-6 py-6 transition-all duration-300 animate-in slide-in-from-top-4 z-50"
+          >
             <div className="flex flex-col gap-3">
               {navLinks.map((link) => (
                 <Link
@@ -185,10 +225,13 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/cart"
-                onClick={() => setMobileMenuOpen(false)}
-                className="py-2 text-lg font-bold border-b border-gray-100 flex items-center justify-between text-[#0f0f0f]"
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsCartDrawerOpen(true);
+                }}
+                className="py-2 text-lg font-bold border-b border-gray-100 flex items-center justify-between text-[#0f0f0f] text-left w-full"
               >
                 <span className="flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-[#C9281D]" />
@@ -197,7 +240,7 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                 <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] text-white text-xs font-black shadow-[0_2px_6px_rgba(201,40,29,0.35)]">
                   {cartCount}
                 </span>
-              </Link>
+              </button>
               <div className="pt-3">
                 <Link
                   href={ctaHref}

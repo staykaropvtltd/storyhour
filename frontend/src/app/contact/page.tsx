@@ -76,14 +76,15 @@ export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
 
   const handleCopyEmail = async () => {
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText("info@storyhourglobal.com");
+        await navigator.clipboard.writeText("contact@storyhour.co.uk");
       } else {
         const textArea = document.createElement("textarea");
-        textArea.value = "info@storyhourglobal.com";
+        textArea.value = "contact@storyhour.co.uk";
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand("copy");
@@ -115,6 +116,7 @@ export default function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (honeypot) return;
     if (!validateForm()) return;
 
     setIsSubmitting(true);
@@ -204,11 +206,11 @@ export default function ContactPage() {
                 <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] block mb-3 font-semibold">
                   CONTACT
                 </span>
-                <h1 className="font-serif text-4xl sm:text-5xl lg:text-[68px] font-normal text-[#0F0F0F] tracking-[-0.03em] leading-[0.98] text-balance">
+                <h2 className="font-serif text-4xl sm:text-5xl lg:text-[68px] font-normal text-[#0F0F0F] tracking-[-0.03em] leading-[0.98] text-balance">
                   Let&apos;s keep the stories going.
-                </h1>
+                </h2>
               </div>
-              <p className="font-sans text-[15px] sm:text-[16px] text-[#5A5A5A] leading-[1.65] max-w-[480px]">
+              <p className="font-sans text-[15px] sm:text-[16px] text-[#4F4F4F] leading-[1.65] max-w-[480px]">
                 Bring Indian mythology, live storytelling, and culture into your community or school. We are here to connect and collaborate.
               </p>
             </div>
@@ -223,7 +225,7 @@ export default function ContactPage() {
                 <div className="absolute bottom-0 left-0 w-56 h-56 bg-[#C9281D]/10 rounded-full blur-[70px] pointer-events-none" />
 
                 <div className="relative z-10">
-                  <span className="font-mono text-[11px] uppercase tracking-widest text-[#F7F4EE]/50 block mb-2 font-semibold">
+                  <span className="font-mono text-[11px] uppercase tracking-widest text-[#F7F4EE]/80 block mb-2 font-semibold">
                     DIRECT INQUIRIES
                   </span>
                   
@@ -231,21 +233,21 @@ export default function ContactPage() {
                     StoryHour Studio
                   </h2>
 
-                  <p className="font-sans text-[14px] text-white/70 leading-relaxed mb-8">
+                  <p className="font-sans text-[14px] text-white/80 leading-relaxed mb-8">
                     Contact our creative team for audiobook enquiries, school residencies, theatre tours, and cultural partnerships.
                   </p>
 
                   {/* Official Email */}
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-8 backdrop-blur-sm">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="font-mono text-[10px] text-[#F7F4EE]/50 uppercase tracking-wider font-medium">
+                      <span className="font-mono text-[10px] text-[#F7F4EE]/80 uppercase tracking-wider font-medium">
                         Official Email
                       </span>
                       <button
                         onClick={handleCopyEmail}
                         type="button"
                         aria-label="Copy official email"
-                        className="inline-flex items-center gap-1 font-inter text-[11px] text-[#F7F4EE]/70 hover:text-white transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 font-inter text-[11px] text-[#F7F4EE]/85 hover:text-white transition-colors cursor-pointer"
                       >
                         {copiedEmail ? (
                           <>
@@ -261,10 +263,10 @@ export default function ContactPage() {
                       </button>
                     </div>
                     <a
-                      href="mailto:info@storyhourglobal.com"
+                      href="mailto:contact@storyhour.co.uk"
                       className="font-inter text-[17px] sm:text-[19px] font-semibold text-white hover:text-[#f3a8a3] transition-colors break-all"
                     >
-                      info@storyhourglobal.com
+                      contact@storyhour.co.uk
                     </a>
                   </div>
 
@@ -318,7 +320,7 @@ export default function ContactPage() {
                 <div className="relative z-10 pt-6 border-t border-white/10">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="font-mono text-[10px] text-[#F7F4EE]/45 uppercase tracking-wider block mb-1">
+                      <span className="font-mono text-[10px] text-[#F7F4EE]/80 uppercase tracking-wider block mb-1">
                         Locations
                       </span>
                       <p className="font-inter text-[13px] text-white font-medium">
@@ -330,10 +332,10 @@ export default function ContactPage() {
                     </div>
 
                     <div>
-                      <span className="font-mono text-[10px] text-[#F7F4EE]/45 uppercase tracking-wider block mb-1">
+                      <span className="font-mono text-[10px] text-[#F7F4EE]/80 uppercase tracking-wider block mb-1">
                         Verified Channels
                       </span>
-                      <div className="space-y-0.5 font-inter text-[13px] text-[#F7F4EE]/75">
+                      <div className="space-y-0.5 font-inter text-[13px] text-[#F7F4EE]/90">
                         <p>IG: @storyhourglobal</p>
                         <p>YT: StoryHour UK</p>
                       </div>
@@ -532,8 +534,23 @@ export default function ContactPage() {
                         )}
                       </button>
 
-                      <p className="font-sans text-[12px] text-[#5A5A5A] text-center mt-3">
-                        By submitting this form, you agree to hear back from our team regarding your enquiry.
+                      {/* Anti-spam honeypot */}
+                      <div className="hidden" aria-hidden="true">
+                        <input
+                          type="text"
+                          name="organization_website"
+                          tabIndex={-1}
+                          autoComplete="off"
+                          value={honeypot}
+                          onChange={(e) => setHoneypot(e.target.value)}
+                        />
+                      </div>
+
+                      <p className="font-sans text-[12px] text-[#4F4F4F] text-center mt-3">
+                        By submitting this form, you agree to hear back from our team. We respect your privacy. Read our{" "}
+                        <Link href="/privacy" className="underline hover:text-[#C9281D]">
+                          Privacy Policy
+                        </Link>.
                       </p>
                     </div>
                   </form>

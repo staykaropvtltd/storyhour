@@ -2,12 +2,14 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Search, X, Play } from "lucide-react";
 import { useLibraryCart } from "@/context/LibraryCartContext";
 import { useAudio } from "@/context/AudioContext";
 import { STORIES } from "@/data/storyhour-data";
 
 export default function SearchModal() {
+  const router = useRouter();
   const { isSearchOpen, setIsSearchOpen } = useLibraryCart();
   const { playStory } = useAudio();
   const [query, setQuery] = useState("");
@@ -21,8 +23,19 @@ export default function SearchModal() {
       s.category.toLowerCase().includes(query.toLowerCase())
   );
 
+  const handleSelectStory = (story: (typeof STORIES)[0]) => {
+    setIsSearchOpen(false);
+    playStory(story);
+    router.push(`/stories?highlight=${encodeURIComponent(story.slug || story.id)}#editions`);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search stories and audiobooks"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4"
+    >
       <div
         onClick={() => setIsSearchOpen(false)}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
@@ -36,10 +49,12 @@ export default function SearchModal() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
+            aria-label="Search input"
             className="flex-1 bg-transparent border-none outline-none font-sans text-base text-[#0f0f0f] placeholder:text-[#a4a4a4]"
           />
           <button
             onClick={() => setIsSearchOpen(false)}
+            aria-label="Close search"
             className="w-8 h-8 rounded-full bg-[#f3f3f3] hover:bg-[#e7e7e7] flex items-center justify-center cursor-pointer"
           >
             <X className="w-4 h-4 text-[#0f0f0f]" />
@@ -55,14 +70,19 @@ export default function SearchModal() {
             filtered.map((story) => (
               <div
                 key={story.id}
-                onClick={() => {
-                  playStory(story);
-                  setIsSearchOpen(false);
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleSelectStory(story);
+                  }
                 }}
-                className="py-3 px-2 flex items-center gap-4 hover:bg-[#FAF8F3] rounded-2xl cursor-pointer transition-colors"
+                onClick={() => handleSelectStory(story)}
+                className="py-3 px-2 flex items-center gap-4 hover:bg-[#FAF8F3] rounded-2xl cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#C9281D]"
               >
                 <div className="relative w-12 h-14 rounded-xl overflow-hidden bg-[#f3f3f3] flex-shrink-0">
-                  <Image src={story.coverImage} alt={story.title} fill className="object-cover" />
+                  <Image src={story.coverImage} alt={story.title} fill className="object-cover" sizes="56px" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-sans font-bold text-sm text-[#0f0f0f]">{story.title}</h4>

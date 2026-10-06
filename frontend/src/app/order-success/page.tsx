@@ -28,14 +28,21 @@ function OrderSuccessContent() {
   const orderId = searchParams.get("orderId");
   const { orders, getOrderById } = useLibraryCart();
 
+  const [isHydrated, setIsHydrated] = useState(false);
   const [activeBookReader, setActiveBookReader] = useState<Edition | null>(null);
   const [activeAudiobook, setActiveAudiobook] = useState<Audiobook | null>(null);
 
-  // Retrieve current order or fallback to most recent order
-  const currentOrder: Order | undefined = orderId
-    ? getOrderById(orderId)
-    : orders && orders.length > 0
-    ? orders[0]
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Retrieve specified order or fallback to the most recent order if no orderId specified
+  const currentOrder: Order | undefined = isHydrated
+    ? (orderId
+        ? getOrderById(orderId)
+        : orders && orders.length > 0
+        ? orders[0]
+        : undefined)
     : undefined;
 
   const handleOpenBook = (itemId: string) => {
@@ -50,11 +57,24 @@ function OrderSuccessContent() {
     }
   };
 
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF8F3]">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-[#C9281D] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-bold text-[#0f0f0f]">Retrieving your order details…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isOrderFound = Boolean(currentOrder);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF8F3] text-[#0f0f0f] selection:bg-[#C9281D] selection:text-white">
       <SiteHeader activeLink="Shop" />
 
-      {/* 1. Celebratory Hero Header (Cerulean Sky, Sunshine Glow, Home Hero Style) */}
+      {/* 1. Hero Header */}
       <section className="relative w-full bg-[#3b9dfb] pt-28 sm:pt-36 pb-20 sm:pb-24 px-4 sm:px-6 overflow-hidden select-none">
         {/* Background sky image matching Home hero */}
         <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
@@ -69,24 +89,41 @@ function OrderSuccessContent() {
         </div>
 
         <div className="relative z-10 max-w-3xl mx-auto text-center flex flex-col items-center">
-          {/* Success Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md border border-white/40 text-white font-sans text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
-            <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-            <span>Order Confirmed · Digital Access Granted</span>
-          </div>
+          {isOrderFound ? (
+            <>
+              {/* Success Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md border border-white/40 text-white font-sans text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>Order Confirmed · Digital Access Granted</span>
+              </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-sm">
-            Your Books Are Unlocked!
-          </h1>
-          <p className="mt-3 text-white/95 font-medium text-base sm:text-lg max-w-md leading-relaxed">
-            Thank you for bringing StoryHour into your home. Your digital editions are now fully accessible with 3D turning animations.
-          </p>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-sm">
+                Your Books Are Unlocked!
+              </h1>
+              <p className="mt-3 text-white/95 font-medium text-base sm:text-lg max-w-md leading-relaxed">
+                Thank you for bringing StoryHour into your home. Your digital editions are now fully accessible with 3D turning animations.
+              </p>
 
-          {currentOrder && (
-            <div className="mt-5 inline-flex items-center gap-3 px-5 py-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 text-white font-mono text-xs sm:text-sm">
-              <span className="text-white/70">Order Number:</span>
-              <span className="font-black text-[#FFF9E6]">{currentOrder.orderNumber}</span>
-            </div>
+              {currentOrder && (
+                <div className="mt-5 inline-flex items-center gap-3 px-5 py-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 text-white font-mono text-xs sm:text-sm">
+                  <span className="text-white/70">Order Number:</span>
+                  <span className="font-black text-[#FFF9E6]">{currentOrder.orderNumber}</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/20 backdrop-blur-md border border-white/40 text-white font-sans text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
+                <span>Order Lookup</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-sm">
+                No Order Found
+              </h1>
+              <p className="mt-3 text-white/95 font-medium text-base sm:text-lg max-w-md leading-relaxed">
+                We could not locate an active order for this reference. Please check your library or cart to view your items.
+              </p>
+            </>
           )}
         </div>
 
@@ -249,16 +286,16 @@ function OrderSuccessContent() {
           </>
         ) : (
           <div className="bg-white rounded-3xl border border-black/5 shadow-[0_16px_40px_rgba(0,0,0,0.06)] p-8 sm:p-12 text-center max-w-lg mx-auto">
-            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-            <h2 className="text-2xl font-extrabold text-[#0f0f0f]">Purchase Confirmed!</h2>
+            <ShoppingBag className="w-12 h-12 text-[#C9281D] mx-auto mb-3" />
+            <h2 className="text-2xl font-extrabold text-[#0f0f0f]">No Order Found</h2>
             <p className="text-sm text-[#5a5a5a] mt-2">
-              Your books have been unlocked. Head to the Shop page to view and read your editions.
+              We couldn&apos;t find an order matching this session. If you recently completed a purchase or wish to explore available titles, browse our complete library.
             </p>
             <Link
               href="/stories"
               className="mt-6 inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#991B1B] hover:from-[#EA3A2D] hover:to-[#B01E14] text-white font-bold text-sm shadow-[0_8px_22px_rgba(201,40,29,0.35)] transition-all hover:scale-105 active:scale-95"
             >
-              <span>Go to StoryHour Editions</span>
+              <span>Explore StoryHour Editions</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

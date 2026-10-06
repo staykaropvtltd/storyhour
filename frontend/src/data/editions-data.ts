@@ -426,9 +426,12 @@ export const AUDIOBOOKS: Audiobook[] = [
 ];
 
 export function getEditionById(id: string): Edition | undefined {
-  return EDITIONS.find((ed) => ed.id === id);
+  if (!id) return undefined;
+  return EDITIONS.find((ed) => ed.id === id || ed.productId === id);
 }
 
 export function getAudiobookById(id: string): Audiobook | undefined {
+  if (!id) return undefined;
   return AUDIOBOOKS.find((ab) => ab.id === id);
 }
+

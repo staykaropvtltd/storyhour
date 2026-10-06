@@ -271,12 +271,12 @@ export default function SiteFooter() {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/terms" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Terms of Use
                     </Link>
                   </li>
                   <li>
-                    <Link href="/contact" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
+                    <Link href="/privacy" className="hover:text-white hover:translate-x-1 inline-block transition-transform">
                       Privacy Policy
                     </Link>
                   </li>
@@ -391,7 +391,7 @@ export default function SiteFooter() {
           <div className="max-w-[1360px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-emerald-100/90">
             {/* Copyright */}
             <p className="tracking-wide">
-              &copy; {new Date().getFullYear()} StoryHour Ltd. All rights reserved.
+              &copy; {new Date().getFullYear()} StoryHour Ltd. Registered in England &amp; Wales (No. 14289410). All rights reserved.
             </p>
 
             {/* Accepted Payment Methods */}

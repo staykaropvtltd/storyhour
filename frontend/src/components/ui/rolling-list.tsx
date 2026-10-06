@@ -49,15 +49,15 @@ export default function RollingList({
           <div
             key={item.id}
             role={hasVideo ? "button" : "group"}
-            tabIndex={0}
-            aria-label={`${item.title} — ${item.category}, ${item.language}${hasVideo ? " (Watch trailer)" : ""}`}
+            tabIndex={hasVideo ? 0 : -1}
+            aria-label={`${item.title} — ${item.category}, ${item.language}${hasVideo ? " (Watch trailer)" : " (Trailer in production)"}`}
             onMouseEnter={() => setHoveredId(item.id)}
             onMouseLeave={() => setHoveredId(null)}
             onFocus={() => setHoveredId(item.id)}
             onBlur={() => setHoveredId(null)}
             onClick={() => {
               setHoveredId(item.id);
-              if (hasVideo && onSelectTrailer) {
+              if (onSelectTrailer) {
                 onSelectTrailer(item);
               }
             }}
@@ -88,11 +88,11 @@ export default function RollingList({
                       </h2>
                     </div>
 
-                    {/* State 2: Hovered Rolling Title (Italic + StoryHour Red Accent) */}
+                    {/* State 2: Hovered Rolling Title (Italic + StoryHour Red Accent - aria-hidden to avoid duplicate heading) */}
                     <div className="flex h-[60px] sm:h-[76px] md:h-[88px] lg:h-[96px] xl:h-[108px] items-center">
-                      <h2 className="font-serif italic font-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[54px] text-[#C9281D] uppercase tracking-tight leading-[1] select-none whitespace-nowrap">
+                      <span aria-hidden="true" className="font-serif italic font-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[54px] text-[#C9281D] uppercase tracking-tight leading-[1] select-none whitespace-nowrap block">
                         {item.title}
-                      </h2>
+                      </span>
                     </div>
                   </div>
                 </div>

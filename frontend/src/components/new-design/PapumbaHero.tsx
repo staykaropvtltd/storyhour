@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Headphones, Play, ArrowDown } from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
 import { STORIES } from "@/data/storyhour-data";
@@ -13,10 +14,10 @@ export default function PapumbaHero() {
   const heroRef = useRef<HTMLDivElement>(null);
 
   const handleStartListening = () => {
-    if (STORIES && STORIES.length > 0) {
-      if (isPlaying) {
-        togglePlay();
-      } else {
+    if (isPlaying) {
+      togglePlay();
+    } else {
+      if (STORIES && STORIES.length > 0) {
         playStory(STORIES[0]);
       }
     }
@@ -79,14 +80,14 @@ export default function PapumbaHero() {
             <span className="font-bold">{isPlaying ? "Playing Sample..." : "Start Listening Free"}</span>
           </button>
 
-          {/* Secondary Button (Untitled UI Button - Secondary Dark) */}
-          <a
-            href="#audiobooks"
+          {/* Secondary Button */}
+          <Link
+            href="/stories"
             className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 rounded-full bg-gray-950/85 hover:bg-gray-950 backdrop-blur-sm text-white font-semibold text-sm sm:text-base shadow-sm border border-white/20 transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer focus:outline-none focus:ring-4 focus:ring-gray-900/30"
           >
             <Play className="w-4 h-4 fill-white text-white" />
             <span className="font-bold">Explore Audiobooks</span>
-          </a>
+          </Link>
         </div>
       </div>
 

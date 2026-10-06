@@ -26,35 +26,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export interface AudiobookTrack {
-  id: number;
-  title: string;
-  duration: string;
-  narrator?: string;
-}
-
-export interface Audiobook {
-  id: string;
-  title: string;
-  nativeTitle?: string;
-  subtitle: string;
-  narrator: string;
-  storyteller: string;
-  language: "English" | "Hindi" | "Telugu" | "Multilingual";
-  duration: string;
-  chaptersCount: number;
-  price: number;
-  cdArtwork: string;
-  category: string;
-  year: string;
-  season: string;
-  badge?: string;
-  description: string;
-  culturalNote?: string;
-  audioPreviewUrl?: string;
-  accentColor?: string;
-  tracks: AudiobookTrack[];
-}
+import type { Audiobook, AudiobookTrack } from "@/data/editions-data";
 
 interface AudiobookModalProps {
   audiobook: Audiobook;
@@ -126,7 +98,9 @@ export default function AudiobookModal({
     }, 2000);
   };
 
-  const currentTrack = audiobook.tracks[currentTrackIndex] || {
+  const tracks = audiobook.tracks || [];
+  const trackCount = tracks.length > 0 ? tracks.length : 1;
+  const currentTrack = tracks[currentTrackIndex] || {
     id: 1,
     title: "Chapter 1: The Divine Invocation",
     duration: "4:32",
@@ -157,6 +131,9 @@ export default function AudiobookModal({
 
         {/* Modal Container */}
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="audiobook-modal-title"
           className="relative z-10 w-full max-w-[1020px] max-h-[92vh] bg-[#FAF8F3] rounded-2xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col lg:flex-row border border-white/15"
           initial={{ scale: 0.9, opacity: 0, y: 30 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -260,7 +237,7 @@ export default function AudiobookModal({
                     </span>
                   )}
                 </div>
-                <h2 className="mt-1 font-serif text-[26px] sm:text-[32px] font-normal text-[#0F0F0F] leading-[1.08] tracking-[-0.025em]">
+                <h2 id="audiobook-modal-title" className="mt-1 font-serif text-[26px] sm:text-[32px] font-normal text-[#0F0F0F] leading-[1.08] tracking-[-0.025em]">
                   {audiobook.title}
                 </h2>
                 {audiobook.nativeTitle && (
@@ -344,7 +321,7 @@ export default function AudiobookModal({
                   <button
                     onClick={() =>
                       setCurrentTrackIndex((idx) =>
-                        idx > 0 ? idx - 1 : audiobook.tracks.length - 1
+                        trackCount > 1 ? (idx > 0 ? idx - 1 : trackCount - 1) : 0
                       )
                     }
                     className="p-2 rounded-full hover:bg-black/5 text-[#5A5A5A] hover:text-[#0F0F0F] transition-colors cursor-pointer"
@@ -367,7 +344,9 @@ export default function AudiobookModal({
 
                   <button
                     onClick={() =>
-                      setCurrentTrackIndex((idx) => (idx + 1) % audiobook.tracks.length)
+                      setCurrentTrackIndex((idx) =>
+                        trackCount > 1 ? (idx + 1) % trackCount : 0
+                      )
                     }
                     className="p-2 rounded-full hover:bg-black/5 text-[#5A5A5A] hover:text-[#0F0F0F] transition-colors cursor-pointer"
                     aria-label="Next track"
@@ -452,7 +431,6 @@ export default function AudiobookModal({
                           language: audiobook.language,
                           type: "audiobook",
                         });
-                        if (onAddToCart) onAddToCart(audiobook);
                       }}
                       className="px-4 py-2.5 rounded-full bg-white hover:bg-gray-50 text-[#0F0F0F] font-sans text-[13px] font-bold border border-black/15 transition-all shadow-sm hover:shadow flex items-center gap-2 cursor-pointer"
                     >

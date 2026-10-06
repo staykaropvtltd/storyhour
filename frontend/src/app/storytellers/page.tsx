@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Play, Pause } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -155,11 +155,13 @@ function TestimonialColumn({
   direction = "up",
   duration = 40,
   className = "",
+  isPaused = false,
 }: {
   items: Testimonial[];
   direction?: "up" | "down";
   duration?: number;
   className?: string;
+  isPaused?: boolean;
 }) {
   const prefersReducedMotion = useReducedMotion();
   const doubled = [...items, ...items]; // duplicate for seamless loop
@@ -171,6 +173,7 @@ function TestimonialColumn({
           animation: prefersReducedMotion
             ? "none"
             : `testimonial-scroll-${direction} ${duration}s linear infinite`,
+          animationPlayState: isPaused ? "paused" : "running",
         }}
       >
         {doubled.map((item, i) => (
@@ -183,6 +186,7 @@ function TestimonialColumn({
 
 export default function StorytellersPage() {
   const [active, setActive] = useState(0);
+  const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
 
   const handleNext = useCallback(() => {
     setActive((prev) => (prev + 1) % STORYTELLERS.length);
@@ -194,6 +198,16 @@ export default function StorytellersPage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
       if (e.key === "ArrowLeft") handlePrev();
       else if (e.key === "ArrowRight") handleNext();
     };
@@ -377,8 +391,28 @@ export default function StorytellersPage() {
                 Stories That Stay With You
               </h2>
               <p className="font-sans text-[16px] text-[#5A5A5A] max-w-[480px] mx-auto leading-[1.65]">
-                Heard by educators, families, cultural voices, and communities from London to Hyderabad — this is how StoryHour's work has been experienced.
+                Heard by educators, families, cultural voices, and communities from London to Hyderabad — this is how StoryHour&apos;s work has been experienced.
               </p>
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setIsTestimonialsPaused((prev) => !prev)}
+                  aria-label={isTestimonialsPaused ? "Resume auto-scrolling testimonials" : "Pause auto-scrolling testimonials"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E7E7E7] bg-white text-[#0F0F0F] text-xs font-medium hover:bg-neutral-50 transition-colors cursor-pointer shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9281D]"
+                >
+                  {isTestimonialsPaused ? (
+                    <>
+                      <Play className="w-3.5 h-3.5 text-[#C9281D] fill-[#C9281D]" />
+                      <span>Resume Scroll</span>
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-3.5 h-3.5 text-[#C9281D]" />
+                      <span>Pause Scroll</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Three-Column Scrolling Grid */}
@@ -392,6 +426,7 @@ export default function StorytellersPage() {
                 items={COL_A}
                 direction="up"
                 duration={36}
+                isPaused={isTestimonialsPaused}
                 className="overflow-hidden h-full"
               />
 
@@ -400,6 +435,7 @@ export default function StorytellersPage() {
                 items={COL_B}
                 direction="down"
                 duration={44}
+                isPaused={isTestimonialsPaused}
                 className="overflow-hidden h-full hidden md:block"
               />
 
@@ -408,6 +444,7 @@ export default function StorytellersPage() {
                 items={COL_C}
                 direction="up"
                 duration={30}
+                isPaused={isTestimonialsPaused}
                 className="overflow-hidden h-full hidden lg:block"
               />
             </div>

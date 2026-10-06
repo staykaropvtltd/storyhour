@@ -12,7 +12,8 @@ export interface Story {
   durationMinutes: number;
   coverImage: string;
   audioPreviewUrl: string; // YouTube embed or audio stream
-  sampleAudioAudioSrc?: string; // Direct audio fallback
+  sampleAudioSrc?: string; // Direct audio fallback
+  sampleAudioAudioSrc?: string; // Alias for backwards compatibility
   chaptersCount: number;
   description: string;
   featured?: boolean;
@@ -253,7 +254,7 @@ export const STORYTELLERS: Storyteller[] = [
     bio: "With decades of theatrical performance, puppet storytelling, and cultural education across India and the United Kingdom, bringing epic mythology and oral heritage to young minds through authentic voice modulation and physical theatre.",
     portraitImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.23.29-1.jpeg",
     performanceImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.23.21.jpeg",
-    connectedStoryTitle: "Ramayana Epic Triology"
+    connectedStoryTitle: "Ramayana Epic Trilogy"
   },
   {
     id: "storyteller-2",

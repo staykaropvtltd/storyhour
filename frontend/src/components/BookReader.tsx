@@ -20,11 +20,13 @@ import {
   User,
   Volume2,
   VolumeX,
+  Sparkles,
 } from "lucide-react";
 
+import type { Edition } from "@/data/editions-data";
+
 /* ═══════════════════════════════════════════════════════════════════════════
-   TEMPORARY DEMO BOOK DATA
-   Structured so real book data can replace this later.
+   AUTHENTIC MULTI-LANGUAGE BOOK DATA (English, Hindi, Telugu)
    ═══════════════════════════════════════════════════════════════════════════ */
 interface BookPage {
   pageNumber: number;
@@ -32,7 +34,7 @@ interface BookPage {
   content: string;
 }
 
-const DEMO_PAGES: BookPage[] = [
+const DEMO_PAGES_EN: BookPage[] = [
   {
     pageNumber: 1,
     chapterTitle: "The Kingdom of Ayodhya",
@@ -71,34 +73,88 @@ const DEMO_PAGES: BookPage[] = [
   },
 ];
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   TYPES
-   ═══════════════════════════════════════════════════════════════════════════ */
-interface Edition {
-  id: string;
-  title: string;
-  subtitle: string;
-  language: string;
-  coverImage: string;
-  description: string;
-  storyteller: string;
-  price: number;
-  chaptersCount: number;
-  duration: string;
-  bookFormat: string;
-  category: string;
-  pagesCount: number;
-  nativeTitle?: string;
-  culturalNote?: string;
-  year?: string;
-  season?: string;
-  codeName?: string;
-  badge?: string;
-  isFeatured?: boolean;
-  isNowPlaying?: boolean;
-  audioPreviewUrl?: string;
-  productId?: string;
-  accentColor?: string;
+const DEMO_PAGES_HI: BookPage[] = [
+  {
+    pageNumber: 1,
+    chapterTitle: "अयोध्या का पावन साम्राज्य",
+    content:
+      "प्राचीन भारतवर्ष की पुण्यभूमि पर, पावन सरयू नदी के सुरम्य तट पर बसी थी अयोध्या नगरी — जिसे कोई जीत न सके। प्रातःकाल की स्वर्ण किरणों में उसके प्राचीर स्वर्णवत आभा बिखेरते थे, और नगर की वीथियाँ प्रफुल्लित वृक्षों से आच्छादित थीं जिनके पुष्प राहगीरों पर आशीष स्वरूप बरसते थे।\n\nमहाराज दशरथ इस वैभवशाली साम्राज्य पर न्याय, धर्म और अपार वात्सल्य के साथ शासन करते थे। उनकी कीर्ति तीनों लोकों में व्याप्त थी और देवगण भी उनके धर्माचरण की सराहना करते थे।",
+  },
+  {
+    pageNumber: 2,
+    chapterTitle: "पुत्रकामेष्टि यज्ञ का संकल्प",
+    content:
+      "परन्तु इस अपार ऐश्वर्य और कीर्ति के उपरान्त भी महाराज के अंतर्मन में एक मौन व्यथा थी — रघुकुल की परंपरा को आगे बढ़ाने के लिए उनका कोई उत्तराधिकारी नहीं था। राजप्रासाद के भव्य कक्ष उस सूनेपन से गूंजते थे जिसे कोई सांसारिक संपदा नहीं भर सकती थी।\n\nकुलगुरु महर्षि वशिष्ठ के परामर्श पर, महाराज ने दिव्य पुत्रकामेष्टि महायज्ञ का अनुष्ठान करने का निश्चय किया, जिससे देवताओं की कृपा से यशस्वी संतानों की प्राप्ति हो सके।",
+  },
+  {
+    pageNumber: 3,
+    chapterTitle: "राजकुमारों का प्राकट्य",
+    content:
+      "पवित्र यज्ञवेदी की पावन ज्वालाओं के मध्य से एक दिव्य पुरुष स्वर्णपात्र में अमृतमय पायस लेकर प्रकट हुए। समस्त गगनमंडल हर्षध्वनि से गूंज उठा।\n\nयथासमय अयोध्या में चार तेजस्वी राजकुमारों का जन्म हुआ — ज्येष्ठ श्रीराम, जिनका मुखमंडल पूर्णिमा के चंद्र समान सौम्य था; धर्मनिष्ठ भरत; तथा परस्पर अविभाज्य लक्ष्मण और शत्रुघ्न। संपूर्ण अयोध्या में कई दिनों तक अनिर्वचनीय आनंदोत्सव मनाया गया।",
+  },
+  {
+    pageNumber: 4,
+    chapterTitle: "विद्याध्ययन और धर्म की दीक्षा",
+    content:
+      "बालक राम एक विशाल वटवृक्ष की भांति पल्लवित हुए — सुदृढ़, आश्रयदाता और धर्म की जड़ों में गहरे समाए हुए। गुरु वशिष्ठ के सानिध्य में उन्होंने वेद, उपनिषद, धनुर्विद्या और क्षत्रिय धर्म के गूढ़ रहस्यों में पारंगतता प्राप्त की।\n\nउनकी विनम्रता और करुणा ने प्रत्येक प्रजाजन का हृदय जीत लिया। जब वे उपवन में भ्रमण करते तो प्रकृति भी उनके चरणों का वंदन करती प्रतीत होती थी।",
+  },
+  {
+    pageNumber: 5,
+    chapterTitle: "महर्षि विश्वामित्र का आगमन",
+    content:
+      "एक शुभ दिन, महान तपस्वी महर्षि विश्वामित्र अयोध्या की राजसभा में पधारे। उनका तेज सूर्य के समान देदीप्यमान था और उनकी उपस्थिति मात्र से संपूर्ण सभा में श्रद्धा मिश्रित नीरवता छा गई।\n\n'हे राजन!' गंभीर मेघगर्जन समान स्वर में मुनि बोले, 'दंडकारण्य में दुष्ट निशाचर मेरे पवित्र अनुष्ठानों को दूषित कर रहे हैं। उस धर्मयज्ञ की रक्षा के लिए मुझे तुम्हारे ज्येष्ठ पुत्र श्रीराम की आवश्यकता है। केवल वही इस संकट का निवारण कर सकते हैं।'",
+  },
+  {
+    pageNumber: 6,
+    chapterTitle: "वनगमन और यात्रा का शुभारंभ",
+    content:
+      "पिता के स्नेहपूर्ण आशीष और अनुज लक्ष्मण के अटूट साथ के साथ, कुमार राम ने नगर की सीमाओं को पार कर सघन अरण्य की ओर प्रस्थान किया। वृक्षों की सघन छाया से छनकर आती किरणें मार्ग आलोकित कर रही थीं।\n\nयहाँ से उस युगांतरकारी यात्रा का आरंभ हुआ जिसने मानव इतिहास को दिशा दी — कर्तव्य, प्रेम, त्याग और असत्य पर सत्य की शाश्वत विजय की अमर गाथा।",
+  },
+];
+
+const DEMO_PAGES_TE: BookPage[] = [
+  {
+    pageNumber: 1,
+    chapterTitle: "అయోధ్య సామ్రాజ్యం",
+    content:
+      "ప్రాచీన భారత దేశపు పుణ్యభూమిపై, పవిత్ర సరయూ నదీ తీరంలో అజేయమైన అయోధ్యా నగరం విలసిల్లింది. ఉదయపు సూర్యకిరణాలలో నగర ప్రాకారాలు బంగారు కాంతులీనుతూ ఉండేవి. రాజమార్గాలన్నీ సువాసనలు వెదజల్లే పుష్పవృక్షాలతో వికసించి, బాటసారులపై దీవెనల వాన కురిపించేవి.\n\nదశరథ మహారాజు ధర్మనిష్ఠతో, ప్రజానురంజకంగా పాలించేవాడు. ఆయన కీర్తి ముల్లోకాలలో వ్యాపించింది. దేవతలు సైతం ఆయన సత్యసంధతను కొనియాడేవారు.",
+  },
+  {
+    pageNumber: 2,
+    chapterTitle: "పుత్రకామేష్టి యాగ సంకల్పం",
+    content:
+      "అంతటి భోగభాగ్యాలు ఉన్నప్పటికీ, రఘువంశాన్ని నిలబెట్టే పుత్రసంతానం లేకపోవడం దశరథుని హృదయంలో తీరని వేదనగా మిగిలిపోయింది. ఆ రాజమందిరాలు ఎన్ని సంపదలున్నా నిశ్శబ్ద శూన్యతతో ప్రతిధ్వనించేవి.\n\nకులగురువు వసిష్ఠ మహర్షి సలహా మేరకు, సంతాన ప్రాప్తికై మహారాజు శక్తివంతమైన పుత్రకామేష్టి యాగాన్ని సంకల్పించారు.",
+  },
+  {
+    pageNumber: 3,
+    chapterTitle: "రామ లక్ష్మణుల అవతరణ",
+    content:
+      "యాగకుండం నుండి దివ్యపురుషుడు బంగారు పాత్రలో దివ్య పాయసాన్ని తీసుకుని ఆవిర్భవించాడు. దివి నుండి దేవతలు పూలవాన కురిపించారు.\n\nకాలక్రమంలో నలుగురు దివ్య తేజస్సు గల రాజకుమారులు జన్మించారు — పున్నమి చంద్రుని వంటి శ్రీరాముడు, ధర్మమూర్తి భరతుడు, పరస్పర అనురాగంగల లక్ష్మణ శత్రుఘ్నులు. అయోధ్యా నగరమంతా ఎడతెగని ఆనందోత్సవాల్లో మునిగితేలింది.",
+  },
+  {
+    pageNumber: 4,
+    chapterTitle: "విద్యాభ్యాసము - గురుకుల ప్రవేశము",
+    content:
+      "బాలరాముడు మహావృక్షంలా ఎదుగుతూ, ధర్మ మార్గంలో ముందుకు సాగాడు. వసిష్ఠ మహర్షి ఆశ్రమంలో వేదాలు, శాస్త్రాలు, ధనుర్విద్యను అభ్యసించి సంపూర్ణ క్షత్రియ ధర్మాన్ని ఔపోసన పట్టాడు.\n\nఆయన శాంత స్వభావం, మధుర సంభాషణ సమస్త ప్రజల మనస్సులను ఆకట్టుకున్నాయి. ప్రకృతి సైతం రాముని పాదస్పర్శకు పులకించిపోయింది.",
+  },
+  {
+    pageNumber: 5,
+    chapterTitle: "విశ్వామిత్ర మహర్షి రాక",
+    content:
+      "ఒక శుభదినాన, తపోధనుడైన విశ్వామిత్ర మహర్షి అయోధ్యా సభకు విచ్చేశారు. ఆయన బ్రహ్మతేజస్సు చూసి సభలోని వారందరూ భక్తిప్రపత్తులతో లేచి నమస్కరించారు.\n\n'దశరథ రాజా! సిద్ధాశ్రమంలో నేను చేయు యజ్ఞాన్ని రాక్షసులు భంగం చేస్తున్నారు. ఆ యాగ సంరక్షణ కోసం నీ జ్యేష్ఠపుత్రుడైన శ్రీరాముని నా వెంట పంపు' అని కోరారు.",
+  },
+  {
+    pageNumber: 6,
+    chapterTitle: "అరణ్య ప్రవేశం",
+    content:
+      "తండ్రి ఆశీస్సులతో, తమ్ముడు లక్ష్మణునితో కలిసి శ్రీరాముడు విశ్వామిత్రుని వెంట అరణ్య మార్గంలో నడిచాడు. మహా వృక్షాల మధ్య నుండి సూర్యకిరణాలు దారి చూపుతుండగా సాగిన ఆ పయనం ధర్మ సంస్థాపనకు నాంది పలికింది.\n\nఅలా త్యాగం, ప్రేమ, కర్తవ్య నిష్ఠలతో కూడిన విశ్వవిఖ్యాత అమరగాథ ప్రారంభమైంది.",
+  },
+];
+
+function getPagesForEdition(language: string): BookPage[] {
+  if (language === "Hindi") return DEMO_PAGES_HI;
+  if (language === "Telugu") return DEMO_PAGES_TE;
+  return DEMO_PAGES_EN;
 }
 
 type ReaderState = "preview" | "unlocking" | "reading";
@@ -109,16 +165,25 @@ interface BookReaderProps {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SUBTLE SYNTHESIZED PAPER FLIP AUDIO (Web Audio API)
+   SUBTLE SYNTHESIZED PAPER FLIP AUDIO (Web Audio API - Singleton)
    ═══════════════════════════════════════════════════════════════════════════ */
+let sharedAudioCtx: AudioContext | null = null;
+
 function playPaperFlipSound() {
   try {
+    if (typeof window === "undefined") return;
     const AudioCtx =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const bufferSize = ctx.sampleRate * 0.12;
+    if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
+      sharedAudioCtx = new AudioCtx();
+    }
+    if (sharedAudioCtx.state === "suspended") {
+      sharedAudioCtx.resume().catch(() => {});
+    }
+    const ctx = sharedAudioCtx;
+    const bufferSize = Math.floor(ctx.sampleRate * 0.12);
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -264,18 +329,20 @@ function PageFace({
    MAIN BOOK READER COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
 export default function BookReader({ edition, onClose }: BookReaderProps) {
-  const { isBookUnlocked, addToCart, unlockBooks, showToast } = useLibraryCart();
+  const { isBookUnlocked, addToCart, showToast } = useLibraryCart();
   const router = useRouter();
-  const isUnlocked = isBookUnlocked(edition.id);
+  const isUnlocked = isBookUnlocked(edition.id) || (edition.productId ? isBookUnlocked(edition.productId) : false);
   const [state, setState] = useState<ReaderState>(isUnlocked ? "reading" : "preview");
   const [currentSpread, setCurrentSpread] = useState(0); // Index into page pairs (0 = pages 1-2, 1 = pages 3-4, etc.)
+  const [mobileSubPage, setMobileSubPage] = useState<0 | 1>(0);
   const [isBookOpen, setIsBookOpen] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
   const [flipDirection, setFlipDirection] = useState<"next" | "prev" | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const totalSpreads = Math.ceil(DEMO_PAGES.length / 2);
+  const bookPages = getPagesForEdition(edition.language);
+  const totalSpreads = Math.ceil(bookPages.length / 2);
 
   // Sync state if unlocked status changes
   useEffect(() => {
@@ -301,13 +368,14 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
   // Page Turn Actions with 3D Rotation Animation
   const turnNext = useCallback(() => {
     if (isFlipping || currentSpread >= totalSpreads - 1) return;
-    if (!isUnlocked && currentSpread >= 1) {
-      showToast("Unlock full edition to read beyond the free preview pages!");
+    if (!isUnlocked && currentSpread >= 0) {
+      showToast("Preview limit reached (Pages 1–2). Purchase the edition to unlock all chapters!");
       return;
     }
     if (soundEnabled) playPaperFlipSound();
     setFlipDirection("next");
     setIsFlipping(true);
+    setMobileSubPage(0);
   }, [isFlipping, currentSpread, totalSpreads, soundEnabled, isUnlocked, showToast]);
 
   const turnPrev = useCallback(() => {
@@ -315,6 +383,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
     if (soundEnabled) playPaperFlipSound();
     setFlipDirection("prev");
     setIsFlipping(true);
+    setMobileSubPage(0);
   }, [isFlipping, currentSpread, soundEnabled]);
 
   // Handler when 3D page flip animation finishes
@@ -353,30 +422,23 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Mock purchase flow
-  const handleUnlock = () => {
-    setState("unlocking");
-    setTimeout(() => {
-      unlockBooks([edition.id]);
-      setState("reading");
-      setCurrentSpread(0);
-    }, 2200);
-  };
-
   // Helper pages for current spread and incoming spread
-  const currentLeftPage = DEMO_PAGES[currentSpread * 2];
-  const currentRightPage = DEMO_PAGES[currentSpread * 2 + 1];
+  const currentLeftPage = bookPages[currentSpread * 2];
+  const currentRightPage = bookPages[currentSpread * 2 + 1];
 
-  const nextLeftPage = DEMO_PAGES[(currentSpread + 1) * 2];
-  const nextRightPage = DEMO_PAGES[(currentSpread + 1) * 2 + 1];
+  const nextLeftPage = bookPages[(currentSpread + 1) * 2];
+  const nextRightPage = bookPages[(currentSpread + 1) * 2 + 1];
 
-  const prevLeftPage = DEMO_PAGES[(currentSpread - 1) * 2];
-  const prevRightPage = DEMO_PAGES[(currentSpread - 1) * 2 + 1];
+  const prevLeftPage = bookPages[(currentSpread - 1) * 2];
+  const prevRightPage = bookPages[(currentSpread - 1) * 2 + 1];
 
   return (
     <AnimatePresence>
       <motion.div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reader-title"
         className="fixed inset-0 z-[200] flex items-center justify-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -479,7 +541,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                   <span className="font-mono text-[11px] uppercase tracking-widest text-[#C9281D] font-bold">
                     StoryHour Edition
                   </span>
-                  <h2 className="mt-1.5 font-serif text-[28px] sm:text-[34px] font-normal text-[#0F0F0F] leading-[1.05] tracking-[-0.025em]">
+                  <h2 id="reader-title" className="mt-1.5 font-serif text-[28px] sm:text-[34px] font-normal text-[#0F0F0F] leading-[1.05] tracking-[-0.025em]">
                     {edition.title}
                   </h2>
                   {edition.nativeTitle && (
@@ -525,7 +587,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                         Edition Purchased &amp; Unlocked
                       </p>
                       <p className="font-sans text-[11px] text-emerald-600">
-                        You have full access to all {DEMO_PAGES.length} pages with 3D turning animation.
+                        You have full access to all {bookPages.length} pages with 3D turning animation.
                       </p>
                     </div>
                   </div>
@@ -539,7 +601,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                         Pages locked until purchase
                       </p>
                       <p className="font-sans text-[11px] text-[#5A5A5A]">
-                        Unlock the full book to read all {DEMO_PAGES.length} pages with 3D turning animation
+                        Read sample preview pages or unlock all {bookPages.length} pages with 3D turning animation
                       </p>
                     </div>
                   </div>
@@ -565,7 +627,18 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                     Read Book Now
                   </button>
                 ) : (
-                  <div className="flex items-center gap-2 sm:gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                    <button
+                      onClick={() => {
+                        setState("reading");
+                        setCurrentSpread(0);
+                        setMobileSubPage(0);
+                      }}
+                      className="px-4 py-3 rounded-full bg-[#1F1C18] hover:bg-black text-white font-sans text-[13px] font-bold transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4 text-amber-400" />
+                      Read Free Preview
+                    </button>
                     <button
                       onClick={() => {
                         addToCart({
@@ -581,7 +654,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                           type: "book",
                         });
                       }}
-                      className="px-4 sm:px-5 py-3 rounded-full bg-white hover:bg-gray-50 text-[#0F0F0F] font-sans text-[13px] font-bold border border-black/15 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
+                      className="px-3.5 sm:px-4 py-3 rounded-full bg-white hover:bg-gray-50 text-[#0F0F0F] font-sans text-[13px] font-bold border border-black/15 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5 cursor-pointer"
                     >
                       <ShoppingBag className="w-4 h-4 text-[#C9281D]" />
                       Add to Cart
@@ -603,7 +676,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                         onClose();
                         router.push("/checkout");
                       }}
-                      className="px-5 sm:px-6 py-3 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#991B1B] hover:from-[#EA3A2D] hover:via-[#D12E23] hover:to-[#A81F19] text-white font-sans text-[13px] font-bold transition-all shadow-[0_4px_16px_rgba(201,40,29,0.35)] hover:shadow-[0_8px_24px_rgba(201,40,29,0.5)] hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 sm:px-5 py-3 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#991B1B] hover:from-[#EA3A2D] hover:via-[#D12E23] hover:to-[#A81F19] text-white font-sans text-[13px] font-bold transition-all shadow-[0_4px_16px_rgba(201,40,29,0.35)] hover:shadow-[0_8px_24px_rgba(201,40,29,0.5)] hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5 cursor-pointer"
                     >
                       Buy Now
                     </button>
@@ -719,17 +792,21 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
             {/* Header bar above the book */}
             <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4 px-2">
               <div className="flex items-center gap-2">
-                <Unlock className="w-3.5 h-3.5 text-[#C9281D]" />
-                <span className="font-mono text-[11px] uppercase tracking-widest text-white/80 font-semibold">
-                  {edition.title} — Reading Mode
+                {isUnlocked ? (
+                  <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
+                )}
+                <span className="font-mono text-[11px] uppercase tracking-widest text-white/80 font-semibold truncate max-w-[200px] sm:max-w-none">
+                  {edition.title} {isUnlocked ? "— Reading Mode" : "— Free Preview (Pages 1–2)"}
                 </span>
               </div>
 
               {/* Controls (Sound toggle + spread count) */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => setSoundEnabled((s) => !s)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-[11px] font-mono transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-[11px] font-mono transition-colors cursor-pointer"
                   title={soundEnabled ? "Mute page turn sound" : "Enable page turn sound"}
                 >
                   {soundEnabled ? (
@@ -737,9 +814,9 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                   ) : (
                     <VolumeX className="w-3.5 h-3.5 text-white/40" />
                   )}
-                  <span>Flip Sound</span>
+                  <span className="hidden sm:inline">Flip Sound</span>
                 </button>
-                <span className="font-mono text-[11px] text-white/50">
+                <span className="font-mono text-[11px] text-white/50 whitespace-nowrap">
                   Spread {currentSpread + 1} of {totalSpreads}
                 </span>
               </div>
@@ -766,9 +843,9 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                   <div className="w-2 h-2 border-b-2 border-r-2 border-amber-300/60 rotate-45" />
                 </div>
 
-                {/* 2-PAGE SPREAD BOOK CONTAINER (3D SCENE) */}
+                {/* DESKTOP/TABLET 2-PAGE SPREAD BOOK CONTAINER (3D SCENE) */}
                 <div
-                  className="relative w-full rounded-lg overflow-hidden bg-[#EDE8DE] flex min-h-[460px] sm:min-h-[520px] md:min-h-[580px]"
+                  className="hidden sm:flex relative w-full rounded-lg overflow-hidden bg-[#EDE8DE] min-h-[460px] sm:min-h-[520px] md:min-h-[580px]"
                   style={{
                     transformStyle: "preserve-3d",
                     boxShadow:
@@ -947,14 +1024,89 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                     </motion.div>
                   )}
                 </div>
+
+                {/* MOBILE SINGLE-PAGE SPREAD (visible on screens < sm) */}
+                <div
+                  className="sm:hidden relative w-full rounded-lg overflow-hidden bg-[#EDE8DE] min-h-[440px] flex flex-col"
+                  style={{
+                    boxShadow:
+                      "inset -3px 0 6px rgba(0,0,0,0.15), inset 3px 0 6px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  <PageFace
+                    page={mobileSubPage === 0 ? currentLeftPage : currentRightPage}
+                    isLeft={mobileSubPage === 0}
+                    onClick={() => {
+                      if (mobileSubPage === 0 && currentRightPage) {
+                        setMobileSubPage(1);
+                        if (soundEnabled) playPaperFlipSound();
+                      } else {
+                        turnNext();
+                      }
+                    }}
+                    canTurn={isUnlocked || mobileSubPage === 0}
+                  />
+                  <div className="flex items-center justify-between px-3 py-2 bg-[#E3DDD1] border-t border-[#D5CDBD] text-[11px] font-mono text-[#6A6458]">
+                    <span>Page {mobileSubPage === 0 ? currentSpread * 2 + 1 : currentSpread * 2 + 2} of {bookPages.length}</span>
+                    {currentRightPage && (
+                      <button
+                        onClick={() => {
+                          setMobileSubPage((s) => (s === 0 ? 1 : 0));
+                          if (soundEnabled) playPaperFlipSound();
+                        }}
+                        className="text-[#C9281D] font-bold underline cursor-pointer"
+                      >
+                        {mobileSubPage === 0 ? "Facing page →" : "← Preceding page"}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
+
+              {/* Free preview limit prompt banner */}
+              {!isUnlocked && (
+                <div className="mt-3 p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-amber-950/80 via-black/80 to-amber-950/80 border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-200">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-center sm:text-left">
+                    <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <span>Free sample preview (pages 1–2). Purchase full edition to read all {bookPages.length} pages.</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      addToCart({
+                        id: edition.id,
+                        title: edition.title,
+                        nativeTitle: edition.nativeTitle,
+                        subtitle: edition.subtitle,
+                        authorOrNarrator: edition.storyteller,
+                        coverImage: edition.coverImage,
+                        price: edition.price,
+                        format: edition.bookFormat || "Digital Edition",
+                        language: edition.language,
+                        type: "book",
+                      });
+                      onClose();
+                      router.push("/checkout");
+                    }}
+                    className="px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-sans text-xs font-bold transition shadow whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95"
+                  >
+                    Unlock Full Edition · ${edition.price}
+                  </button>
+                </div>
+              )}
 
               {/* Bottom Controls Bar */}
               <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 mt-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
                 {/* Previous Button */}
                 <button
-                  onClick={turnPrev}
-                  disabled={currentSpread === 0 || isFlipping}
+                  onClick={() => {
+                    if (mobileSubPage === 1) {
+                      setMobileSubPage(0);
+                      if (soundEnabled) playPaperFlipSound();
+                    } else {
+                      turnPrev();
+                    }
+                  }}
+                  disabled={currentSpread === 0 && mobileSubPage === 0 || isFlipping}
                   className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-sans font-semibold transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-white hover:bg-white/15 active:scale-95"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -968,6 +1120,10 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                       key={i}
                       onClick={() => {
                         if (isFlipping || i === currentSpread) return;
+                        if (!isUnlocked && i > 0) {
+                          showToast("Preview limit reached. Purchase full edition to read all chapters!");
+                          return;
+                        }
                         if (i > currentSpread) {
                           turnNext();
                         } else {
@@ -986,8 +1142,19 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
 
                 {/* Next Button */}
                 <button
-                  onClick={turnNext}
-                  disabled={currentSpread === totalSpreads - 1 || isFlipping}
+                  onClick={() => {
+                    if (mobileSubPage === 0 && currentRightPage) {
+                      setMobileSubPage(1);
+                      if (soundEnabled) playPaperFlipSound();
+                    } else {
+                      turnNext();
+                    }
+                  }}
+                  disabled={
+                    (!isUnlocked && currentSpread >= 0 && mobileSubPage === 1) ||
+                    (isUnlocked && currentSpread === totalSpreads - 1 && mobileSubPage === 1) ||
+                    isFlipping
+                  }
                   className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-sans font-semibold transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-white hover:bg-white/15 active:scale-95"
                 >
                   <span>Next Page</span>

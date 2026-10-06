@@ -34,6 +34,7 @@ export default function StoriesEditionsPage() {
   const [hoveredAudiobookId, setHoveredAudiobookId] = useState<string | null>(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [bookReaderEdition, setBookReaderEdition] = useState<Edition | null>(null);
+  const [activeTouchId, setActiveTouchId] = useState<string | null>(null);
   const { isPlaying, togglePlay, playStory } = useAudio();
   const { addToCart, showToast, setIsSearchOpen, isBookUnlocked } = useLibraryCart();
 
@@ -177,8 +178,23 @@ export default function StoriesEditionsPage() {
                   key={ed.id}
                   onMouseEnter={() => setHoveredEditionId(ed.id)}
                   onMouseLeave={() => setHoveredEditionId(null)}
-                  onClick={() => setBookReaderEdition(ed)}
-                  className="group cursor-pointer flex flex-col items-center select-none"
+                  onClick={() => {
+                    if (activeTouchId === ed.id) {
+                      setBookReaderEdition(ed);
+                    } else {
+                      setActiveTouchId(ed.id);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="region"
+                  aria-label={`${ed.title} (${ed.language})`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setBookReaderEdition(ed);
+                    }
+                  }}
+                  className="group cursor-pointer flex flex-col items-center select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9281D] focus-visible:ring-offset-2 rounded-md"
                   style={{ perspective: "1200px" }}
                 >
                   {/* Square 3D Album/Book Sleeve */}
@@ -255,13 +271,28 @@ export default function StoriesEditionsPage() {
                     )}
 
                     {/* Centered Hover Book Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/35 backdrop-blur-[1.5px] gap-2 px-2">
-                      <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[11px] sm:text-[12px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300">
+                    <div
+                      className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 bg-black/35 backdrop-blur-[1.5px] gap-2 px-2 ${
+                        isHovered || activeTouchId === ed.id
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBookReaderEdition(ed);
+                        }}
+                        aria-label={`${isBookUnlocked(ed.id) ? "Read" : "View"} ${ed.title}`}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[11px] sm:text-[12px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                      >
                         <BookOpen className="w-3.5 h-3.5 text-[#C9281D]" />
                         <span>{isBookUnlocked(ed.id) ? "Read Book" : "View"}</span>
-                      </div>
+                      </button>
                       {!isBookUnlocked(ed.id) && (
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             addToCart({
@@ -278,6 +309,7 @@ export default function StoriesEditionsPage() {
                             });
                           }}
                           title="Add to Cart"
+                          aria-label={`Add ${ed.title} to Cart`}
                           className="w-8 h-8 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white flex items-center justify-center shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
                         >
                           <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
@@ -356,8 +388,23 @@ export default function StoriesEditionsPage() {
                   key={ed.id}
                   onMouseEnter={() => setHoveredEditionId(ed.id)}
                   onMouseLeave={() => setHoveredEditionId(null)}
-                  onClick={() => setBookReaderEdition(ed)}
-                  className="group cursor-pointer flex flex-col items-center select-none"
+                  onClick={() => {
+                    if (activeTouchId === ed.id) {
+                      setBookReaderEdition(ed);
+                    } else {
+                      setActiveTouchId(ed.id);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="region"
+                  aria-label={`${ed.title} (${ed.language})`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setBookReaderEdition(ed);
+                    }
+                  }}
+                  className="group cursor-pointer flex flex-col items-center select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9281D] focus-visible:ring-offset-2 rounded-md"
                   style={{ perspective: "1200px" }}
                 >
                   {/* Square 3D Album/Book Sleeve */}
@@ -419,13 +466,28 @@ export default function StoriesEditionsPage() {
                     )}
 
                     {/* Centered Hover Book Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/35 backdrop-blur-[1.5px] gap-1.5 px-1.5">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[10px] sm:text-[11px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300">
+                    <div
+                      className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 bg-black/35 backdrop-blur-[1.5px] gap-1.5 px-1.5 ${
+                        isHovered || activeTouchId === ed.id
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBookReaderEdition(ed);
+                        }}
+                        aria-label={`${isBookUnlocked(ed.id) ? "Read" : "View"} ${ed.title}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[10px] sm:text-[11px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                      >
                         <BookOpen className="w-3 h-3 text-[#C9281D]" />
                         <span>{isBookUnlocked(ed.id) ? "Read Book" : "View"}</span>
-                      </div>
+                      </button>
                       {!isBookUnlocked(ed.id) && (
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             addToCart({
@@ -442,6 +504,7 @@ export default function StoriesEditionsPage() {
                             });
                           }}
                           title="Add to Cart"
+                          aria-label={`Add ${ed.title} to Cart`}
                           className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white flex items-center justify-center shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
                         >
                           <ShoppingBag className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -536,7 +599,10 @@ export default function StoriesEditionsPage() {
 
           {/* CDs Row (Horizontal Architectural Display) */}
           <div
-            className="flex items-end justify-center gap-3 sm:gap-6 md:gap-8 lg:gap-10 px-2 sm:px-6 relative z-10 overflow-x-auto pb-4 pt-10 no-scrollbar"
+            tabIndex={0}
+            role="region"
+            aria-label="Audiobook editions collection"
+            className="flex items-end justify-center gap-3 sm:gap-6 md:gap-8 lg:gap-10 px-2 sm:px-6 relative z-10 overflow-x-auto pb-4 pt-10 no-scrollbar focus:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400"
             style={{ perspective: "1400px" }}
           >
             {AUDIOBOOKS.map((ab) => {
@@ -548,7 +614,16 @@ export default function StoriesEditionsPage() {
                   onMouseEnter={() => setHoveredAudiobookId(ab.id)}
                   onMouseLeave={() => setHoveredAudiobookId(null)}
                   onClick={() => setSelectedAudiobook(ab)}
-                  className="group relative flex flex-col items-center flex-shrink-0 cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Listen to ${ab.title} audiobook (${ab.language})`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedAudiobook(ab);
+                    }
+                  }}
+                  className="group relative flex flex-col items-center flex-shrink-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9281D] rounded-full"
                   style={{ width: "clamp(130px, 14vw, 190px)" }}
                 >
                   {/* 3D CD Disc Floating Container */}
@@ -660,14 +735,14 @@ export default function StoriesEditionsPage() {
                     <p className="font-sans font-semibold text-[11px] sm:text-[12.5px] text-[#0F0F0F] truncate group-hover:text-[#C9281D] transition-colors">
                       {ab.title}
                     </p>
-                    <p className="font-sans text-[9px] sm:text-[10px] text-[#6A6A6A] truncate mt-0.5">
+                    <p className="font-sans text-[9px] sm:text-[10px] text-[#4F4A42] truncate mt-0.5">
                       {ab.language} · {ab.duration}
                     </p>
                     <div className="mt-1 flex items-center justify-center gap-1.5">
                       <span className="font-mono text-[9px] font-bold text-[#C9281D]">
                         ${ab.price}
                       </span>
-                      <span className="text-[8px] font-mono text-[#8C867A] px-1.5 py-0.5 rounded bg-black/5">
+                      <span className="text-[8px] font-mono text-[#4F4A42] px-1.5 py-0.5 rounded bg-black/5">
                         {ab.category}
                       </span>
                     </div>
@@ -723,11 +798,11 @@ export default function StoriesEditionsPage() {
             <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#C9281D]" />
-                <span className="font-mono text-[10.5px] uppercase tracking-wider text-[#7A756D] font-bold">
+                <span className="font-mono text-[10.5px] uppercase tracking-wider text-[#4F4A42] font-bold">
                   Books &amp; Editions (9)
                 </span>
               </div>
-              <span className="font-mono text-[10px] text-[#A29C91] hidden sm:inline">
+              <span className="font-mono text-[10px] text-[#4F4A42] hidden sm:inline">
                 Hover on any book to pop up preview
               </span>
             </div>
@@ -760,7 +835,7 @@ export default function StoriesEditionsPage() {
                       }`}
                     >
                       {/* Top Line: Year & Season */}
-                      <p className="font-mono text-[9.5px] sm:text-[10px] text-[#7A756D] leading-none mb-1">
+                      <p className="font-mono text-[9.5px] sm:text-[10px] text-[#4F4A42] leading-none mb-1">
                         {ed.year} · {ed.season}
                       </p>
                       {/* Middle Line: Codename */}
@@ -772,7 +847,7 @@ export default function StoriesEditionsPage() {
                         {ed.codeName}
                       </p>
                       {/* Third Line: Full Book Title */}
-                      <p className="font-sans text-[10px] text-[#6A6A6A] leading-tight truncate mt-0.5">
+                      <p className="font-sans text-[10px] text-[#4F4A42] leading-tight truncate mt-0.5">
                         {ed.title}
                       </p>
                       {/* Active Indicator Line */}
@@ -828,7 +903,7 @@ export default function StoriesEditionsPage() {
                         </div>
 
                         <div className="mt-2.5 pt-2 border-t border-[#EAE7E0] flex items-center justify-between text-[10px]">
-                          <span className="font-sans text-[#7A756D]">
+                          <span className="font-sans text-[#4F4A42]">
                             {ed.language}
                           </span>
                           <span className="font-sans font-semibold text-[#C9281D] flex items-center gap-0.5">
@@ -859,11 +934,11 @@ export default function StoriesEditionsPage() {
                   className="w-3.5 h-3.5 text-[#C9281D] animate-spin"
                   style={{ animationDuration: "10s" }}
                 />
-                <span className="font-mono text-[10.5px] uppercase tracking-wider text-[#7A756D] font-bold">
+                <span className="font-mono text-[10.5px] uppercase tracking-wider text-[#4F4A42] font-bold">
                   Audiobooks &amp; Discs (6)
                 </span>
               </div>
-              <span className="font-mono text-[10px] text-[#A29C91] hidden sm:inline">
+              <span className="font-mono text-[10px] text-[#4F4A42] hidden sm:inline">
                 Hover on any audiobook to pop up preview
               </span>
             </div>
@@ -896,8 +971,8 @@ export default function StoriesEditionsPage() {
                       }`}
                     >
                       {/* Top Line: Badge & Language (Gray like book one) */}
-                      <p className="font-mono text-[9.5px] sm:text-[10px] text-[#7A756D] font-semibold leading-none mb-1 flex items-center gap-1">
-                        <Disc className="w-2.5 h-2.5 text-[#7A756D]" />
+                      <p className="font-mono text-[9.5px] sm:text-[10px] text-[#4F4A42] font-semibold leading-none mb-1 flex items-center gap-1">
+                        <Disc className="w-2.5 h-2.5 text-[#4F4A42]" />
                         {ab.badge || "AUDIO"} · {ab.language}
                       </p>
                       {/* Middle Line: Audiobook Title */}
@@ -909,7 +984,7 @@ export default function StoriesEditionsPage() {
                         {ab.title}
                       </p>
                       {/* Third Line: Duration & Narrator */}
-                      <p className="font-sans text-[10px] text-[#6A6A6A] leading-tight truncate mt-0.5">
+                      <p className="font-sans text-[10px] text-[#4F4A42] leading-tight truncate mt-0.5">
                         {ab.duration} · {ab.narrator}
                       </p>
                       {/* Active Indicator Line */}
@@ -1167,7 +1242,7 @@ export default function StoriesEditionsPage() {
                   <button
                     onClick={() => {
                       addToCart({
-                        id: selectedEdition.productId || selectedEdition.id,
+                        id: selectedEdition.id,
                         slug: selectedEdition.id,
                         title: selectedEdition.title,
                         language: selectedEdition.language,
@@ -1177,8 +1252,8 @@ export default function StoriesEditionsPage() {
                         format: `${selectedEdition.bookFormat} (Collector's)`,
                         description: selectedEdition.description,
                         chaptersCount: selectedEdition.chaptersCount,
+                        type: "book",
                       });
-                      showToast(`${selectedEdition.title} added to cart`);
                     }}
                     className="px-6 py-3 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#B01E14] hover:from-[#C9281D] hover:to-[#8F1712] text-white font-sans text-[13px] font-medium transition-all shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:shadow-[0_8px_25px_rgba(201,40,29,0.45)] flex items-center gap-2 cursor-pointer"
                   >
@@ -1197,21 +1272,6 @@ export default function StoriesEditionsPage() {
         <AudiobookModal
           audiobook={selectedAudiobook}
           onClose={() => setSelectedAudiobook(null)}
-          onAddToCart={(ab) => {
-            addToCart({
-              id: ab.id,
-              slug: ab.id,
-              title: ab.title,
-              language: ab.language,
-              price: ab.price,
-              currency: "$",
-              coverImage: ab.cdArtwork,
-              format: "Audiobook Edition (CD & Digital)",
-              description: ab.description,
-              chaptersCount: ab.chaptersCount,
-            });
-            showToast(`${ab.title} Audiobook added to cart`);
-          }}
         />
       )}
 
