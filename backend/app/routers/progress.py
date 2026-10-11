@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import require_active_user
 from app.schemas.listening_progress import (
     ListeningProgressResponse,
     ListeningProgressUpdate,
@@ -25,7 +25,7 @@ progress_service = ListeningProgressService()
 )
 def record_listening_progress(
     payload: ListeningProgressUpdate,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_active_user),
     db: Session = Depends(get_db),
 ) -> ListeningProgressResponse:
     """
@@ -47,7 +47,7 @@ def record_listening_progress(
 )
 def get_resume_points(
     limit: int = Query(20, ge=1, le=50, description="Max resume entries to return"),
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_active_user),
     db: Session = Depends(get_db),
 ) -> List[ResumePointResponse]:
     """
@@ -69,7 +69,7 @@ def get_resume_points(
 )
 def get_story_listening_progress(
     story_id: str,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_active_user),
     db: Session = Depends(get_db),
 ) -> List[ListeningProgressResponse]:
     """

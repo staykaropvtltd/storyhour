@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import require_active_user
 from app.models.audio_asset import AudioAccessType
 from app.models.story import StoryStatus
 from app.repositories.audio import AudioRepository
@@ -91,7 +91,7 @@ def get_audio_preview(
 def get_protected_audio_stream(
     story_slug: str,
     chapter_order: Optional[int] = Query(None, description="Optional chapter order index to stream"),
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_active_user),
     db: Session = Depends(get_db),
 ) -> AudioPlaybackDescriptor:
     """

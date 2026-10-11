@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     # No secret is hard-coded in source code.
     SUPABASE_JWT_SECRET: str = ""
     SUPABASE_JWT_ALGORITHM: str = "HS256"
+
+    # Phase 1A Authentication Mode
+    # Options: "supabase" (default: authoritative remote Supabase Auth verification)
+    #          "local" (explicitly configured local cryptographic JWT verification)
+    AUTH_MODE: str = "supabase"
+    JWT_AUDIENCE: Optional[str] = "authenticated"
+    JWT_ISSUER: Optional[str] = None
 
     # Phase 6 Rate Limiting
     RATE_LIMIT_ENABLED: bool = True

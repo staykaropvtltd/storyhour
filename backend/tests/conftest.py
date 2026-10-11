@@ -8,11 +8,20 @@ from app.config import settings
 from app.main import app
 
 
+@pytest.fixture(autouse=True)
+def configure_test_auth_mode(monkeypatch):
+    """Ensure tests default to explicit local JWT mode to avoid external Supabase dependency."""
+    monkeypatch.setattr(settings, "AUTH_MODE", "local")
+
+
 @pytest.fixture
-def client():
-    """TestClient fixture for FastAPI application."""
+def client(db_session):
+    """TestClient fixture for FastAPI application bound to isolated SQLite db."""
+    from app.database import get_db
+    app.dependency_overrides[get_db] = lambda: db_session
     with TestClient(app) as test_client:
         yield test_client
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -77,10 +86,28 @@ def db_session():
     from app.database.base import Base
     import app.database.models  # noqa: F401
 
-    test_engine = create_engine("sqlite:///:memory:", echo=False)
+    from sqlalchemy.pool import StaticPool
+    test_engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
     Base.metadata.create_all(bind=test_engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
     db = TestingSessionLocal()
+    from app.database.models.profile import UserProfile
+    test_user = UserProfile(
+        user_id="d486d34e-0a56-4293-85f2-2b6b15801c80",
+        email="storyteller@storyhour.com",
+        full_name="Adithya Goud",
+        subscription_tier="free",
+        is_active=True,
+        is_deleted=False,
+    )
+    db.add(test_user)
+    db.commit()
+
     try:
         yield db
     finally:

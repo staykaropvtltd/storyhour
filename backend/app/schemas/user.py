@@ -29,8 +29,8 @@ class AuthenticatedUser(BaseModel):
         description="Application authorization role",
     )
     is_active: bool = Field(
-        default=True,
-        description="Whether the user account is active",
+        default=False,
+        description="Whether the user account is active in the application database",
     )
     app_metadata: Dict[str, Any] = Field(default_factory=dict)
     user_metadata: Dict[str, Any] = Field(default_factory=dict)

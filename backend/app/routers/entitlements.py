@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, status
 
-from app.dependencies import get_current_user, require_role
+from app.dependencies import require_active_user, require_role
 from app.schemas.user import AuthenticatedUser
 
 router = APIRouter(prefix="/library", tags=["User Library & Entitlements"])
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/library", tags=["User Library & Entitlements"])
     description="Retrieves the authenticated user's purchased stories, active entitlements, and audio access."
 )
 def get_user_library(
-    current_user: AuthenticatedUser = Depends(get_current_user)
+    current_user: AuthenticatedUser = Depends(require_active_user)
 ):
     """
     Sample protected resource demonstrating integration with future

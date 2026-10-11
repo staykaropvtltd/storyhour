@@ -60,58 +60,100 @@ class SupabaseAuthService:
                 logger.error(f"Failed to initialize Supabase admin client: {str(e)}")
         return self._admin_client
 
+    @property
+    def auth_mode(self) -> str:
+        """Determines the active authentication verification mode."""
+        mode = (getattr(settings, "AUTH_MODE", "") or "").strip().lower()
+        if mode in ("supabase", "local"):
+            return mode
+        if settings.SUPABASE_URL and settings.SUPABASE_ANON_KEY:
+            return "supabase"
+        return "local"
+
     def verify_token(self, token: str) -> AuthenticatedUser:
         """
-        Validates incoming Supabase access token (JWT).
-        1. Checks signature and expiry locally using SUPABASE_JWT_SECRET.
-        2. If live Supabase client is configured, optionally validates against Supabase Auth server.
-        3. Returns an AuthenticatedUser instance with verified claims.
+        Validates incoming access token (JWT).
+        In 'supabase' mode: Strictly validates against Supabase Auth API without fallback.
+        In 'local' mode: Strictly validates signature, expiration, audience, and claims locally.
 
         Raises:
             jwt.ExpiredSignatureError: When token has expired.
-            jwt.InvalidTokenError: When token format or signature is invalid.
+            jwt.InvalidTokenError: When token format or signature is invalid, or provider verification fails.
             ValueError: When required claims (sub, email) are missing.
         """
-        if not token or not isinstance(token, str):
+        if not token or not isinstance(token, str) or not token.strip():
             raise jwt.InvalidTokenError("Token is missing or empty")
 
-        # Step 1: Remote verification with Supabase Auth API if client is available
-        if self.anon_client is not None:
-            try:
-                res = self.anon_client.auth.get_user(token)
-                if res and res.user:
-                    user_data = res.user
-                    app_meta = getattr(user_data, "app_metadata", {}) or {}
-                    user_meta = getattr(user_data, "user_metadata", {}) or {}
-                    raw_role = (
-                        app_meta.get("role")
-                        or getattr(user_data, "role", None)
-                        or "authenticated"
-                    )
-                    role = _normalize_role(raw_role)
-                    return AuthenticatedUser(
-                        id=str(user_data.id),
-                        email=user_data.email or "",
-                        role=role,
-                        is_active=True,
-                        app_metadata=app_meta,
-                        user_metadata=user_meta,
-                        created_at=str(getattr(user_data, "created_at", "")) if hasattr(user_data, "created_at") else None,
-                    )
-            except Exception as e:
-                logger.debug(f"Remote Supabase validation fallback to local decode: {str(e)}")
+        mode = self.auth_mode
+        if mode == "supabase":
+            return self._verify_supabase_remote(token)
+        elif mode == "local":
+            return self._verify_local_jwt(token)
+        else:
+            raise jwt.InvalidTokenError(f"Unsupported authentication mode: {mode}")
 
-        # Step 2: Fallback to local cryptographic signature and claims verification
-        payload = self._decode_jwt(token)
+    def _verify_supabase_remote(self, token: str) -> AuthenticatedUser:
+        """
+        Strict authoritative remote verification against Supabase Auth API.
+        Never falls back to local JWT decoding on failure.
+        """
+        if self.anon_client is None:
+            logger.error("Supabase client is not configured for remote verification.")
+            raise jwt.InvalidTokenError("Authentication service is currently not configured")
 
-        user_id = payload.get("sub")
+        try:
+            res = self.anon_client.auth.get_user(token)
+        except Exception as exc:
+            err_msg = str(exc)
+            logger.debug(f"Remote Supabase validation failed: {err_msg}")
+            if "expired" in err_msg.lower():
+                raise jwt.ExpiredSignatureError("Token has expired")
+            raise jwt.InvalidTokenError(f"Could not validate credentials with authentication provider: {err_msg}")
+
+        if not res or not getattr(res, "user", None):
+            raise jwt.InvalidTokenError("Invalid token or user not found")
+
+        user_data = res.user
+        user_id = str(getattr(user_data, "id", "")).strip()
         if not user_id:
             raise ValueError("Token subject (sub) claim missing")
 
+        email = getattr(user_data, "email", None)
+        if not email or not str(email).strip():
+            raise ValueError("Token email claim missing")
+
+        app_meta = getattr(user_data, "app_metadata", {}) or {}
+        user_meta = getattr(user_data, "user_metadata", {}) or {}
+        raw_role = (
+            app_meta.get("role")
+            or getattr(user_data, "role", None)
+            or "authenticated"
+        )
+        role = _normalize_role(raw_role)
+
+        # Token identity verified; application active status is strictly verified by database
+        return AuthenticatedUser(
+            id=user_id,
+            email=str(email).strip().lower(),
+            role=role,
+            is_active=False,
+            app_metadata=app_meta,
+            user_metadata=user_meta,
+            created_at=str(getattr(user_data, "created_at", "")) if hasattr(user_data, "created_at") else None,
+        )
+
+    def _verify_local_jwt(self, token: str) -> AuthenticatedUser:
+        """
+        Strict local cryptographic verification for explicitly configured local JWT mode.
+        """
+        payload = self._decode_jwt(token)
+
+        user_id = payload.get("sub")
+        if not user_id or not str(user_id).strip():
+            raise ValueError("Token subject (sub) claim missing")
+
         email = payload.get("email")
-        if not email:
-            email = payload.get("user_metadata", {}).get("email")
-        if not email:
+        if not email or not str(email).strip():
             raise ValueError("Token email claim missing")
 
         app_metadata = payload.get("app_metadata", {}) or {}
@@ -121,40 +163,54 @@ class SupabaseAuthService:
         role = _normalize_role(raw_role)
 
         return AuthenticatedUser(
-            id=str(user_id),
-            email=email,
+            id=str(user_id).strip(),
+            email=str(email).strip().lower(),
             role=role,
-            is_active=True,
+            is_active=False,
             app_metadata=app_metadata,
             user_metadata=user_metadata,
             created_at=payload.get("created_at"),
         )
 
-
     def _decode_jwt(self, token: str) -> Dict[str, Any]:
         """
         Cryptographically decodes and verifies JWT signature and expiry.
-        Supports HS256 with SUPABASE_JWT_SECRET.
+        Strictly validates secret, algorithm, expiration, and audience.
         """
-        # Ensure audience verification is permissive for Supabase 'authenticated' audience
+        secret = settings.SUPABASE_JWT_SECRET
+        if not secret or not isinstance(secret, str) or not secret.strip():
+            logger.error("Local JWT verification failed: SUPABASE_JWT_SECRET is empty or not configured.")
+            raise jwt.InvalidTokenError("JWT signing secret is not configured")
+
+        algorithm = settings.SUPABASE_JWT_ALGORITHM or "HS256"
+        if algorithm not in ["HS256", "HS384", "HS512"]:
+            logger.error(f"Unsupported JWT signing algorithm: {algorithm}")
+            raise jwt.InvalidTokenError(f"Unsupported JWT signing algorithm: {algorithm}")
+
         decode_options = {
             "verify_signature": True,
             "verify_exp": True,
-            "verify_aud": False,  # Supabase tokens use aud: 'authenticated'
+            "verify_aud": bool(settings.JWT_AUDIENCE),
+            "verify_iss": bool(settings.JWT_ISSUER),
+            "require": ["sub", "exp"],
         }
 
+        decode_kwargs: Dict[str, Any] = {
+            "algorithms": [algorithm],
+            "options": decode_options,
+        }
+        if settings.JWT_AUDIENCE:
+            decode_kwargs["audience"] = settings.JWT_AUDIENCE
+        if settings.JWT_ISSUER:
+            decode_kwargs["issuer"] = settings.JWT_ISSUER
+
         try:
-            return jwt.decode(
-                token,
-                settings.SUPABASE_JWT_SECRET,
-                algorithms=[settings.SUPABASE_JWT_ALGORITHM],
-                options=decode_options
-            )
+            return jwt.decode(token, secret, **decode_kwargs)
         except jwt.ExpiredSignatureError:
             logger.debug("Token verification failed: token has expired")
             raise
         except jwt.InvalidTokenError as e:
-            logger.debug(f"Token verification failed: invalid token ({str(e)})")
+            logger.debug(f"Token verification failed: {str(e)}")
             raise
 
     def sign_up(self, name: str, email: str, password: str) -> Dict[str, Any]:
@@ -318,15 +374,22 @@ class SupabaseAuthService:
                 metadata = getattr(user, "user_metadata", {}) or {}
                 full_name = metadata.get("full_name") or metadata.get("name")
 
-                if not existing:
+                if existing:
+                    # Do not reactivate or update a soft-deleted or deactivated profile through synchronization
+                    if existing.is_deleted or not existing.is_active:
+                        logger.warning(
+                            f"Profile synchronization bypassed: user {user.id} is marked inactive or soft-deleted."
+                        )
+                        return
+                    if full_name and existing.full_name != full_name:
+                        repo.update(db, db_obj=existing, obj_in={"full_name": full_name})
+                else:
                     repo.create(db, obj_in={
                         "user_id": str(user.id),
                         "email": user.email,
                         "full_name": full_name,
                         "subscription_tier": "free",
                     })
-                elif full_name and existing.full_name != full_name:
-                    repo.update(db, db_obj=existing, obj_in={"full_name": full_name})
         except Exception as err:
             logger.error(f"Failed to sync user profile into database: {str(err)}")
 
