@@ -46,6 +46,10 @@ class SupabaseAuthService:
                 logger.error(f"Failed to initialize Supabase client: {str(e)}")
         return self._anon_client
 
+    @anon_client.setter
+    def anon_client(self, client: Optional[Client]) -> None:
+        self._anon_client = client
+
     @property
     def admin_client(self) -> Optional[Client]:
         """Lazy initializer for admin service-role Supabase client."""
@@ -59,6 +63,10 @@ class SupabaseAuthService:
             except Exception as e:
                 logger.error(f"Failed to initialize Supabase admin client: {str(e)}")
         return self._admin_client
+
+    @admin_client.setter
+    def admin_client(self, client: Optional[Client]) -> None:
+        self._admin_client = client
 
     @property
     def auth_mode(self) -> str:
@@ -254,8 +262,8 @@ class SupabaseAuthService:
             if hasattr(user, "identities") and user.identities is not None and len(user.identities) == 0:
                 logger.warning(f"Registration conflict: account with {email} already exists")
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="An account with this email already exists",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Registration could not be completed with the provided information. Please verify your details or try logging in.",
                 )
 
             session = getattr(res, "session", None)
@@ -288,7 +296,7 @@ class SupabaseAuthService:
             raise
         except Exception as exc:
             err_msg = str(exc)
-            logger.warning(f"Sign up failed for email {email}: {err_msg}")
+            logger.warning(f"Sign up failed for email {email}: [REDACTED_UPSTREAM_ERROR]")
             if "rate limit" in err_msg.lower():
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -296,12 +304,12 @@ class SupabaseAuthService:
                 )
             if "already registered" in err_msg.lower() or "user already registered" in err_msg.lower():
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="An account with this email already exists",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Registration could not be completed with the provided information. Please verify your details or try logging in.",
                 )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Registration failed: {err_msg}",
+                detail="Registration could not be completed. Please check your information and try again.",
             )
 
     def sign_in_with_password(self, email: str, password: str) -> Dict[str, Any]:

@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, status
 
-from app.core.rate_limit import auth_rate_limiter
+from app.core.rate_limit import (
+    auth_login_limiter,
+    auth_rate_limiter,
+    auth_signup_limiter,
+)
 from app.schemas.auth import LoginRequest, LoginResponse, SignUpRequest, SignUpResponse
 from app.services.supabase_service import supabase_service
 
@@ -12,7 +16,7 @@ router = APIRouter(tags=["Authentication"])
     response_model=SignUpResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user account (Strictly 4 fields)",
-    dependencies=[Depends(auth_rate_limiter)],
+    dependencies=[Depends(auth_signup_limiter)],
     description=(
         "Registers a new account in Supabase Auth. "
         "Strictly contains only 4 fields (not more than that):\n"
@@ -47,6 +51,7 @@ def signup(payload: SignUpRequest) -> SignUpResponse:
     status_code=status.HTTP_201_CREATED,
     include_in_schema=False,
     summary="User signup alias",
+    dependencies=[Depends(auth_signup_limiter)],
 )
 def signup_alias(payload: SignUpRequest) -> SignUpResponse:
     """Convenience alias for /api/signup."""
@@ -58,7 +63,7 @@ def signup_alias(payload: SignUpRequest) -> SignUpResponse:
     response_model=LoginResponse,
     status_code=status.HTTP_200_OK,
     summary="User login with email and password",
-    dependencies=[Depends(auth_rate_limiter)],
+    dependencies=[Depends(auth_login_limiter)],
     description="Authenticates credentials with Supabase Auth, returning a JWT session and profile.",
 )
 def login(credentials: LoginRequest) -> LoginResponse:
@@ -82,6 +87,7 @@ def login(credentials: LoginRequest) -> LoginResponse:
     status_code=status.HTTP_200_OK,
     include_in_schema=False,
     summary="User login alias",
+    dependencies=[Depends(auth_login_limiter)],
 )
 def login_alias(credentials: LoginRequest) -> LoginResponse:
     """Convenience alias for /api/login."""

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.config import settings
+from app.config import settings, validate_configuration
 from app.core.caching import ResponseCachingMiddleware
 from app.core.logging import logger
 from app.routers import (
@@ -110,6 +110,7 @@ OPENAPI_TAGS = [
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
+    validate_configuration(settings)
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
 

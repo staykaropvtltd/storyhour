@@ -53,9 +53,10 @@ def api_db():
 
 
 @pytest.fixture
-def api_client(api_db):
+def api_client(api_db, monkeypatch):
     """FastAPI TestClient with get_db overridden to use isolated in-memory test database."""
     app.dependency_overrides[get_db] = lambda: api_db
+    monkeypatch.setattr("app.routers.health.check_database_health", lambda: True)
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()

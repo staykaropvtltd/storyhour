@@ -15,10 +15,11 @@ def configure_test_auth_mode(monkeypatch):
 
 
 @pytest.fixture
-def client(db_session):
+def client(db_session, monkeypatch):
     """TestClient fixture for FastAPI application bound to isolated SQLite db."""
     from app.database import get_db
     app.dependency_overrides[get_db] = lambda: db_session
+    monkeypatch.setattr("app.routers.health.check_database_health", lambda: True)
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()

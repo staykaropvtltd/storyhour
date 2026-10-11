@@ -17,16 +17,28 @@ class RateLimiter:
     or enforced at the API Gateway / Cloudflare layer.
     """
 
-    def __init__(self, requests_limit: int = 30, window_seconds: int = 60, key_prefix: str = ""):
+    def __init__(
+        self,
+        requests_limit: int = 30,
+        window_seconds: int = 60,
+        key_prefix: str = "",
+        use_path: bool = True,
+    ):
         self.requests_limit = requests_limit
         self.window_seconds = window_seconds
         self.key_prefix = key_prefix
+        self.use_path = use_path
         self._history: Dict[str, List[float]] = defaultdict(list)
 
     def _get_client_ip(self, request: Request) -> str:
-        forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
+        """
+        Extract client IP safely.
+        Untrusted forwarded headers are ignored unless TRUST_PROXY_HEADERS is explicitly True.
+        """
+        if getattr(settings, "TRUST_PROXY_HEADERS", False):
+            forwarded = request.headers.get("x-forwarded-for")
+            if forwarded:
+                return forwarded.split(",")[0].strip()
         if request.client and request.client.host:
             return request.client.host
         return "127.0.0.1"
@@ -36,8 +48,18 @@ class RateLimiter:
             return
 
         client_ip = self._get_client_ip(request)
-        path = request.scope.get("path", "")
-        key = f"{self.key_prefix}:{client_ip}:{path}" if self.key_prefix else f"{client_ip}:{path}"
+
+        if not self.use_path:
+            key = f"{self.key_prefix}:{client_ip}"
+        else:
+            path = request.scope.get("path", "")
+            # Normalize authentication alias paths to share rate limit bucket
+            if self.key_prefix.startswith("auth"):
+                if path.endswith("/login"):
+                    path = "/auth/login"
+                elif path.endswith("/signup"):
+                    path = "/auth/signup"
+            key = f"{self.key_prefix}:{client_ip}:{path}" if self.key_prefix else f"{client_ip}:{path}"
 
         now = time.time()
         cutoff = now - self.window_seconds
@@ -67,16 +89,34 @@ contact_rate_limiter = RateLimiter(
     requests_limit=getattr(settings, "CONTACT_RATE_LIMIT_PER_MINUTE", 30),
     window_seconds=60,
     key_prefix="contact",
+    use_path=True,
+)
+
+# Shared authentication limiters enforcing quota across canonical and alias routes
+auth_login_limiter = RateLimiter(
+    requests_limit=getattr(settings, "AUTH_RATE_LIMIT_PER_MINUTE", 30),
+    window_seconds=60,
+    key_prefix="auth:login",
+    use_path=False,
+)
+
+auth_signup_limiter = RateLimiter(
+    requests_limit=getattr(settings, "AUTH_RATE_LIMIT_PER_MINUTE", 30),
+    window_seconds=60,
+    key_prefix="auth:signup",
+    use_path=False,
 )
 
 auth_rate_limiter = RateLimiter(
     requests_limit=getattr(settings, "AUTH_RATE_LIMIT_PER_MINUTE", 30),
     window_seconds=60,
     key_prefix="auth",
+    use_path=True,
 )
 
 analytics_rate_limiter = RateLimiter(
     requests_limit=getattr(settings, "ANALYTICS_RATE_LIMIT_PER_MINUTE", 120),
     window_seconds=60,
     key_prefix="analytics",
+    use_path=True,
 )
