@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLibraryCart } from "@/context/LibraryCartContext";
+import { useAudio } from "@/context/AudioContext";
 import {
   X,
   Play,
@@ -39,15 +40,14 @@ export default function AudiobookModal({
   onClose,
   onAddToCart,
 }: AudiobookModalProps) {
-  const { isBookUnlocked, addToCart, unlockBooks } = useLibraryCart();
+  const { isBookUnlocked, addToCart } = useLibraryCart();
+  const { isMuted, toggleMute } = useAudio();
   const router = useRouter();
   const isInitiallyUnlocked = isBookUnlocked(audiobook.id);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isUnlocked, setIsUnlocked] = useState(isInitiallyUnlocked);
-  const [isUnlocking, setIsUnlocking] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [playbackProgress, setPlaybackProgress] = useState(18); // Simulated % progress
-  const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
     if (isBookUnlocked(audiobook.id)) {
@@ -88,15 +88,6 @@ export default function AudiobookModal({
     return () => clearInterval(interval);
   }, [isPlaying]);
 
-  const handleUnlock = () => {
-    setIsUnlocking(true);
-    setTimeout(() => {
-      unlockBooks([audiobook.id]);
-      setIsUnlocking(false);
-      setIsUnlocked(true);
-      setIsPlaying(true);
-    }, 2000);
-  };
 
   const tracks = audiobook.tracks || [];
   const trackCount = tracks.length > 0 ? tracks.length : 1;
@@ -287,7 +278,7 @@ export default function AudiobookModal({
                   </div>
 
                   <button
-                    onClick={() => setIsMuted((m) => !m)}
+                    onClick={toggleMute}
                     className="p-1.5 rounded-full hover:bg-black/5 text-[#5A5A5A] transition-colors"
                     title={isMuted ? "Unmute" : "Mute"}
                   >
@@ -410,7 +401,7 @@ export default function AudiobookModal({
                   Complete Digital Audiobook
                 </span>
                 <span className="font-serif text-[24px] font-bold text-[#0F0F0F]">
-                  ${audiobook.price}
+                  £{audiobook.price}
                 </span>
               </div>
 
@@ -439,7 +430,7 @@ export default function AudiobookModal({
                     </button>
                     <button
                       onClick={() => {
-                        addToCart({
+                        const added = addToCart({
                           id: audiobook.id,
                           title: audiobook.title,
                           nativeTitle: audiobook.nativeTitle,
@@ -451,8 +442,10 @@ export default function AudiobookModal({
                           language: audiobook.language,
                           type: "audiobook",
                         });
-                        onClose();
-                        router.push("/checkout");
+                        if (added) {
+                          onClose();
+                          router.push("/checkout");
+                        }
                       }}
                       className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#991B1B] hover:from-[#EA3A2D] hover:via-[#D12E23] hover:to-[#A81F19] text-white font-sans text-[13px] font-bold transition-all shadow-[0_4px_14px_rgba(201,40,29,0.35)] hover:shadow-[0_6px_20px_rgba(201,40,29,0.5)] flex items-center gap-1.5 cursor-pointer"
                     >

@@ -32,7 +32,6 @@ export default function StoriesEditionsPage() {
   const [selectedAudiobook, setSelectedAudiobook] = useState<Audiobook | null>(null);
   const [hoveredEditionId, setHoveredEditionId] = useState<string | null>(null);
   const [hoveredAudiobookId, setHoveredAudiobookId] = useState<string | null>(null);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [bookReaderEdition, setBookReaderEdition] = useState<Edition | null>(null);
   const [activeTouchId, setActiveTouchId] = useState<string | null>(null);
   const { isPlaying, togglePlay, playStory } = useAudio();
@@ -40,36 +39,6 @@ export default function StoriesEditionsPage() {
 
   const topShelf = EDITIONS.slice(0, 4);
   const bottomShelf = EDITIONS.slice(4, 9);
-
-  // Sync ambient sound button with global audio
-  const handleToggleSound = () => {
-    if (isPlaying) {
-      togglePlay();
-      setIsAudioPlaying(false);
-    } else {
-      // Play featured story preview
-      const featured = EDITIONS[0];
-      playStory({
-        id: featured.id,
-        slug: "ramayana-english",
-        title: featured.title,
-        subtitle: featured.subtitle,
-        storyteller: featured.storyteller,
-        language: featured.language,
-        audience: "Families & All Ages",
-        category: "Mythology & Epics",
-        format: "Audiobook",
-        duration: featured.duration,
-        durationMinutes: 860,
-        coverImage: featured.coverImage,
-        audioPreviewUrl: featured.audioPreviewUrl,
-        chaptersCount: featured.chaptersCount,
-        description: featured.description,
-      });
-      setIsAudioPlaying(true);
-      showToast("Playing StoryHour Editions Signature Narration");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#FAF8F3] text-[#0F0F0F] font-sans selection:bg-[#C9281D] selection:text-white flex flex-col justify-between overflow-x-hidden">
@@ -120,28 +89,6 @@ export default function StoriesEditionsPage() {
         </div>
       </section>
 
-      {/* ── Audio Companion Toolbar ── */}
-      <div className="w-full max-w-[1520px] mx-auto px-6 sm:px-10 lg:px-14 pt-4 sm:pt-6 pb-2 flex items-center justify-end z-20">
-
-        {/* Ambient Audio Companion Toggle */}
-        <button
-          onClick={handleToggleSound}
-          aria-label="Toggle audio companion preview"
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-[#FDF2F0] border border-[#E7E7E7] hover:border-[#C9281D] text-[13px] font-sans font-medium text-[#0F0F0F] hover:text-[#C9281D] transition-all shadow-subtle cursor-pointer"
-        >
-          {isPlaying || isAudioPlaying ? (
-            <>
-              <Volume2 className="w-4 h-4 text-[#C9281D] animate-pulse" />
-              <span className="text-[#C9281D]">Audio Sample Playing</span>
-            </>
-          ) : (
-            <>
-              <Headphones className="w-4 h-4 text-[#5A5A5A]" />
-              <span>Audio Companion Sample</span>
-            </>
-          )}
-        </button>
-      </div>
 
       {/* ═══════════════════════════════════════════════════════════
           CENTER STAGE: THE 3D DOUBLE FLOATING ARCHITECTURAL SHELVES
@@ -278,19 +225,20 @@ export default function StoriesEditionsPage() {
                           : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
                       }`}
                     >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setBookReaderEdition(ed);
-                        }}
-                        aria-label={`${isBookUnlocked(ed.id) ? "Read" : "View"} ${ed.title}`}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[11px] sm:text-[12px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
-                      >
-                        <BookOpen className="w-3.5 h-3.5 text-[#C9281D]" />
-                        <span>{isBookUnlocked(ed.id) ? "Read Book" : "View"}</span>
-                      </button>
-                      {!isBookUnlocked(ed.id) && (
+                      {isBookUnlocked(ed.id) ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBookReaderEdition(ed);
+                          }}
+                          aria-label={`Read ${ed.title}`}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#0F0F0F] font-sans text-[11px] sm:text-[12px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                        >
+                          <BookOpen className="w-3.5 h-3.5 text-[#C9281D]" />
+                          <span>Read Book</span>
+                        </button>
+                      ) : (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -308,11 +256,11 @@ export default function StoriesEditionsPage() {
                               type: "book",
                             });
                           }}
-                          title="Add to Cart"
                           aria-label={`Add ${ed.title} to Cart`}
-                          className="w-8 h-8 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white flex items-center justify-center shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white font-sans text-[11px] sm:text-[12px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
                         >
-                          <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>Add to Cart · £{ed.price}</span>
                         </button>
                       )}
                     </div>
@@ -473,19 +421,20 @@ export default function StoriesEditionsPage() {
                           : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
                       }`}
                     >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setBookReaderEdition(ed);
-                        }}
-                        aria-label={`${isBookUnlocked(ed.id) ? "Read" : "View"} ${ed.title}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[10px] sm:text-[11px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
-                      >
-                        <BookOpen className="w-3 h-3 text-[#C9281D]" />
-                        <span>{isBookUnlocked(ed.id) ? "Read Book" : "View"}</span>
-                      </button>
-                      {!isBookUnlocked(ed.id) && (
+                      {isBookUnlocked(ed.id) ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBookReaderEdition(ed);
+                          }}
+                          aria-label={`Read ${ed.title}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full bg-white text-[#0F0F0F] font-sans text-[10px] sm:text-[11px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                        >
+                          <BookOpen className="w-3 h-3 text-[#C9281D]" />
+                          <span>Read Book</span>
+                        </button>
+                      ) : (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -503,11 +452,11 @@ export default function StoriesEditionsPage() {
                               type: "book",
                             });
                           }}
-                          title="Add to Cart"
                           aria-label={`Add ${ed.title} to Cart`}
-                          className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white flex items-center justify-center shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+                          className="inline-flex items-center gap-1 px-3 py-1 sm:py-1.5 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white font-sans text-[10px] sm:text-[11px] font-semibold shadow-xl transform scale-95 group-hover:scale-100 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
                         >
-                          <ShoppingBag className="w-3.5 h-3.5 stroke-[2.2]" />
+                          <ShoppingBag className="w-3 h-3" />
+                          <span>Add to Cart · ${ed.price}</span>
                         </button>
                       )}
                     </div>
@@ -1208,7 +1157,7 @@ export default function StoriesEditionsPage() {
                       chaptersCount: selectedEdition.chaptersCount,
                       description: selectedEdition.description,
                     });
-                    showToast(`Playing audio companion sample: ${selectedEdition.title}`);
+                    showToast(`Playing audio sample: ${selectedEdition.title}`);
                   }}
                   className="w-11 h-11 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] hover:from-[#C9281D] hover:to-[#8F1712] text-white flex items-center justify-center flex-shrink-0 shadow-md cursor-pointer transition-colors"
                 >
@@ -1234,7 +1183,7 @@ export default function StoriesEditionsPage() {
                     Collector&apos;s Book Edition
                   </span>
                   <span className="font-serif text-[24px] font-bold text-[#0F0F0F]">
-                    ${selectedEdition.price}
+                    £{selectedEdition.price}
                   </span>
                 </div>
 
@@ -1247,7 +1196,7 @@ export default function StoriesEditionsPage() {
                         title: selectedEdition.title,
                         language: selectedEdition.language,
                         price: selectedEdition.price,
-                        currency: "$",
+                        currency: "£",
                         coverImage: selectedEdition.coverImage,
                         format: `${selectedEdition.bookFormat} (Collector's)`,
                         description: selectedEdition.description,

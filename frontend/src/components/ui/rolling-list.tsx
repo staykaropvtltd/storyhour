@@ -33,7 +33,7 @@ export default function RollingList({
   const handleKeyDown = (e: React.KeyboardEvent, item: TrailerItem) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (item.videoUrl && onSelectTrailer) {
+      if (onSelectTrailer) {
         onSelectTrailer(item);
       }
     }
@@ -48,9 +48,9 @@ export default function RollingList({
         return (
           <div
             key={item.id}
-            role={hasVideo ? "button" : "group"}
-            tabIndex={hasVideo ? 0 : -1}
-            aria-label={`${item.title} — ${item.category}, ${item.language}${hasVideo ? " (Watch trailer)" : " (Trailer in production)"}`}
+            role="button"
+            tabIndex={0}
+            aria-label={`${item.title} — ${item.category}, ${item.language}${hasVideo ? " (Watch trailer)" : " (Trailer in production — View details)"}`}
             onMouseEnter={() => setHoveredId(item.id)}
             onMouseLeave={() => setHoveredId(null)}
             onFocus={() => setHoveredId(item.id)}
@@ -66,7 +66,7 @@ export default function RollingList({
               "group relative w-full border-b border-[#E8E4DC] transition-colors duration-300 select-none",
               "py-3 sm:py-4 md:py-5 lg:py-6 px-2 sm:px-4",
               "outline-none focus-visible:bg-black/[0.02]",
-              hasVideo ? "cursor-pointer" : "cursor-default"
+              "cursor-pointer"
             )}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 relative">

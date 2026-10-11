@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ShoppingBag, Search } from "lucide-react";
+import { Menu, X, ShoppingBag, Search, User, Mail, Phone, LogOut, ChevronDown } from "lucide-react";
 import { useLibraryCart } from "@/context/LibraryCartContext";
 
 interface SiteHeaderProps {
@@ -17,7 +17,32 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
   const isHomePage = pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [userSession, setUserSession] = useState<{
+    name: string;
+    fullName?: string;
+    email: string;
+    phone?: string;
+  } | null>(null);
   const { cartCount, setIsSearchOpen, setIsCartDrawerOpen } = useLibraryCart();
+
+  useEffect(() => {
+    const syncSession = () => {
+      try {
+        const stored = localStorage.getItem("storyhour_user_session");
+        if (stored) {
+          setUserSession(JSON.parse(stored));
+        } else {
+          setUserSession(null);
+        }
+      } catch {
+        setUserSession(null);
+      }
+    };
+    syncSession();
+    window.addEventListener("storage", syncSession);
+    return () => window.removeEventListener("storage", syncSession);
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -75,7 +100,9 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
     { label: "Trailer", href: "/trailers" },
   ];
 
-  const ctaHref = "/stories";
+  const isLoggedIn = !!userSession;
+  const ctaHref = isLoggedIn ? "/account" : "/login";
+  const ctaLabel = isLoggedIn ? (userSession.name || "Profile") : "Login/sign up";
 
   return (
     <>
@@ -159,12 +186,93 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
               )}
             </button>
 
-            <Link
-              href={ctaHref}
-              className="inline-flex items-center justify-center bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-[15px] px-6 sm:px-7 py-2.5 sm:py-3 rounded-full transition-all duration-200 shadow-sm hover:shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#C9281D]"
-            >
-              <span>Try it for free!</span>
-            </Link>
+            {isLoggedIn ? (
+              <div
+                className="relative"
+                onMouseEnter={() => setProfileMenuOpen(true)}
+                onMouseLeave={() => setProfileMenuOpen(false)}
+              >
+                <Link
+                  href="/account"
+                  className="inline-flex items-center justify-center gap-2 bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-[15px] px-5 sm:px-6 py-2.5 sm:py-3 rounded-full transition-all duration-200 shadow-sm hover:shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#C9281D]"
+                  aria-haspopup="true"
+                  aria-expanded={profileMenuOpen}
+                >
+                  <User className="w-4 h-4 text-white/90" />
+                  <span className="max-w-[130px] truncate capitalize">{userSession?.fullName || userSession?.name || "Profile"}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-white/70 transition-transform duration-200 ${profileMenuOpen ? "rotate-180" : ""}`} />
+                </Link>
+
+                {/* Hover Profile Popover Card */}
+                {profileMenuOpen && (
+                  <div className="absolute right-0 top-full pt-2 z-50 w-80 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="bg-white rounded-2xl p-5 shadow-[0_16px_40px_rgba(0,0,0,0.12)] border border-black/10 text-[#0f0f0f]">
+                      {/* Avatar & Name Header */}
+                      <div className="flex items-center gap-3.5 pb-4 border-b border-black/5">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#DE3124] via-[#C9281D] to-[#FC7819] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+                          {((userSession?.fullName || userSession?.name || "U").charAt(0)).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-bold text-base text-[#0f0f0f] capitalize truncate">
+                            {userSession?.fullName || userSession?.name || "Reader Account"}
+                          </h4>
+                        </div>
+                      </div>
+
+                      {/* Contact Details */}
+                      <div className="py-3.5 space-y-2.5 text-xs text-black/75">
+                        <div className="flex items-center gap-2.5">
+                          <Mail className="w-4 h-4 text-[#C9281D] shrink-0" />
+                          <span className="truncate font-medium">{userSession?.email || "reader@storyhour.co.uk"}</span>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <Phone className="w-4 h-4 text-[#C9281D] shrink-0" />
+                          <span className="font-medium">{userSession?.phone || "+44 (0) 7911 123456"}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Links */}
+                      <div className="pt-3 border-t border-black/5 space-y-1.5">
+                        <Link
+                          href="/account"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-bold text-[#0f0f0f] hover:bg-[#FAF8F3] hover:text-[#C9281D] transition-colors"
+                        >
+                          <span className="flex items-center gap-2">
+                            <User className="w-3.5 h-3.5" />
+                            View Full Profile &amp; Library
+                          </span>
+                          <span className="text-black/40">→</span>
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              localStorage.removeItem("storyhour_user_session");
+                            } catch {}
+                            setUserSession(null);
+                            setProfileMenuOpen(false);
+                            window.location.href = "/";
+                          }}
+                          className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-[15px] px-6 sm:px-7 py-2.5 sm:py-3 rounded-full transition-all duration-200 shadow-sm hover:shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#C9281D]"
+              >
+                <span>Login/sign up</span>
+              </Link>
+            )}
           </div>
 
           {/* 4. Mobile Menu Trigger & Mobile Cart & Mobile Search */}
@@ -242,13 +350,60 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                 </span>
               </button>
               <div className="pt-3">
-                <Link
-                  href={ctaHref}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-base py-3.5 rounded-full transition-all duration-200 shadow-md"
-                >
-                  <span>Try it for free!</span>
-                </Link>
+                {isLoggedIn ? (
+                  <div className="rounded-2xl border border-black/10 bg-[#FAF8F3] p-4 space-y-3 text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#DE3124] to-[#FC7819] flex items-center justify-center text-white font-bold text-base shrink-0">
+                        {((userSession?.fullName || userSession?.name || "U").charAt(0)).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-sm text-[#0f0f0f] capitalize truncate">
+                          {userSession?.fullName || userSession?.name || "Reader Account"}
+                        </div>
+                        <div className="text-[11px] text-black/60 truncate">
+                          {userSession?.email}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-black/75 flex items-center gap-2 pt-1.5 border-t border-black/5">
+                      <Phone className="w-3.5 h-3.5 text-[#C9281D]" />
+                      <span>{userSession?.phone || "+44 (0) 7911 123456"}</span>
+                    </div>
+
+                    <div className="pt-2 flex items-center gap-2">
+                      <Link
+                        href="/account"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex-1 py-2.5 rounded-xl bg-[#0f0f0f] text-white text-xs font-bold text-center"
+                      >
+                        My Library
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          try {
+                            localStorage.removeItem("storyhour_user_session");
+                          } catch {}
+                          setUserSession(null);
+                          setMobileMenuOpen(false);
+                          window.location.href = "/";
+                        }}
+                        className="px-3.5 py-2.5 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold cursor-pointer"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={ctaHref}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-base py-3.5 rounded-full transition-all duration-200 shadow-md"
+                  >
+                    <span>Login/sign up</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

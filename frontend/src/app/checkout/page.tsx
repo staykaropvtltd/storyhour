@@ -51,8 +51,34 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    try {
+      const session = localStorage.getItem("storyhour_user_session");
+      if (session) {
+        const parsed = JSON.parse(session);
+        if (parsed.email || parsed.token || parsed.name) {
+          setIsAuthenticated(true);
+          const name = parsed.fullName || parsed.name || "";
+          if (name) {
+            setFullName(name);
+            setCardName(name);
+          }
+          if (parsed.email) setEmail(parsed.email);
+          if (parsed.phone) setPhone(parsed.phone);
+          return;
+        }
+      }
+      setIsAuthenticated(false);
+      router.push("/login?redirect=/checkout");
+    } catch {
+      setIsAuthenticated(false);
+      router.push("/login?redirect=/checkout");
+    }
+  }, [router]);
 
   React.useEffect(() => {
     return () => {
@@ -169,6 +195,32 @@ export default function CheckoutPage() {
       }
     }, 1400);
   };
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#FAF8F3] text-[#0f0f0f]">
+        <SiteHeader activeLink="Cart" />
+        <main className="flex-1 flex items-center justify-center p-6 pt-32 pb-16">
+          <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-xl border border-black/10 text-center animate-in fade-in duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#DE3124] to-[#FC7819] flex items-center justify-center text-white mx-auto mb-5 shadow-md">
+              <User className="w-7 h-7" />
+            </div>
+            <h2 className="text-2xl font-serif font-bold text-[#0F0F0F] mb-2">Please Log In to Checkout</h2>
+            <p className="text-sm text-black/70 mb-6 font-sans">
+              You must be logged in to StoryHour so we can bind your purchased digital editions and narrations to your reader account.
+            </p>
+            <Link
+              href="/login?redirect=/checkout"
+              className="w-full py-3.5 px-6 rounded-full bg-[#0F0F0F] hover:bg-[#C9281D] text-white font-bold text-sm block transition-all shadow-md"
+            >
+              Log In to Continue
+            </Link>
+          </div>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF8F3] text-[#0f0f0f] selection:bg-[#C9281D] selection:text-white">
@@ -620,7 +672,7 @@ export default function CheckoutPage() {
                 {/* Mini Item List */}
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
                   {cartItems.map((item: CartItem) => {
-                    const itemImage = item.coverImage || item.product?.coverImage || "/images/covers/cover-ramayana.png";
+                    const itemImage = item.coverImage || item.product?.coverImage || "/images/ramayana_epic.jpg";
                     const itemTitle = item.title || item.product?.title || "StoryHour Edition";
                     const itemPrice = typeof item.price === "number" ? item.price : (item.product?.price ?? 18.5);
                     return (
@@ -641,7 +693,7 @@ export default function CheckoutPage() {
                           </p>
                         </div>
                         <span className="font-mono text-xs font-bold text-[#0f0f0f] flex-shrink-0">
-                          ${(itemPrice * item.quantity).toFixed(2)}
+                          £{(itemPrice * item.quantity).toFixed(2)}
                         </span>
                       </div>
                     );
@@ -651,7 +703,7 @@ export default function CheckoutPage() {
                 <div className="pt-3 border-t border-black/5 space-y-2.5 font-sans text-xs">
                   <div className="flex justify-between text-[#5a5a5a]">
                     <span>Subtotal</span>
-                    <span className="font-mono font-bold text-[#0f0f0f]">${subtotal.toFixed(2)}</span>
+                    <span className="font-mono font-bold text-[#0f0f0f]">£{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-[#5a5a5a]">
                     <span>Digital Lifetime Delivery</span>
@@ -659,15 +711,15 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-[#5a5a5a]">
                     <span>Taxes</span>
-                    <span className="font-mono font-bold text-[#0f0f0f]">${tax.toFixed(2)}</span>
+                    <span className="font-mono font-bold text-[#0f0f0f]">£{tax.toFixed(2)}</span>
                   </div>
                   <div className="pt-3 border-t border-black/10 flex justify-between items-baseline">
                     <span className="text-sm font-extrabold text-[#0f0f0f]">Total Due</span>
                     <div className="text-right">
                       <span className="font-serif text-2xl font-black text-[#0f0f0f] block leading-none">
-                        ${finalTotal.toFixed(2)}
+                        £{finalTotal.toFixed(2)}
                       </span>
-                      <span className="text-[10px] font-mono text-[#7A756D]">USD</span>
+                      <span className="text-[10px] font-mono text-[#7A756D]">GBP</span>
                     </div>
                   </div>
                 </div>
@@ -686,7 +738,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <Lock className="w-4 h-4 stroke-[2.5]" />
-                      <span>Complete Purchase (${finalTotal.toFixed(2)})</span>
+                      <span>Complete Purchase (£{finalTotal.toFixed(2)})</span>
                     </>
                   )}
                 </button>

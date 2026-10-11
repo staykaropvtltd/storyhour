@@ -64,7 +64,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https://storyhour.co.uk https://images.unsplash.com https://img.fablecdn.net https://i.ytimg.com",
               "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
               "media-src 'self' data: blob: https://storyhour.co.uk",
-              "connect-src 'self' https://storyhour.co.uk https://*.supabase.co",
+              "connect-src 'self' ws: wss: https://storyhour.co.uk https://*.supabase.co",
             ].join("; "),
           },
         ],
@@ -92,6 +92,11 @@ const nextConfig: NextConfig = {
         source: "/books",
         destination: "/stories",
         permanent: true,
+      },
+      {
+        source: "/new-design",
+        destination: "/",
+        permanent: false,
       },
     ];
   },

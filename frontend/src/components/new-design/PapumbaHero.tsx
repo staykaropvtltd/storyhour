@@ -57,7 +57,7 @@ export default function PapumbaHero() {
       {/* 2. Central Composition Zone (Untitled UI Component Hierarchy) */}
       <div className="relative z-20 flex flex-col items-center text-center max-w-[620px] md:max-w-[720px] lg:max-w-[800px] xl:max-w-[840px] px-4 mt-4 sm:mt-10 lg:mt-12">
         {/* Main Display Headline (Untitled UI Display Typography + Papumba Scale, 2 Clean Lines) */}
-        <h1 className="text-[2.8rem] sm:text-[4rem] md:text-[5.2rem] lg:text-[6.2rem] xl:text-[7rem] font-extrabold text-white tracking-[-0.035em] leading-[0.96] drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)] lowercase select-none">
+        <h1 className="text-[clamp(2.2rem,9.5vw,2.8rem)] sm:text-[4rem] md:text-[5.2rem] lg:text-[6.2rem] xl:text-[7rem] font-extrabold text-white tracking-[-0.035em] leading-[0.96] drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)] lowercase select-none">
           the magic storytelling
           <br />
           world for kids

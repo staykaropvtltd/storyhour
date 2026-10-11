@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 export default function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart, cartTotal, cartCount } = useLibraryCart();
+  const { cartItems, updateQuantity, removeFromCart, cartTotal, cartCount, isUserLoggedIn, openAuthModal } = useLibraryCart();
   const router = useRouter();
 
   const subtotal = cartTotal;
@@ -141,7 +141,7 @@ export default function CartPage() {
                 {cartItems.map((item: CartItem) => {
                   const isAudio = item.type === "audiobook" || item.id.startsWith("ab-");
                   const itemPrice = typeof item.price === "number" ? item.price : (item.product?.price ?? 18.5);
-                  const itemImage = item.coverImage || item.product?.coverImage || "/images/covers/cover-ramayana.png";
+                  const itemImage = item.coverImage || item.product?.coverImage || "/images/ramayana_epic.jpg";
                   const itemTitle = item.title || item.product?.title || "StoryHour Edition";
                   return (
                     <div
@@ -195,7 +195,7 @@ export default function CartPage() {
 
                           <div className="mt-2 sm:hidden flex items-center justify-between">
                             <span className="font-mono text-base font-extrabold text-[#0f0f0f]">
-                              ${(itemPrice * item.quantity).toFixed(2)}
+                              £{(itemPrice * item.quantity).toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -227,11 +227,11 @@ export default function CartPage() {
                         {/* Item Total Price */}
                         <div className="hidden sm:block text-right min-w-[90px]">
                           <span className="font-mono text-lg font-extrabold text-[#0f0f0f] block">
-                            ${(itemPrice * item.quantity).toFixed(2)}
+                            £{(itemPrice * item.quantity).toFixed(2)}
                           </span>
                           {item.quantity > 1 && (
                             <span className="text-[11px] font-mono text-[#7A756D] block">
-                              ${itemPrice.toFixed(2)} each
+                              £{itemPrice.toFixed(2)} each
                             </span>
                           )}
                         </div>
@@ -263,7 +263,7 @@ export default function CartPage() {
                   <div className="flex justify-between items-center text-[#5a5a5a]">
                     <span>Items Subtotal ({cartCount})</span>
                     <span className="font-mono font-bold text-[#0f0f0f]">
-                      ${subtotal.toFixed(2)}
+                      £{subtotal.toFixed(2)}
                     </span>
                   </div>
 
@@ -274,13 +274,13 @@ export default function CartPage() {
                         FREE
                       </span>
                     </span>
-                    <span className="font-mono font-bold text-emerald-600">$0.00</span>
+                    <span className="font-mono font-bold text-emerald-600">£0.00</span>
                   </div>
 
                   <div className="flex justify-between items-center text-[#5a5a5a]">
                     <span>Estimated Tax</span>
                     <span className="font-mono font-bold text-[#0f0f0f]">
-                      ${tax.toFixed(2)}
+                      £{tax.toFixed(2)}
                     </span>
                   </div>
 
@@ -288,16 +288,22 @@ export default function CartPage() {
                     <span className="text-base font-extrabold text-[#0f0f0f]">Total</span>
                     <div className="text-right">
                       <span className="font-serif text-3xl font-extrabold text-[#0f0f0f] block leading-none">
-                        ${finalTotal.toFixed(2)}
+                        £{finalTotal.toFixed(2)}
                       </span>
-                      <span className="text-[11px] font-mono text-[#7A756D]">USD · One-time payment</span>
+                      <span className="text-[11px] font-mono text-[#7A756D]">GBP · One-time payment</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Primary CTA */}
                 <button
-                  onClick={() => router.push("/checkout")}
+                  onClick={() => {
+                    if (!isUserLoggedIn()) {
+                      router.push("/login?redirect=/checkout");
+                      return;
+                    }
+                    router.push("/checkout");
+                  }}
                   className="w-full py-4 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#991B1B] hover:from-[#E6392D] hover:to-[#B52218] text-white font-extrabold text-base transition-all duration-200 shadow-[0_10px_26px_rgba(201,40,29,0.42)] hover:shadow-[0_14px_32px_rgba(201,40,29,0.55)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer focus:outline-none focus:ring-4 focus:ring-[#C9281D]/30"
                 >
                   <span>Proceed to Checkout</span>

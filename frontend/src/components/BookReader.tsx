@@ -151,9 +151,214 @@ const DEMO_PAGES_TE: BookPage[] = [
   },
 ];
 
-function getPagesForEdition(language: string): BookPage[] {
-  if (language === "Hindi") return DEMO_PAGES_HI;
-  if (language === "Telugu") return DEMO_PAGES_TE;
+const DEMO_PAGES_HANUMAN: BookPage[] = [
+  {
+    pageNumber: 1,
+    chapterTitle: "The Council on Mount Mahendra",
+    content:
+      "Upon the towering crags of Mount Mahendra, the mighty vanara army stood gazing out across the vast, roaring ocean. The waves crashed like thunder against the cliffs, stretching four hundred leagues toward the hidden island of Lanka.\n\nDeep doubt clouded the hearts of the searchers until the venerable bear-king Jambavan turned to Hanuman, sitting silently in deep contemplation. 'O son of Vayu,' Jambavan whispered, 'why dost thou sit in quietude? Arise, for in thee lies the strength to leap across the turbulent seas.'",
+  },
+  {
+    pageNumber: 2,
+    chapterTitle: "The Awakening of Cosmic Might",
+    content:
+      "At those words, Hanuman's memory of his celestial lineage awakened. His spirit swelled with devotion for Rama, and his physical form began to expand like a mountain peak piercing the azure heavens.\n\nHe pressed his feet upon the granite roots of Mount Mahendra with such majestic force that subterranean springs gushed forth and ancient gem veins gleamed in the twilight. With hands folded toward the sun, he prepared to take flight.",
+  },
+  {
+    pageNumber: 3,
+    chapterTitle: "The Great Flight Over the Waters",
+    content:
+      "Hanuman leaped into the open skies! The wind parted in great swirling vortices as his shadow swept across the ocean surface like a golden cloud.\n\nThe celestial gandharvas and devas shower fragrant blossoms from the heavens, watching the brave messenger fly toward destiny with unshakeable resolve.",
+  },
+  {
+    pageNumber: 4,
+    chapterTitle: "The Challenge of Mother Surasa",
+    content:
+      "Emerging from the depths, the sea serpent mother Surasa arose to test his wisdom. 'By divine decree, all who cross my waters must enter my jaws!' she proclaimed, expanding her fangs thirty leagues wide.\n\nHanuman expanded to sixty leagues, then suddenly shrank to the size of a thumb, darted inside her mouth, and flew back out in an instant. Surasa smiled with motherly pride: 'Go forth, Hanuman, thy wit is equal to thy valour.'",
+  },
+  {
+    pageNumber: 5,
+    chapterTitle: "Vanquishing the Shadow Demoness",
+    content:
+      "Further along the perilous crossing, the shadow demoness Simhika caught Hanuman's reflection upon the surging waves, pulling him downward by his shadow.\n\nRecognizing the dark trickery, Hanuman dove fearlessly into her cavernous maw, struck her vitals with diamond claws, and burst free to ascend into clear skies once more.",
+  },
+  {
+    pageNumber: 6,
+    chapterTitle: "First Glimpse of Golden Lanka",
+    content:
+      "As evening painted the horizon in hues of amber and saffron, the golden spires of Lanka rose above Mount Trikuta. Verdant groves of ashoka, champaka, and flowering sandalwood welcomed the tired traveler.\n\nHanuman alighted softly upon the outer perimeter, carrying Rama's royal signet ring and the inextinguishable flame of hope for Sita.",
+  },
+];
+
+const DEMO_PAGES_PANCHATANTRA: BookPage[] = [
+  {
+    pageNumber: 1,
+    chapterTitle: "The Reign of Bhasuraka the Lion",
+    content:
+      "Deep in the emerald canopy of the ancient forest lived Bhasuraka, a ferocious lion whose pride was as vast as the wilderness. Every day he hunted indiscriminately, slaughtering more animals than he could ever consume.\n\nThe trembling deer, boars, and rabbits huddled in terror as their quiet forest paradise turned into a realm of perpetual fear.",
+  },
+  {
+    pageNumber: 2,
+    chapterTitle: "The Pact of the Forest Council",
+    content:
+      "Desperate to preserve their kind, the elders of all animal clans gathered before the lion's rocky throne. 'O King,' spoke the wise deer, 'thou needst not hunt us to exhaustion. If thou stayest in thy royal cave, we will send one animal each day for thy sustenance.'\n\nBhasuraka agreed with a menacing growl: 'So be it! But let a single day pass without my food, and I shall consume every living creature in this forest!'",
+  },
+  {
+    pageNumber: 3,
+    chapterTitle: "The Little Hare's Turn",
+    content:
+      "Weeks passed in sorrow until the lot fell upon a tiny, quick-witted hare. The forest wept for the innocent creature, but the hare held his ears high and bowed politely to his tearful kin.\n\n'Grieve not for me,' whispered the hare with a sparkle in his bright eyes. 'True strength resides not in claws or fangs, but in the quiet workings of the intellect.'",
+  },
+  {
+    pageNumber: 4,
+    chapterTitle: "The Art of Delay",
+    content:
+      "The little hare took his time, pausing to nibble wild grass, drink from clear brooks, and rest under cool shadows. By the time he reached the lion's den, the sun was sinking and Bhasuraka was roaring with furious hunger.\n\n'Why art thou so late, thou miserable morsel?' bellowed the lion. The hare bowed low: 'Forgive me, O King! Five hares set out to serve thee, but another giant lion intercepted us and claimed this forest as his own!'",
+  },
+  {
+    pageNumber: 5,
+    chapterTitle: "The Deep Echoing Well",
+    content:
+      "Enraged that any beast dared challenge his supremacy, Bhasuraka demanded: 'Lead me to this impudent intruder at once!'\n\nThe little hare led the furious king to an ancient, moss-covered stone well filled with clear, still water. 'He hides within this deep fortress, Sire. Peer inside and behold his haughty countenance.'",
+  },
+  {
+    pageNumber: 6,
+    chapterTitle: "Triumph of Wisdom Over Force",
+    content:
+      "Bhasuraka peered into the darkness. Looking back was the reflection of a fierce lion with blazing eyes. When Bhasuraka let out an ear-splitting roar, the deep well reverberated with a roar twice as loud.\n\nThinking his rival was mocking him, the foolish king leaped headfirst into the deep well to strike, perishing in the depths. The little hare hopped back merrily to the meadow, and peace returned to the jungle.",
+  },
+];
+
+const DEMO_PAGES_GANDHI: BookPage[] = [
+  {
+    pageNumber: 1,
+    chapterTitle: "Boyhood in Coastal Porbandar",
+    content:
+      "Along the salty breeze of Porbandar on the western shore of Gujarat, young Mohandas Karamchand Gandhi spent his gentle, introspective childhood.\n\nHe was shy, clutching his schoolbooks and running straight home each afternoon to avoid talking to anyone, yet his heart harboured an innate sensitivity to the moral teachings of his pious mother, Putlibai.",
+  },
+  {
+    pageNumber: 2,
+    chapterTitle: "The Dramatic Vision of Truth",
+    content:
+      "One evening, a traveling drama troupe staged the legendary play of King Harishchandra — the ancient monarch who sacrificed his throne, family, and comfort to uphold absolute truth.\n\nThe young boy could not sleep for weeks. 'Why should not all people be as truthful as Harishchandra?' he whispered repeatedly to himself. The ideal of Satya (Truth) became his guiding star.",
+  },
+  {
+    pageNumber: 3,
+    chapterTitle: "The Burden of Confession",
+    content:
+      "In early adolescence, Mohandas committed a grievous mistake — clipping a bit of gold from his brother's bracelet to settle a petty debt. But the weight of deceit crushed his spirit like a stone.\n\nUnable to bear the remorse, he sat down and wrote a complete, unsparing confession to his bedridden father, asking for punishment and vowing never to repeat the wrongdoing.",
+  },
+  {
+    pageNumber: 4,
+    chapterTitle: "Tears of Sublime Forgiveness",
+    content:
+      "Trembling, young Mohandas handed the paper to his ailing father, Kaba Gandhi, and sat on the floor, awaiting anger. The father read the confession silently, closed his eyes, and slow tears of unconditional love rolled down his cheeks onto the paper.\n\nNot a single harsh word was spoken. That pure moment taught Mohandas the true sublime power of Ahimsa — that non-violence and love melt hearts far deeper than wrath.",
+  },
+  {
+    pageNumber: 5,
+    chapterTitle: "The Law of Courage",
+    content:
+      "Over years of study in London and facing deep prejudice in South Africa, this profound childhood foundation grew into a world-transforming philosophy of Satyagraha — soul force.\n\nHe showed millions that moral conviction and peaceful endurance can shake the foundations of the mightiest empires without shedding a single drop of an opponent's blood.",
+  },
+  {
+    pageNumber: 6,
+    chapterTitle: "Lessons for Every Generation",
+    content:
+      "Young Mohandas proved that greatness begins not in weapons or grand ancestry, but in the everyday courage to speak truth, admit faults, and stand firmly with the vulnerable.\n\nHis legacy invites every young child to discover the unbreakable strength of an honest and compassionate heart.",
+  },
+];
+
+const DEMO_PAGES_LAMP: BookPage[] = [
+  {
+    pageNumber: 1,
+    chapterTitle: "The Little Clay Diya",
+    content:
+      "As dusk descended over the village of Ayodhya, grandmother brought forth a tray of handmade terracotta diyas, filled with sweet mustard oil and hand-spun cotton wicks.\n\n'Look closely, little one,' she whispered, striking the match. A warm golden flame danced into life, chasing away the long shadows of twilight with quiet dignity.",
+  },
+  {
+    pageNumber: 2,
+    chapterTitle: "Fireside Evening Whispers",
+    content:
+      "Under the gentle glow of the evening lamp, generations sat together on jute charpoys. The modern screens were tucked away; the only sound was the crackle of evening fires and the cadence of oral fables.\n\nChildren leaned their heads against grandmothers' shoulders as stories of courage, generosity, and friendship unfolded in the soft, warm amber light.",
+  },
+  {
+    pageNumber: 3,
+    chapterTitle: "The Wisdom of the Peepal Tree",
+    content:
+      "Grandmother told of the ancient Peepal tree that stood at the edge of the hermitage, its broad green heart-shaped leaves fluttering even when not a whisper of wind stirred.\n\n'The tree gives shelter to every passing bird and tired pilgrim, asking nothing in return. Such is the true mark of a noble life.'",
+  },
+  {
+    pageNumber: 4,
+    chapterTitle: "Night Music of the Hermitage",
+    content:
+      "Outside, crickets hummed in the tall grass, and the holy Sarayu river murmured softly against the banks like an ancient lullaby.\n\nThe cool breeze carried the soothing scent of night-blooming jasmine (Raat ki Rani), bringing tranquility to every wandering thought.",
+  },
+  {
+    pageNumber: 5,
+    chapterTitle: "The Bedtime Blessing",
+    content:
+      "With eyelids growing heavy, the children received the traditional bedtime blessing — a gentle touch of tilak upon the forehead and a quiet prayer for peaceful sleep and pure dreams.\n\nThe cares of the day melted away into the embrace of loving family storytelling.",
+  },
+  {
+    pageNumber: 6,
+    chapterTitle: "The Flame that Lives Within",
+    content:
+      "When the little diya slowly flickered out in the night, the room was not dark — for the warmth, values, and timeless comfort of the spoken tales remained aglow inside every child's heart.\n\nGoodnight, young listener. May tomorrow bring kindness, curiosity, and wonder.",
+  },
+];
+
+const DEMO_PAGES_ARCHIVE: BookPage[] = [
+  {
+    pageNumber: 1,
+    chapterTitle: "StoryHour Outreach & Workshop Folio",
+    content:
+      "Welcome to the StoryHour Archival & Educational Folio. This collector's archive documents live theatrical storytelling, multilingual school residencies, and youth workshops conducted across London and Indian educational hubs.\n\nThrough oral performance, puppetry, and choral recitation, young learners explore ancient epics directly through creative collaboration.",
+  },
+  {
+    pageNumber: 2,
+    chapterTitle: "Classroom Dialogue & Performance Notes",
+    content:
+      "In our bilingual school workshops, students engage with classical tales through dramatic voice modulation, bilingual poetry, and rhythm exercises.\n\nEducators and parents observe how participatory storytelling bridges cultural divides and fosters deep empathy across diverse classrooms.",
+  },
+  {
+    pageNumber: 3,
+    chapterTitle: "Puppetry Gesture & Voice Scripts",
+    content:
+      "Documenting traditional leather string marionette techniques adapted for contemporary stage settings.\n\nStudents learn the subtle hand gestures (mudras) and vocal modulations that transform simple puppets into living mythological heroes.",
+  },
+  {
+    pageNumber: 4,
+    chapterTitle: "Community & Ensemble Reflections",
+    content:
+      "Reflections from youth narrators, teachers, and cultural directors on the enduring power of the oral tradition.\n\nStories told face-to-face nurture imagination, listening comprehension, and shared human connection in a digital age.",
+  },
+  {
+    pageNumber: 5,
+    chapterTitle: "Curriculum Integration Guide",
+    content:
+      "Key moral themes, discussion prompts, and creative writing exercises designed for primary and secondary classroom use.\n\nHelping teachers integrate Valmiki's Ramayana and Panchatantra ethics into cross-curricular arts and literacy programs.",
+  },
+  {
+    pageNumber: 6,
+    chapterTitle: "Archival Access & Inquiries",
+    content:
+      "Full performance recordings, lesson plans, and masterclass bookings are available to schools and educational institutions upon request.\n\nContact the StoryHour Education Faculty at contact@storyhour.co.uk to learn more about future residency programs.",
+  },
+];
+
+function getPagesForEdition(edition: Edition): BookPage[] {
+  const id = (edition.id || "").toLowerCase();
+  const title = (edition.title || "").toLowerCase();
+
+  if (id.includes("hanuman") || title.includes("hanuman")) return DEMO_PAGES_HANUMAN;
+  if (id.includes("panchatantra") || title.includes("clever hare") || title.includes("panchatantra")) return DEMO_PAGES_PANCHATANTRA;
+  if (id.includes("gandhi") || id.includes("truth") || title.includes("mohandas") || title.includes("gandhi")) return DEMO_PAGES_GANDHI;
+  if (id.includes("lamp") || title.includes("lamp")) return DEMO_PAGES_LAMP;
+  if (id.includes("residency") || id.includes("festival") || id.includes("ensemble") || title.includes("classroom") || title.includes("festival")) return DEMO_PAGES_ARCHIVE;
+
+  // Classical Ramayana Editions by Language
+  if (edition.language === "Hindi") return DEMO_PAGES_HI;
+  if (edition.language === "Telugu") return DEMO_PAGES_TE;
   return DEMO_PAGES_EN;
 }
 
@@ -329,9 +534,10 @@ function PageFace({
    MAIN BOOK READER COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
 export default function BookReader({ edition, onClose }: BookReaderProps) {
-  const { isBookUnlocked, addToCart, showToast } = useLibraryCart();
+  const { isBookUnlocked, addToCart, showToast, isUserLoggedIn } = useLibraryCart();
   const router = useRouter();
   const isUnlocked = isBookUnlocked(edition.id) || (edition.productId ? isBookUnlocked(edition.productId) : false);
+
   const [state, setState] = useState<ReaderState>(isUnlocked ? "reading" : "preview");
   const [currentSpread, setCurrentSpread] = useState(0); // Index into page pairs (0 = pages 1-2, 1 = pages 3-4, etc.)
   const [mobileSubPage, setMobileSubPage] = useState<0 | 1>(0);
@@ -341,7 +547,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const bookPages = getPagesForEdition(edition.language);
+  const bookPages = getPagesForEdition(edition);
   const totalSpreads = Math.ceil(bookPages.length / 2);
 
   // Sync state if unlocked status changes
@@ -369,7 +575,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
   const turnNext = useCallback(() => {
     if (isFlipping || currentSpread >= totalSpreads - 1) return;
     if (!isUnlocked && currentSpread >= 0) {
-      showToast("Preview limit reached (Pages 1–2). Purchase the edition to unlock all chapters!");
+      showToast("Preview limit reached. Unlock full edition to continue.");
       return;
     }
     if (soundEnabled) playPaperFlipSound();
@@ -615,7 +821,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                     Digital Edition
                   </span>
                   <span className="font-serif text-[26px] font-bold text-[#0F0F0F]">
-                    ${edition.price}
+                    £{edition.price}
                   </span>
                 </div>
                 {isUnlocked ? (
@@ -661,7 +867,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                     </button>
                     <button
                       onClick={() => {
-                        addToCart({
+                        const added = addToCart({
                           id: edition.id,
                           title: edition.title,
                           nativeTitle: edition.nativeTitle,
@@ -673,8 +879,10 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                           language: edition.language,
                           type: "book",
                         });
-                        onClose();
-                        router.push("/checkout");
+                        if (added) {
+                          onClose();
+                          router.push("/checkout");
+                        }
                       }}
                       className="px-4 sm:px-5 py-3 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#991B1B] hover:from-[#EA3A2D] hover:via-[#D12E23] hover:to-[#A81F19] text-white font-sans text-[13px] font-bold transition-all shadow-[0_4px_16px_rgba(201,40,29,0.35)] hover:shadow-[0_8px_24px_rgba(201,40,29,0.5)] hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5 cursor-pointer"
                     >
@@ -1072,7 +1280,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                   </div>
                   <button
                     onClick={() => {
-                      addToCart({
+                      const added = addToCart({
                         id: edition.id,
                         title: edition.title,
                         nativeTitle: edition.nativeTitle,
@@ -1084,8 +1292,10 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                         language: edition.language,
                         type: "book",
                       });
-                      onClose();
-                      router.push("/checkout");
+                      if (added) {
+                        onClose();
+                        router.push("/checkout");
+                      }
                     }}
                     className="px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-sans text-xs font-bold transition shadow whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95"
                   >
@@ -1121,7 +1331,7 @@ export default function BookReader({ edition, onClose }: BookReaderProps) {
                       onClick={() => {
                         if (isFlipping || i === currentSpread) return;
                         if (!isUnlocked && i > 0) {
-                          showToast("Preview limit reached. Purchase full edition to read all chapters!");
+                          showToast("Preview limit reached. Unlock full edition to continue.");
                           return;
                         }
                         if (i > currentSpread) {

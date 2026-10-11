@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   Send,
   CheckCircle2,
+  AlertCircle,
   Plus,
   Minus,
   ArrowRight,
@@ -72,6 +73,7 @@ export default function ContactPage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -114,16 +116,35 @@ export default function ContactPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (honeypot) return;
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
+    setSubmitError(null);
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, honeypot }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSubmitError(data.error || "Failed to submit enquiry. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
       setIsSubmitting(false);
       setIsSubmitted(true);
-    }, 500);
+    } catch {
+      setSubmitError("Network connection error. Please check your internet connection and try again.");
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -135,6 +156,7 @@ export default function ContactPage() {
       message: "",
     });
     setErrors({});
+    setSubmitError(null);
     setIsSubmitted(false);
   };
 
@@ -516,6 +538,15 @@ export default function ContactPage() {
 
                     {/* Primary Button */}
                     <div className="pt-8">
+                      {submitError && (
+                        <div
+                          role="alert"
+                          className="p-3 mb-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[13px] flex items-center gap-2"
+                        >
+                          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                          <span>{submitError}</span>
+                        </div>
+                      )}
                       <button
                         type="submit"
                         disabled={isSubmitting}

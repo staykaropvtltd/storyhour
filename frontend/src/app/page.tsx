@@ -1,7 +1,7 @@
 import React from "react";
 import PapumbaHeader from "@/components/new-design/PapumbaHeader";
 import PapumbaHero from "@/components/new-design/PapumbaHero";
-import PapumbaFooter from "@/components/new-design/PapumbaFooter";
+import SiteFooter from "@/components/SiteFooter";
 import ScrollStorytellingSection from "@/components/new-design/ScrollStorytellingSection";
 import TheatreCurtainSection from "@/components/new-design/TheatreCurtainSection";
 import WhyStoryHourSection from "@/components/new-design/WhyStoryHourSection";
@@ -27,8 +27,8 @@ export default function HomePage() {
         <WhyStoryHourSection />
       </main>
 
-      {/* 3. Papumba-Inspired Footer (Multi-Column Layout, Authentic StoryHour Content & Legal Links) */}
-      <PapumbaFooter />
+      {/* 3. SiteFooter (Multi-Column Layout, Authentic StoryHour Content & Legal Links) */}
+      <SiteFooter />
     </div>
   );
 }

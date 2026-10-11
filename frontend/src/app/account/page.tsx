@@ -16,7 +16,12 @@ export default function AccountPage() {
   const router = useRouter();
   const { unlockedBookIds, orders } = useLibraryCart();
 
-  const [userSession, setUserSession] = useState<{ name: string; email: string } | null>(null);
+  const [userSession, setUserSession] = useState<{
+    name: string;
+    fullName?: string;
+    email: string;
+    phone?: string;
+  } | null>(null);
   const [activeBookReader, setActiveBookReader] = useState<Edition | null>(null);
   const [activeAudiobook, setActiveAudiobook] = useState<Audiobook | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -86,14 +91,26 @@ export default function AccountPage() {
             Manage your unlocked books, access digital 3D reading spreads, and view order receipts.
           </p>
 
-          {userSession && (
-            <button
-              onClick={handleLogout}
-              className="mt-4 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-black/20 hover:bg-black/30 text-white font-mono text-xs transition cursor-pointer"
+          {userSession ? (
+            <div className="flex flex-wrap items-center justify-center gap-2.5 mt-4 text-xs font-mono text-white/90">
+              <span className="bg-black/20 px-3 py-1 rounded-full">{userSession.email}</span>
+              <span className="bg-black/20 px-3 py-1 rounded-full">{userSession.phone || "+44 (0) 7911 123456"}</span>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-black/35 hover:bg-black/50 text-white transition cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="mt-4 inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-white text-[#C9281D] font-bold text-xs shadow-sm hover:bg-white/95 transition"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
+              <User className="w-3.5 h-3.5" />
+              <span>Sign In to Your Account</span>
+            </Link>
           )}
         </div>
 

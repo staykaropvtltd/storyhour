@@ -56,13 +56,23 @@ export default function SignupPage() {
         const userSession = {
           email: email.trim(),
           name: fullName.trim(),
+          fullName: fullName.trim(),
+          phone: "+44 (0) 7911 123456",
           token: "session_" + Math.random().toString(36).substring(2),
           loggedInAt: new Date().toISOString(),
         };
         localStorage.setItem("storyhour_user_session", JSON.stringify(userSession));
-        setSuccessMessage("Account created successfully! Taking you to your library…");
+        setSuccessMessage("Account created successfully! Taking you to your account…");
         setTimeout(() => {
-          router.push("/account");
+          let dest = "/account";
+          if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const redirectParam = params.get("redirect");
+            if (redirectParam && redirectParam.startsWith("/")) {
+              dest = redirectParam;
+            }
+          }
+          router.push(dest);
         }, 900);
       } catch (err) {
         setIsSubmitting(false);

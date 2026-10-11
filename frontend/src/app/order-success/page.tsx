@@ -177,7 +177,7 @@ function OrderSuccessContent() {
                     <div className="flex items-center gap-3.5 min-w-0 flex-1">
                       <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white border border-black/10 shadow-sm">
                         <Image
-                          src={item.coverImage || "/images/covers/cover-ramayana.png"}
+                          src={item.coverImage || "/images/ramayana_epic.jpg"}
                           alt={item.title || "StoryHour Edition"}
                           fill
                           className="object-cover"
@@ -259,9 +259,9 @@ function OrderSuccessContent() {
                     Total Amount Paid
                   </span>
                   <p className="font-serif text-2xl font-black text-[#0f0f0f]">
-                    ${(currentOrder.total ?? currentOrder.subtotal ?? 0).toFixed(2)}
+                    £{(currentOrder.total ?? currentOrder.subtotal ?? 0).toFixed(2)}
                   </p>
-                  <p className="text-[#7A756D]">USD · One-Time Lifetime License</p>
+                  <p className="text-[#7A756D]">GBP · One-Time Lifetime License</p>
                 </div>
               </div>
 

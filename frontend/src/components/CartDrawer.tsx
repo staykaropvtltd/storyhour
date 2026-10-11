@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,22 +16,73 @@ export default function CartDrawer() {
     updateQuantity,
     removeFromCart,
     cartTotal,
+    isUserLoggedIn,
+    openAuthModal,
   } = useLibraryCart();
 
-  // Escape key handler
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  // Focus management, focus trap, and Escape key handling
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isCartDrawerOpen) {
-        setIsCartDrawerOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    if (isCartDrawerOpen) {
+      triggerRef.current = document.activeElement as HTMLElement | null;
+
+      // Focus first focusable element inside drawer
+      setTimeout(() => {
+        if (drawerRef.current) {
+          const focusable = drawerRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex="0"]:not([tabindex="-1"])'
+          );
+          if (focusable.length > 0) {
+            focusable[0].focus();
+          }
+        }
+      }, 50);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setIsCartDrawerOpen(false);
+          return;
+        }
+
+        // Focus trap
+        if (e.key === "Tab" && drawerRef.current) {
+          const focusableElements = drawerRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]:not([tabindex="-1"])'
+          );
+          if (focusableElements.length === 0) return;
+
+          const firstEl = focusableElements[0];
+          const lastEl = focusableElements[focusableElements.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === firstEl) {
+              e.preventDefault();
+              lastEl.focus();
+            }
+          } else {
+            if (document.activeElement === lastEl) {
+              e.preventDefault();
+              firstEl.focus();
+            }
+          }
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        if (triggerRef.current && typeof triggerRef.current.focus === "function") {
+          triggerRef.current.focus();
+        }
+      };
+    }
   }, [isCartDrawerOpen, setIsCartDrawerOpen]);
 
   if (!isCartDrawerOpen) return null;
 
-  const currencySymbol = cartItems[0]?.currency || "$";
+  const currencySymbol = cartItems[0]?.currency || "£";
 
   return (
     <div
@@ -45,7 +96,7 @@ export default function CartDrawer() {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
       />
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between p-6 sm:p-8">
+        <div ref={drawerRef} className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between p-6 sm:p-8">
           <div>
             <div className="flex items-center justify-between pb-6 border-b border-[#e7e7e7]">
               <div className="flex items-center gap-2">
@@ -156,6 +207,11 @@ export default function CartDrawer() {
             </div>
             <button
               onClick={() => {
+                if (!isUserLoggedIn()) {
+                  setIsCartDrawerOpen(false);
+                  router.push("/login?redirect=/checkout");
+                  return;
+                }
                 setIsCartDrawerOpen(false);
                 router.push("/checkout");
               }}

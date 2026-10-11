@@ -1,0 +1,385 @@
+{
+  "auditMetadata": {
+    "auditDate": "2026-10-11T01:35:00Z",
+    "auditor": "Senior Frontend QA Engineer & Website Testing Expert",
+    "targetApplication": "StoryHour Web Application",
+    "framework": "Next.js 15.2.1 / React 19 / Tailwind CSS 3.4.17",
+    "totalRoutesDiscovered": 15,
+    "totalTestsIdentified": 64,
+    "totalTestsExecuted": 64,
+    "passCount": 49,
+    "failCount": 15,
+    "blockedCount": 0,
+    "needsReviewCount": 0,
+    "notTestedCount": 0
+  },
+  "routes": [
+    {
+      "route": "/",
+      "page": "Homepage (New Design Stream)",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "PapumbaFooter duplicate of SiteFooter; 320px viewport heading text wrap risk"
+    },
+    {
+      "route": "/stories",
+      "page": "StoryHour Editions & Books",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "None"
+    },
+    {
+      "route": "/account",
+      "page": "Reader Profile & Personal Library",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "None (Correctly reads and synchronizes user session from localStorage)"
+    },
+    {
+      "route": "/cart",
+      "page": "Full Cart Review & Order Summary",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "Fallback coverImage points to 404 nonexistent path (/images/covers/cover-ramayana.png)"
+    },
+    {
+      "route": "/checkout",
+      "page": "Secure Checkout & Payment Sandbox",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "Fallback coverImage points to 404 nonexistent path (/images/covers/cover-ramayana.png)"
+    },
+    {
+      "route": "/contact",
+      "page": "Enquiries & School Partnerships",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "Form submission is a stub simulation; messages are discarded and never transmitted"
+    },
+    {
+      "route": "/editions",
+      "page": "Legacy Editions URL",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "Server-side redirects to /stories"
+    },
+    {
+      "route": "/login",
+      "page": "Account Sign In",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "Fake Google/Apple OAuth buttons autofill demo accounts; Forgot Password uses blocking browser alert()"
+    },
+    {
+      "route": "/new-design",
+      "page": "Prototype Landing Page",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "Orphaned prototype route that duplicates homepage components"
+    },
+    {
+      "route": "/order-success",
+      "page": "Order Confirmation & Access Receipt",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "Fallback coverImage points to 404 nonexistent path (/images/covers/cover-ramayana.png)"
+    },
+    {
+      "route": "/privacy",
+      "page": "Privacy Policy & Children's Code",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "None"
+    },
+    {
+      "route": "/signup",
+      "page": "Reader Account Registration",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "None (Validates fields, passwords, terms; creates simulated local session)"
+    },
+    {
+      "route": "/storytellers",
+      "page": "Master Storytellers & About Us",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "None"
+    },
+    {
+      "route": "/terms",
+      "page": "Terms of Use & Content Licensing",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "None"
+    },
+    {
+      "route": "/trailers",
+      "page": "Video Trailers & Puppet Theatre Previews",
+      "httpStatus": 200,
+      "loadStatus": "PASS",
+      "navigationStatus": "PASS",
+      "issues": "None"
+    }
+  ],
+  "forms": [
+    {
+      "formName": "Login Form",
+      "route": "/login",
+      "validationStatus": "PASS",
+      "submissionStatus": "PASS",
+      "errorHandlingStatus": "PASS",
+      "status": "PASS",
+      "notes": "Validates email regex and password length >= 6; creates storyhour_user_session."
+    },
+    {
+      "formName": "Social OAuth Logins (Google & Apple)",
+      "route": "/login",
+      "validationStatus": "FAIL",
+      "submissionStatus": "FAIL",
+      "errorHandlingStatus": "FAIL",
+      "status": "FAIL",
+      "notes": "Buttons do not execute OAuth; they autofill static credentials into the text inputs."
+    },
+    {
+      "formName": "Forgot Password Trigger",
+      "route": "/login",
+      "validationStatus": "FAIL",
+      "submissionStatus": "FAIL",
+      "errorHandlingStatus": "FAIL",
+      "status": "FAIL",
+      "notes": "Executes browser alert() without input collection or dispatch."
+    },
+    {
+      "formName": "Sign Up Form",
+      "route": "/signup",
+      "validationStatus": "PASS",
+      "submissionStatus": "PASS",
+      "errorHandlingStatus": "PASS",
+      "status": "PASS",
+      "notes": "Validates name, email, password (>=8 chars), password confirmation, and terms agreement."
+    },
+    {
+      "formName": "Contact & School Enquiry Form",
+      "route": "/contact",
+      "validationStatus": "PASS",
+      "submissionStatus": "FAIL",
+      "errorHandlingStatus": "FAIL",
+      "status": "FAIL",
+      "notes": "Client-side validation passes, but submission only triggers setTimeout(500) and displays fake success without network transmission."
+    },
+    {
+      "formName": "Checkout Payment & Billing Form",
+      "route": "/checkout",
+      "validationStatus": "PASS",
+      "submissionStatus": "PASS",
+      "errorHandlingStatus": "PASS",
+      "status": "PASS",
+      "notes": "Validates card length (15-16), future expiration date MM/YY, 3-4 digit CVC, statutory digital waiver consent."
+    },
+    {
+      "formName": "Global Story Search Input",
+      "route": "Global (SearchModal)",
+      "validationStatus": "PASS",
+      "submissionStatus": "PASS",
+      "errorHandlingStatus": "PASS",
+      "status": "PASS",
+      "notes": "Real-time query filtering across titles, languages, categories."
+    }
+  ],
+  "bugRegister": [
+    {
+      "id": "BUG-01",
+      "title": "Contact form submission is a mock simulation; messages are never transmitted",
+      "route": "/contact",
+      "component": "src/app/contact/page.tsx:122-127",
+      "severity": "P1",
+      "status": "FAIL",
+      "expected": "Form submission should POST data to backend endpoint or email service API with confirmation or failure feedback.",
+      "actual": "Form executes a 500ms setTimeout and sets isSubmitted(true). Messages are permanently discarded in memory.",
+      "rootCause": "Mock/placeholder implementation.",
+      "recommendation": "Wire form to a server action or API route (/api/contact) connected to an email dispatch provider."
+    },
+    {
+      "id": "BUG-02",
+      "title": "Broken fallback image asset (/images/covers/cover-ramayana.png) returns HTTP 404",
+      "route": "/cart, /checkout, /order-success",
+      "component": "src/context/LibraryCartContext.tsx:165,228; src/app/order-success/page.tsx:180; src/app/checkout/page.tsx:675; src/app/cart/page.tsx:144",
+      "severity": "P1",
+      "status": "FAIL",
+      "expected": "Fallback cover image should point to an existing valid asset.",
+      "actual": "Fallback points to /images/covers/cover-ramayana.png which does not exist in public/images, resulting in 404.",
+      "rootCause": "Nonexistent directory /images/covers/ referenced in fallback ternaries.",
+      "recommendation": "Update fallback asset reference to /images/ramayana_epic.jpg."
+    },
+    {
+      "id": "BUG-03",
+      "title": "Fake Google and Apple OAuth login buttons autofill demo accounts",
+      "route": "/login",
+      "component": "src/app/login/page.tsx:128-150",
+      "severity": "P1",
+      "status": "FAIL",
+      "expected": "Social login buttons should initiate third-party OAuth flows, or be clearly labeled as demo credentials buttons.",
+      "actual": "Clicking 'Sign in with Google' or 'Sign in with Apple' sets hardcoded email and password state.",
+      "rootCause": "Mock UI controls masquerading as functional third-party authentication.",
+      "recommendation": "Integrate real OAuth provider or re-label as demo quick-fill helpers."
+    },
+    {
+      "id": "BUG-04",
+      "title": "Forgot Password feature uses browser alert() and fake dispatch message",
+      "route": "/login",
+      "component": "src/app/login/page.tsx:212-216",
+      "severity": "P2",
+      "status": "FAIL",
+      "expected": "A functional password reset modal or dedicated page requesting email.",
+      "actual": "Displays alert('Password reset instructions sent to your email.') without checking input.",
+      "rootCause": "Hardcoded browser alert placeholder.",
+      "recommendation": "Implement a password reset modal or route with input validation."
+    },
+    {
+      "id": "BUG-05",
+      "title": "Potential memory/CPU leak in SmoothScrollProvider: missing cancelAnimationFrame",
+      "route": "Global Layout",
+      "component": "src/components/layout/SmoothScrollProvider.tsx:33-43",
+      "severity": "P2",
+      "status": "FAIL",
+      "expected": "Animation frame loop should be cancelled with cancelAnimationFrame(id) on unmount.",
+      "actual": "Loop continues calling requestAnimationFrame indefinitely after Lenis instance is destroyed.",
+      "rootCause": "Missing raf ID capture and cleanup.",
+      "recommendation": "Capture requestAnimationFrame ID and call cancelAnimationFrame in useEffect cleanup."
+    },
+    {
+      "id": "BUG-06",
+      "title": "SearchModal does not dismiss on Escape key and lacks focus trap",
+      "route": "Global",
+      "component": "src/components/SearchModal.tsx:11-37",
+      "severity": "P2",
+      "status": "FAIL",
+      "expected": "Pressing Escape key should close search modal, and focus should remain trapped while open.",
+      "actual": "Escape key is ignored. Keyboard tab navigation escapes the modal.",
+      "rootCause": "Missing keydown event listener and focus containment logic.",
+      "recommendation": "Add Escape keydown listener and focus trap to SearchModal."
+    },
+    {
+      "id": "BUG-07",
+      "title": "Text overflow risk on mobile 320px in PapumbaHero headline",
+      "route": "/",
+      "component": "src/components/new-design/PapumbaHero.tsx:60-64",
+      "severity": "P2",
+      "status": "FAIL",
+      "expected": "Text should fit comfortably on 320px wide viewports without clipping.",
+      "actual": "text-[2.8rem] (~44.8px) makes 'storytelling' ~312px wide, exceeding 288px container width.",
+      "rootCause": "Base font size too large for 320px screens.",
+      "recommendation": "Use text-[2.2rem] xs:text-[2.5rem] sm:text-[4rem] or break-words."
+    },
+    {
+      "id": "BUG-08",
+      "title": "CartDrawer lacks focus trap (WCAG 2.4.3 Focus Order)",
+      "route": "Global",
+      "component": "src/components/CartDrawer.tsx:38-51",
+      "severity": "P2",
+      "status": "FAIL",
+      "expected": "Tabbing while drawer is open should cycle only within drawer elements.",
+      "actual": "Tab key moves focus to background page elements behind the backdrop.",
+      "rootCause": "Missing focus trap.",
+      "recommendation": "Add focus trap utility to CartDrawer."
+    },
+    {
+      "id": "BUG-09",
+      "title": "Unused dependency in package.json (split-type)",
+      "route": "Build Configuration",
+      "component": "package.json:24",
+      "severity": "P3",
+      "status": "FAIL",
+      "expected": "All declared dependencies should be utilized.",
+      "actual": "split-type is never imported or used across the codebase.",
+      "rootCause": "Orphaned package declaration.",
+      "recommendation": "Run npm uninstall split-type."
+    },
+    {
+      "id": "BUG-10",
+      "title": "Dead code in AudiobookModal: handleUnlock unreferenced",
+      "route": "/stories",
+      "component": "src/components/AudiobookModal.tsx:91-99",
+      "severity": "P3",
+      "status": "FAIL",
+      "expected": "Defined handlers should be wired to actions or pruned.",
+      "actual": "handleUnlock is declared in state but never referenced in JSX.",
+      "rootCause": "Pruned prototype handler left in component body.",
+      "recommendation": "Remove unused function."
+    },
+    {
+      "id": "BUG-11",
+      "title": "Orphaned component files in src/components/ui/ (demo.tsx, auth-section-1.tsx)",
+      "route": "Component Architecture",
+      "component": "src/components/ui/demo.tsx, src/components/ui/auth-section-1.tsx",
+      "severity": "P3",
+      "status": "FAIL",
+      "expected": "Only active production components should reside in src/components/ui.",
+      "actual": "demo.tsx and auth-section-1.tsx are unreferenced by any page or layout.",
+      "rootCause": "Scaffolding files left behind.",
+      "recommendation": "Remove unreferenced demo files."
+    },
+    {
+      "id": "BUG-12",
+      "title": "Duplicate footer implementations (PapumbaFooter.tsx vs SiteFooter.tsx)",
+      "route": "Shared Layout",
+      "component": "src/components/new-design/PapumbaFooter.tsx, src/components/SiteFooter.tsx",
+      "severity": "P3",
+      "status": "FAIL",
+      "expected": "A single consolidated footer component should be used across all routes.",
+      "actual": "Both files contain ~400 lines of duplicate SVGs, puppet assets, and links.",
+      "rootCause": "Parallel development of redesign without consolidating existing footer.",
+      "recommendation": "Standardize all pages on SiteFooter and remove PapumbaFooter."
+    },
+    {
+      "id": "BUG-13",
+      "title": "Unused prototype route /new-design exposed to users",
+      "route": "/new-design",
+      "component": "src/app/new-design/page.tsx",
+      "severity": "P3",
+      "status": "FAIL",
+      "expected": "Prototype routes should be redirected or guarded.",
+      "actual": "/new-design renders partial duplicate of homepage.",
+      "rootCause": "Temporary development route left in router tree.",
+      "recommendation": "Redirect /new-design to /."
+    },
+    {
+      "id": "BUG-14",
+      "title": "Agentation annotation developer tool loaded unconditionally in production RootLayout",
+      "route": "Global Layout",
+      "component": "src/app/layout.tsx:92, src/components/AgentationProvider.tsx",
+      "severity": "P3",
+      "status": "FAIL",
+      "expected": "Developer annotation toolbar should only mount in development environment.",
+      "actual": "Mounted unconditionally in RootLayout.",
+      "rootCause": "Missing NODE_ENV condition check.",
+      "recommendation": "Wrap with process.env.NODE_ENV === 'development'."
+    },
+    {
+      "id": "BUG-15",
+      "title": "AudiobookModal missing volume persistence across sessions",
+      "route": "/stories",
+      "component": "src/components/AudiobookModal.tsx:45-51",
+      "severity": "P3",
+      "status": "FAIL",
+      "expected": "Audio mute/unmute state should stay consistent with global AudioContext.",
+      "actual": "AudiobookModal manages its own isolated isMuted state rather than syncing with AudioContext.",
+      "rootCause": "Isolated local component state.",
+      "recommendation": "Connect AudiobookModal audio state to AudioContext."
+    }
+  ]
+}

@@ -88,7 +88,7 @@ interface LibraryCartContextType {
   toggleSaveStory: (storyId: string) => boolean;
   isStorySaved: (storyId: string) => boolean;
   cartItems: CartItem[];
-  addToCart: (item: AddToCartInput | Product, quantity?: number) => void;
+  addToCart: (item: AddToCartInput | Product, quantity?: number) => boolean;
   updateQuantity: (itemId: string, quantity: number) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
@@ -114,6 +114,14 @@ interface LibraryCartContextType {
   setIsCartDrawerOpen: (open: boolean) => void;
   toastMessage: string | null;
   showToast: (msg: string) => void;
+  dismissToast: () => void;
+  isAuthModalOpen: boolean;
+  setIsAuthModalOpen: (open: boolean) => void;
+  authModalTitle: string;
+  authModalDescription: string;
+  openAuthModal: (options?: { title?: string; description?: string; pendingItem?: AddToCartInput | Product }) => void;
+  closeAuthModal: () => void;
+  isUserLoggedIn: () => boolean;
 }
 
 const LibraryCartContext = createContext<LibraryCartContextType | undefined>(undefined);
@@ -133,6 +141,11 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalTitle, setAuthModalTitle] = useState<string>("Log in to Shop");
+  const [authModalDescription, setAuthModalDescription] = useState<string>(
+    "Please sign in or create an account to add stories to your cart, unlock editions, and access your digital library."
+  );
 
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -149,7 +162,7 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
               const prod = item.product || {};
               const id = item.id || prod.id || "edition-1";
               const title = item.title || prod.title || "StoryHour Edition";
-              const coverImage = item.coverImage || prod.coverImage || "/images/covers/cover-ramayana.png";
+              const coverImage = item.coverImage || prod.coverImage || "/images/ramayana_epic.jpg";
               const price = typeof item.price === "number" ? item.price : (typeof prod.price === "number" ? prod.price : 18.5);
               const format = item.format || prod.format || "Digital Collector Edition";
               const language = item.language || prod.language || "English";
@@ -166,7 +179,7 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
                 authorOrNarrator,
                 coverImage,
                 price,
-                currency: item.currency || prod.currency || "$",
+                currency: item.currency || prod.currency || "£",
                 format,
                 language,
                 type,
@@ -176,7 +189,7 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
                   title,
                   coverImage,
                   price,
-                  currency: item.currency || prod.currency || "$",
+                  currency: item.currency || prod.currency || "£",
                   format,
                   language,
                 },
@@ -186,12 +199,18 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
         }
       }
 
-      const storedUnlocked = localStorage.getItem(UNLOCKED_STORAGE_KEY);
-      if (storedUnlocked) {
-        const parsed = JSON.parse(storedUnlocked);
-        if (Array.isArray(parsed)) {
-          setUnlockedBookIds(parsed.filter((id) => typeof id === "string"));
+      const session = localStorage.getItem("storyhour_user_session");
+      if (session) {
+        const storedUnlocked = localStorage.getItem(UNLOCKED_STORAGE_KEY);
+        if (storedUnlocked) {
+          const parsed = JSON.parse(storedUnlocked);
+          if (Array.isArray(parsed)) {
+            setUnlockedBookIds(parsed.filter((id) => typeof id === "string"));
+          }
         }
+      } else {
+        setUnlockedBookIds([]);
+        localStorage.removeItem(UNLOCKED_STORAGE_KEY);
       }
 
       const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -206,7 +225,7 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
             items: Array.isArray(o.items)
               ? o.items.map((it: any) => ({
                   ...it,
-                  coverImage: it.coverImage || "/images/covers/cover-ramayana.png",
+                  coverImage: it.coverImage || "/images/ramayana_epic.jpg",
                   title: it.title || "StoryHour Edition",
                 }))
               : [],
@@ -302,7 +321,15 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
     toastTimerRef.current = setTimeout(() => {
       setToastMessage(null);
       toastTimerRef.current = null;
-    }, 3200);
+    }, 3000);
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    setToastMessage(null);
   }, []);
 
   // Cleanup toast timer on unmount
@@ -319,85 +346,152 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
 
     if (nextSaved) {
       setSavedStoryIds((prev) => Array.from(new Set([...prev, storyId])));
-      showToast("Story saved to your family library");
+      showToast("Saved to your library");
     } else {
       setSavedStoryIds((prev) => prev.filter((id) => id !== storyId));
-      showToast("Story removed from your saved library");
+      showToast("Removed from your library");
     }
     return nextSaved;
   };
 
   const isStorySaved = (storyId: string) => savedStoryIds.includes(storyId);
 
-  const addToCart = (item: AddToCartInput | Product, quantity: number = 1) => {
-    const id = item.id;
-    const title = item.title;
-    const price = item.price;
-    const coverImage = item.coverImage;
-    const currency = item.currency || "$";
-    const format = item.format || "Hardcover Edition";
-    const language = item.language || "English";
-    const type: "book" | "audiobook" = (item as AddToCartInput).type || (id.startsWith("ab-") ? "audiobook" : "book");
-    const authorOrNarrator = (item as AddToCartInput).authorOrNarrator || "StoryHour Ensemble";
-    const nativeTitle = item.nativeTitle;
-    const subtitle = (item as AddToCartInput).subtitle;
-
-    // Check if canonical edition maps to existing cart item (canonical ID resolution)
-    const edition = getEditionById(id);
-    const canonicalId = edition ? edition.id : id;
-
-    // Digital item limit rule (fixes FT-14 / C-08): digital editions are capped at quantity 1
-    const isDigital = type === "book" || type === "audiobook" || !format.toLowerCase().includes("physical");
-
-    const existingItem = cartItems.find(
-      (ci) => ci.id === canonicalId || ci.id === id || (edition && ci.id === edition.productId)
-    );
-
-    if (existingItem) {
-      if (isDigital) {
-        showToast(`"${title}" is already in your cart (digital edition limit: 1)`);
-        return;
-      }
-      setCartItems((prev) =>
-        prev.map((ci) => {
-          if (ci.id === existingItem.id) {
-            const nextQty = Math.min(ci.quantity + quantity, 5);
-            return { ...ci, quantity: nextQty };
-          }
-          return ci;
-        })
-      );
-      showToast(`Updated "${title}" quantity in your cart`);
-      return;
+  const isUserLoggedIn = useCallback((): boolean => {
+    if (typeof window === "undefined") return false;
+    try {
+      const session = localStorage.getItem("storyhour_user_session");
+      if (!session) return false;
+      const parsed = JSON.parse(session);
+      return !!parsed && !!(parsed.email || parsed.token || parsed.name);
+    } catch {
+      return false;
     }
+  }, []);
 
-    const newItem: CartItem = {
-      id: canonicalId,
-      title,
-      nativeTitle,
-      subtitle,
-      authorOrNarrator,
-      coverImage,
-      price,
-      currency,
-      format,
-      language,
-      type,
-      quantity: isDigital ? 1 : Math.min(Math.max(1, quantity), 5),
-      product: {
+  const redirectToLogin = useCallback((redirectPath?: string, pendingItem?: AddToCartInput | Product) => {
+    if (typeof window !== "undefined") {
+      if (pendingItem) {
+        try {
+          localStorage.setItem("storyhour_pending_cart_item", JSON.stringify(pendingItem));
+        } catch (e) {
+          console.error("Failed to store pending cart item", e);
+        }
+      }
+      const target = redirectPath || window.location.pathname;
+      window.location.href = `/login?redirect=${encodeURIComponent(target)}`;
+    }
+  }, []);
+
+  const openAuthModal = useCallback(
+    (options?: { title?: string; description?: string; pendingItem?: AddToCartInput | Product }) => {
+      redirectToLogin(typeof window !== "undefined" ? window.location.pathname : "/stories", options?.pendingItem);
+    },
+    [redirectToLogin]
+  );
+
+  const closeAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+  }, []);
+
+  const addToCart = useCallback(
+    (item: AddToCartInput | Product, quantity: number = 1): boolean => {
+      if (!isUserLoggedIn()) {
+        redirectToLogin(typeof window !== "undefined" ? window.location.pathname : "/stories", item);
+        return false;
+      }
+
+      const id = item.id;
+      const title = item.title;
+      const price = item.price;
+      const coverImage = item.coverImage;
+      const currency = item.currency || "£";
+      const format = item.format || "Hardcover Edition";
+      const language = item.language || "English";
+      const type: "book" | "audiobook" = (item as AddToCartInput).type || (id.startsWith("ab-") ? "audiobook" : "book");
+      const authorOrNarrator = (item as AddToCartInput).authorOrNarrator || "StoryHour Ensemble";
+      const nativeTitle = item.nativeTitle;
+      const subtitle = (item as AddToCartInput).subtitle;
+
+      // Check if canonical edition maps to existing cart item (canonical ID resolution)
+      const edition = getEditionById(id);
+      const canonicalId = edition ? edition.id : id;
+
+      // Digital item limit rule (fixes FT-14 / C-08): digital editions are capped at quantity 1
+      const isDigital = type === "book" || type === "audiobook" || !format.toLowerCase().includes("physical");
+
+      const existingItem = cartItems.find(
+        (ci) => ci.id === canonicalId || ci.id === id || (edition && ci.id === edition.productId)
+      );
+
+      if (existingItem) {
+        if (isDigital) {
+          showToast(`"${title}" is already in your cart`);
+          return true;
+        }
+        setCartItems((prev) =>
+          prev.map((ci) => {
+            if (ci.id === existingItem.id) {
+              const nextQty = Math.min(ci.quantity + quantity, 5);
+              return { ...ci, quantity: nextQty };
+            }
+            return ci;
+          })
+        );
+        showToast(`Updated "${title}" quantity in cart`);
+        return true;
+      }
+
+      const newItem: CartItem = {
         id: canonicalId,
         title,
+        nativeTitle,
+        subtitle,
+        authorOrNarrator,
         coverImage,
         price,
         currency,
         format,
         language,
-      },
-    };
+        type,
+        quantity: isDigital ? 1 : Math.min(Math.max(1, quantity), 5),
+        product: {
+          id: canonicalId,
+          title,
+          coverImage,
+          price,
+          currency,
+          format,
+          language,
+        },
+      };
 
-    setCartItems((prev) => [...prev, newItem]);
-    showToast(`Added "${title}" to your cart`);
-  };
+      setCartItems((prev) => [...prev, newItem]);
+      showToast(`Added "${title}" to your cart`);
+      return true;
+    },
+    [isUserLoggedIn, redirectToLogin, cartItems, showToast]
+  );
+
+  // Auto-add pending cart item once user logs in
+  useEffect(() => {
+    if (!isHydrated) return;
+    const checkPending = () => {
+      try {
+        const session = localStorage.getItem("storyhour_user_session");
+        const pending = localStorage.getItem("storyhour_pending_cart_item");
+        if (session && pending) {
+          const itemToAutoAdd = JSON.parse(pending);
+          localStorage.removeItem("storyhour_pending_cart_item");
+          addToCart(itemToAutoAdd);
+        }
+      } catch (e) {
+        console.error("Failed to process pending cart item", e);
+      }
+    };
+    checkPending();
+    window.addEventListener("storage", checkPending);
+    return () => window.removeEventListener("storage", checkPending);
+  }, [isHydrated, addToCart]);
 
   const updateQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
@@ -451,6 +545,8 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
   const isBookUnlocked = useCallback(
     (bookId: string) => {
       if (!bookId) return false;
+      // Must be logged in to have any unlocked books
+      if (!isUserLoggedIn()) return false;
       if (unlockedBookIds.includes(bookId)) return true;
       const edition = getEditionById(bookId);
       if (edition) {
@@ -459,7 +555,7 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
       }
       return false;
     },
-    [unlockedBookIds]
+    [unlockedBookIds, isUserLoggedIn]
   );
 
   const createOrder = (orderData: {
@@ -563,6 +659,14 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
         setIsCartDrawerOpen,
         toastMessage,
         showToast,
+        dismissToast,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        authModalTitle,
+        authModalDescription,
+        openAuthModal,
+        closeAuthModal,
+        isUserLoggedIn,
       }}
     >
       {children}

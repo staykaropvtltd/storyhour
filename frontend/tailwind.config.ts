@@ -77,6 +77,9 @@ const config: Config = {
       animation: {
         "spin-slow": "spinSlow 8s linear infinite",
         "fade-in": "fadeIn 0.3s ease-out forwards",
+        "animate-fade-in": "fadeIn 0.3s ease-out forwards",
+        "zoom-in-95": "zoomIn95 0.2s ease-out forwards",
+        "slide-in-from-top-4": "slideInTop4 0.25s ease-out forwards",
       },
       boxShadow: {
         subtle: "0 2px 10px rgba(5, 5, 5, 0.04)",
