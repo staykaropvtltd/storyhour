@@ -72,13 +72,6 @@ export default function PapumbaHero() {
 
       {/* 2. Central Composition Zone (Untitled UI Component Hierarchy) */}
       <div className="relative z-20 flex flex-col items-center text-center max-w-[620px] md:max-w-[720px] lg:max-w-[800px] xl:max-w-[840px] px-4 mt-4 sm:mt-10 lg:mt-12">
-        {homepage?.announcementEnabled && homepage?.announcementText && (
-          <div className="mb-3.5 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-semibold shadow-sm select-none">
-            <span className="w-2 h-2 rounded-full bg-[#FFE500] animate-pulse" />
-            <span>{homepage.announcementText}</span>
-          </div>
-        )}
-
         {/* Main Display Headline */}
         <h1 className="text-[clamp(2.2rem,9.5vw,2.8rem)] sm:text-[4rem] md:text-[5.2rem] lg:text-[6.2rem] xl:text-[7rem] font-extrabold text-white tracking-[-0.035em] leading-[0.96] drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)] lowercase select-none">
           {headline}

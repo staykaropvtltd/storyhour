@@ -69,13 +69,28 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const getAuthHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("storyhour_admin_token");
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+    return headers;
+  };
+
   const refreshData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/cms/admin/content", {
-        headers: { "Cache-Control": "no-cache" },
-      });
+      const headers: Record<string, string> = { "Cache-Control": "no-cache" };
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("storyhour_admin_token");
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/cms/admin/content", { headers });
 
       if (res.status === 401) {
         setIsAuthenticated(false);
@@ -117,6 +132,9 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       const json = await res.json();
       if (json.success) {
+        if (json.token && typeof window !== "undefined") {
+          localStorage.setItem("storyhour_admin_token", json.token);
+        }
         setIsAuthenticated(true);
         setAdminUser(json.admin);
         await refreshData();
@@ -132,6 +150,9 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Logout
   const logout = async () => {
     try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("storyhour_admin_token");
+      }
       await fetch("/api/cms/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -150,7 +171,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const method = id ? "PUT" : "POST";
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(storyData),
       });
       const json = await res.json();
@@ -177,7 +198,10 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const removeStory = async (id: string) => {
     try {
-      const res = await fetch(`/api/cms/admin/stories/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/cms/admin/stories/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
       const json = await res.json();
       if (json.success) {
         await refreshData();
@@ -197,7 +221,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const method = id ? "PUT" : "POST";
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(editionData),
       });
       const json = await res.json();
@@ -224,7 +248,10 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const removeEdition = async (id: string) => {
     try {
-      const res = await fetch(`/api/cms/admin/editions/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/cms/admin/editions/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
       const json = await res.json();
       if (json.success) {
         await refreshData();
@@ -244,7 +271,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const method = id ? "PUT" : "POST";
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(stData),
       });
       const json = await res.json();
@@ -271,7 +298,10 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const removeStoryteller = async (id: string) => {
     try {
-      const res = await fetch(`/api/cms/admin/storytellers/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/cms/admin/storytellers/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
       const json = await res.json();
       if (json.success) {
         await refreshData();
@@ -289,7 +319,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const res = await fetch("/api/cms/admin/homepage", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(updates),
       });
       const json = await res.json();

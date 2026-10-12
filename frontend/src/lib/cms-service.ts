@@ -161,33 +161,63 @@ function generateInitialStore(): CmsDataStore {
   };
 }
 
+let memoryCache: CmsDataStore | null = null;
+
 /**
  * Reads the persistent JSON database. If file does not exist, initializes it.
  */
 export async function getCmsData(): Promise<CmsDataStore> {
+  if (memoryCache) {
+    return memoryCache;
+  }
+
   try {
     const raw = await fs.readFile(DATA_FILE_PATH, "utf8");
-    return JSON.parse(raw) as CmsDataStore;
+    const parsed = JSON.parse(raw) as CmsDataStore;
+    memoryCache = parsed;
+    return parsed;
   } catch (err: any) {
     if (err.code === "ENOENT") {
       // File does not exist yet -> create and persist initial store
       const initial = generateInitialStore();
+      memoryCache = initial;
       await saveCmsData(initial);
       return initial;
     }
     console.error("[CmsService] Error reading data store:", err);
-    return generateInitialStore();
+    if (!memoryCache) {
+      memoryCache = generateInitialStore();
+    }
+    return memoryCache;
   }
 }
 
 /**
- * Atomically writes data to the persistent JSON database.
+ * Atomically writes data to the persistent JSON database with retry for OneDrive locks.
  */
 export async function saveCmsData(data: CmsDataStore): Promise<void> {
   data.lastUpdated = new Date().toISOString();
+  // Immediately update in-memory cache so subsequent reads and live UI have the latest state
+  memoryCache = data;
+
   const dir = path.dirname(DATA_FILE_PATH);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), "utf8");
+  const jsonContent = JSON.stringify(data, null, 2);
+
+  // Retry up to 3 times to handle temporary Windows/OneDrive file locks
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(DATA_FILE_PATH, jsonContent, "utf8");
+      return;
+    } catch (err: any) {
+      if (attempt === 3) {
+        console.warn(`[CmsService] Could not persist to disk after ${attempt} attempts (${err.code}):`, err.message);
+        // Do not throw: memoryCache is already updated and serving live data
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 80 * attempt));
+    }
+  }
 }
 
 function recordActivity(

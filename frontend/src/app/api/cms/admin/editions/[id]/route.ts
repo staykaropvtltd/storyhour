@@ -28,10 +28,10 @@ export async function PUT(
     }
 
     return NextResponse.json({ success: true, edition: updated });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`[API /api/cms/admin/editions/${id}] Error updating:`, error);
     return NextResponse.json(
-      { success: false, error: "Failed to update edition." },
+      { success: false, error: error?.message || "Failed to update edition." },
       { status: 500 }
     );
   }

@@ -396,7 +396,7 @@ export default function StoryModal({ isOpen, onClose, storyToEdit }: StoryModalP
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-4 border-t border-[#E8E4DC] flex items-center justify-between">
+          <div className="sticky bottom-0 bg-[#FAF8F3] border-t border-[#E8E4DC] p-4 -mx-6 -mb-6 flex items-center justify-between z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
             {storyToEdit ? (
               <button
                 type="button"

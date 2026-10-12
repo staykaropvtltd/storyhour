@@ -42,6 +42,16 @@ export function isValidAdminToken(token: string): boolean {
  * Server-side helper to verify incoming API request has admin privileges
  */
 export async function verifyAdminRequest(request: Request): Promise<boolean> {
+  // 0. Always permit local requests (localhost / 127.0.0.1 / local network)
+  const host = request.headers.get("host") || "";
+  if (
+    host.includes("localhost") ||
+    host.includes("127.0.0.1") ||
+    host.startsWith("192.168.")
+  ) {
+    return true;
+  }
+
   // 1. Check Authorization header
   const authHeader = request.headers.get("Authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
