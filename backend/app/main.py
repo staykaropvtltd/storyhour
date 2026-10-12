@@ -111,8 +111,22 @@ OPENAPI_TAGS = [
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
     validate_configuration(settings)
+
+    # B-08.1: Startup database connectivity diagnostic probe (schema managed exclusively by Alembic)
+    try:
+        from app.database.init_db import init_db
+        db_reachable = init_db()
+        if not db_reachable:
+            logger.warning(
+                "Database connectivity check failed during application startup. "
+                "Service started in degraded state; readiness probe (/health/ready) will report not_ready."
+            )
+    except Exception as exc:
+        logger.warning(f"Database connectivity check encountered an unexpected error during startup: {str(exc)}")
+
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
+
 
 
 app = FastAPI(

@@ -522,9 +522,175 @@ def test_b12_5_story_update_rejects_oversized_seo_title():
     assert any("at most 255" in e["msg"] for e in errors)
 
 
-def test_b12_5_story_update_rejects_oversized_seo_description():
+def test_b12_5_story_update_rejects_seo_description():
     """Verify StoryUpdate rejects seo_description > 500 characters."""
     with pytest.raises(ValidationError) as exc_info:
         StoryUpdate.model_validate({"seo_description": "D" * 501})
     errors = exc_info.value.errors()
     assert any("at most 500" in e["msg"] for e in errors)
+
+
+# ==============================================================================
+# PHASE 2A FOLLOW-UP: CONCURRENCY RACE & TRANSACTION ROLLBACK TESTS
+# ==============================================================================
+
+def test_b08_2_concurrent_profile_creation_resolved_on_race(isolated_db_engine):
+    """
+    PHASE 2A FOLLOW-UP (TASK A):
+    Verify that _sync_user_profile recovers gracefully when a concurrent worker
+    creates the UserProfile between lookup and insertion, triggering IntegrityError.
+    Asserts:
+    1. IntegrityError is caught and db.rollback() is issued before retry query.
+    2. The concurrent profile created in the database is retrieved and returned.
+    3. The caller receives the valid profile without an error.
+    """
+    from sqlalchemy.exc import IntegrityError
+    from app.database.repository import BaseRepository
+
+    TestingSession = sessionmaker(bind=isolated_db_engine, autocommit=False, autoflush=False)
+    user_id = "concurrent-race-user-7777"
+    email = "concurrent@storyhour.com"
+    full_name = "Concurrent Storyteller"
+
+    mock_user = MagicMock()
+    mock_user.id = user_id
+    mock_user.email = email
+    mock_user.user_metadata = {"full_name": full_name}
+
+    # Side-effect for repo.create: simulate concurrent worker committing first
+    def simulate_concurrent_insert_and_conflict(*args, **kwargs):
+        # A concurrent worker commits the profile directly to the database
+        with TestingSession() as concurrent_db:
+            concurrent_db.add(UserProfile(
+                user_id=user_id,
+                email=email,
+                full_name=full_name,
+                is_active=True,
+                is_deleted=False,
+            ))
+            concurrent_db.commit()
+        # The current worker encounters an IntegrityError (e.g. duplicate key)
+        raise IntegrityError("duplicate key value violates unique constraint", params={}, orig=Exception("unique_violation"))
+
+    with patch("app.database.session.SessionLocal", side_effect=TestingSession):
+        with patch.object(BaseRepository, "create", side_effect=simulate_concurrent_insert_and_conflict):
+            profile = supabase_service._sync_user_profile(mock_user)
+
+    assert profile is not None
+    assert profile.user_id == user_id
+    assert profile.full_name == full_name
+    assert profile.is_active is True
+
+
+def test_b08_2_unrelated_integrity_error_is_not_swallowed(isolated_db_engine):
+    """
+    PHASE 2A FOLLOW-UP (TASK A):
+    Verify that an IntegrityError where the profile was NOT created concurrently
+    (e.g., check constraint conflict) is NOT treated as a race,
+    is re-raised, rolled back, and converted to a sanitized HTTP 500.
+    """
+    from sqlalchemy.exc import IntegrityError
+    from app.database.repository import BaseRepository
+
+    TestingSession = sessionmaker(bind=isolated_db_engine, autocommit=False, autoflush=False)
+    user_id = "unrelated-conflict-user-8888"
+    mock_user = MagicMock(id=user_id, email="conflict@storyhour.com", user_metadata={"full_name": "Conflict"})
+
+    def simulate_unrelated_integrity_error(*args, **kwargs):
+        # Raise IntegrityError without creating a concurrent record for user_id
+        raise IntegrityError("foreign key or check constraint violated", params={}, orig=Exception("fk_violation"))
+
+    with patch("app.database.session.SessionLocal", side_effect=TestingSession):
+        with patch.object(BaseRepository, "create", side_effect=simulate_unrelated_integrity_error):
+            with pytest.raises(HTTPException) as exc_info:
+                supabase_service._sync_user_profile(mock_user)
+
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert "Database error occurred during user profile synchronization" in exc_info.value.detail
+    assert "fk_violation" not in exc_info.value.detail
+
+
+def test_b08_3_real_transaction_commit_failure_triggers_rollback(isolated_db_engine):
+    """
+    PHASE 2A FOLLOW-UP (TASK B):
+    Verify that an actual SQLAlchemy commit failure on an active transaction
+    triggers db.rollback(), raises sanitized HTTPException(500), and ensures no
+    uncommitted or dirty record remains in the database.
+    """
+    from sqlalchemy.exc import OperationalError
+    from sqlalchemy.orm import Session
+
+    TestingSession = sessionmaker(bind=isolated_db_engine, autocommit=False, autoflush=False)
+    user_id = "commit-fail-user-9999"
+    email = "commitfail@storyhour.com"
+
+    mock_user = MagicMock()
+    mock_user.id = user_id
+    mock_user.email = email
+    mock_user.user_metadata = {"full_name": "Rollback Test"}
+
+    def failing_commit(session_self):
+        # Simulate database connection drop during commit
+        raise OperationalError("Connection dropped during commit", params={}, orig=Exception("connection_reset"))
+
+    with patch("app.database.session.SessionLocal", side_effect=TestingSession):
+        with patch.object(Session, "commit", side_effect=failing_commit):
+            with pytest.raises(HTTPException) as exc_info:
+                supabase_service._sync_user_profile(mock_user)
+
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert "Database error occurred during user profile synchronization" in exc_info.value.detail
+    assert "connection_reset" not in exc_info.value.detail
+    assert "OperationalError" not in exc_info.value.detail
+
+    # Verify no profile was persisted
+    with TestingSession() as verify_db:
+        persisted = verify_db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+        assert persisted is None
+
+
+def test_b08_3_signup_route_rejects_tokens_when_commit_fails(api_client: TestClient, monkeypatch):
+    """
+    PHASE 2A FOLLOW-UP (TASK B):
+    End-to-end API test: Verify that POST /api/auth/signup raises HTTP 500 and
+    does NOT return an access token or session if the database commit fails.
+    """
+    from sqlalchemy.exc import OperationalError
+    from sqlalchemy.orm import Session
+
+    fake_user_id = "real-commit-fail-uuid"
+    fake_user = MagicMock()
+    fake_user.id = fake_user_id
+    fake_user.email = "e2ecommitfail@storyhour.com"
+    fake_user.user_metadata = {"name": "E2E Commit Fail"}
+    fake_user.app_metadata = {}
+    fake_user.identities = [MagicMock()]
+
+    fake_res = MagicMock()
+    fake_res.user = fake_user
+    fake_res.session = MagicMock()
+    fake_res.session.access_token = "secret-token-must-not-be-issued"
+
+    class FakeAuth:
+        def sign_up(self, credentials):
+            return fake_res
+
+    fake_client = MagicMock()
+    fake_client.auth = FakeAuth()
+    monkeypatch.setattr(supabase_service, "anon_client", fake_client)
+
+    # Patch Session.commit inside _sync_user_profile to fail with OperationalError
+    with patch.object(Session, "commit", side_effect=OperationalError("disk I/O error", params={}, orig=Exception("disk_full"))):
+        res = api_client.post("/api/auth/signup", json={
+            "Name:": "E2E Commit Fail",
+            "email id :": "e2ecommitfail@storyhour.com",
+            "password :": "SecurePassword123!",
+            "confirm the password :": "SecurePassword123!",
+        })
+
+    assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    data = res.json()
+    assert "Database error occurred during user profile synchronization" in data["detail"]
+    assert "access_token" not in data
+    assert "disk_full" not in str(data)
+

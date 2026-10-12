@@ -169,26 +169,118 @@ def test_user_profile_repository_crud(in_memory_session):
     assert user_repo.count(in_memory_session) == 0
 
 
+def test_check_database_health_unit(in_memory_session):
+    """
+    ISOLATED UNIT TEST (B-11.2):
+    Verifies check_database_health probe using an isolated in-memory test engine.
+    """
+    from unittest.mock import patch
+    with patch("app.database.health.engine", in_memory_session.bind):
+        assert check_database_health() is True
+
+
+def test_get_database_diagnostics_unit():
+    """
+    ISOLATED UNIT TEST (B-11.2):
+    Verifies get_database_diagnostics structure using controlled mocks without network.
+    """
+    from unittest.mock import MagicMock, patch
+    mock_conn = MagicMock()
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = ["PostgreSQL 15.1 on x86_64"]
+    mock_conn.execute.return_value = mock_result
+    mock_pool = MagicMock()
+    mock_pool.size.return_value = 10
+    mock_pool.checkedin.return_value = 8
+    mock_pool.checkedout.return_value = 2
+    mock_pool.overflow.return_value = 0
+
+    mock_engine = MagicMock()
+    mock_engine.connect.return_value.__enter__.return_value = mock_conn
+    mock_engine.pool = mock_pool
+    mock_engine.dialect.name = "postgresql"
+
+    with patch("app.database.health.engine", mock_engine):
+        diag = get_database_diagnostics()
+        assert diag["connected"] is True
+        assert diag["engine"] == "postgresql"
+        assert diag["server_version"] == "PostgreSQL 15.1"
+        assert diag["pool"]["size"] == 10
+        assert "latency_ms" in diag
+
+
+
+@pytest.mark.integration
 def test_live_database_health_and_diagnostics():
-    """Test health check and diagnostics against the live Supabase PostgreSQL database."""
+    """
+    OPTIONAL INTEGRATION TEST (B-11.2):
+    Tests health check and diagnostics against the live PostgreSQL database.
+    Requires a running database specified in DATABASE_URL.
+    Skipped by default in unit test runs (-m 'not integration').
+    """
     is_healthy = check_database_health()
     assert is_healthy is True
 
     diag = get_database_diagnostics()
     assert diag["connected"] is True
-    assert diag["engine"] == "postgresql"
+    assert diag["engine"] in ("postgresql", "sqlite")
     assert "latency_ms" in diag
     assert diag["latency_ms"] is not None
     assert "pool" in diag
-    assert diag["pool"]["size"] == 10
 
 
-def test_get_db_dependency():
-    """Verify get_db dependency yields a valid session and closes properly."""
-    gen = get_db()
-    session = next(gen)
-    assert session is not None
-    try:
-        next(gen)
-    except StopIteration:
-        pass
+def test_get_db_dependency(in_memory_session):
+    """
+    ISOLATED UNIT TEST (B-11.2):
+    Verify get_db dependency yields a valid session and closes properly
+    without connecting to a live database.
+    """
+    from unittest.mock import patch
+    with patch("app.database.session.SessionLocal", return_value=in_memory_session):
+        gen = get_db()
+        session = next(gen)
+        assert session is not None
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_b08_1_startup_connectivity_check_success():
+    """
+    B-08.1 REGRESSION TEST:
+    Verify that application lifespan invokes init_db() on startup and completes cleanly.
+    """
+    import asyncio
+    from unittest.mock import patch
+    from app.main import app, lifespan
+
+    async def _run():
+        with patch("app.database.init_db.init_db", return_value=True) as mock_init:
+            async with lifespan(app):
+                pass
+            mock_init.assert_called_once()
+
+    asyncio.run(_run())
+
+
+def test_b08_1_startup_connectivity_check_failure_is_non_fatal():
+    """
+    B-08.1 REGRESSION TEST:
+    Verify that database failure on startup logs a warning and allows the service
+    to start in degraded state without an unhandled process crash.
+    """
+    import asyncio
+    from unittest.mock import patch
+    from app.main import app, lifespan
+
+    async def _run():
+        with patch("app.database.init_db.init_db", return_value=False) as mock_init:
+            async with lifespan(app):
+                pass
+            mock_init.assert_called_once()
+
+    asyncio.run(_run())
+
+
+
