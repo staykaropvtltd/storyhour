@@ -6,15 +6,32 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from app.config import settings
 from app.core.logging import logger
 
-# Production-grade SQLAlchemy Engine with robust connection pooling
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True,       # Auto-detect dropped connections and reconnect
-    pool_size=10,             # Keep connections ready for concurrent requests
-    max_overflow=20,          # Allow bursts under peak traffic
-    pool_recycle=1800,        # Recycle connections every 30 minutes to prevent stale connections
-    echo=False,               # Set to True only for verbose SQL debugging
-)
+# SQLAlchemy Engine with dialect-appropriate connection configuration
+if settings.DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+    if ":memory:" in settings.DATABASE_URL or settings.DATABASE_URL in ("sqlite://", "sqlite:///"):
+        from sqlalchemy.pool import StaticPool
+        engine = create_engine(
+            settings.DATABASE_URL,
+            connect_args=connect_args,
+            poolclass=StaticPool,
+            echo=False,
+        )
+    else:
+        engine = create_engine(
+            settings.DATABASE_URL,
+            connect_args=connect_args,
+            echo=False,
+        )
+else:
+    engine = create_engine(
+        settings.DATABASE_URL,
+        pool_pre_ping=True,       # Auto-detect dropped connections and reconnect
+        pool_size=10,             # Keep connections ready for concurrent requests
+        max_overflow=20,          # Allow bursts under peak traffic
+        pool_recycle=1800,        # Recycle connections every 30 minutes to prevent stale connections
+        echo=False,               # Set to True only for verbose SQL debugging
+    )
 
 # SessionLocal factory for creating independent database sessions
 SessionLocal = sessionmaker(
