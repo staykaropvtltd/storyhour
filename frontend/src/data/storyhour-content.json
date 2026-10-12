@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-12T18:53:27.028Z",
+  "lastUpdated": "2026-10-12T19:08:49.263Z",
   "homepage": {
     "heroHeadline": "the greatest stories ever told",
     "heroSubheadline": "Discover Indian mythology, culture, and history through soulful audiobooks, live puppet storytelling, and screen-free calm bedtimes. In Hindi, English & Telugu.",
@@ -12,27 +12,6 @@
     "updatedAt": "2026-10-12T18:28:50.672Z"
   },
   "stories": [
-    {
-      "slug": "new-book-test",
-      "title": "New Book Test",
-      "subtitle": "Test",
-      "storyteller": "StoryHour Ensemble",
-      "language": "English",
-      "audience": "Families & All Ages",
-      "category": "Mythology & Epics",
-      "format": "Audiobook",
-      "duration": "8h 45m",
-      "durationMinutes": 525,
-      "coverImage": "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.28.53.jpeg",
-      "audioPreviewUrl": "https://www.youtube.com/embed/4up2VdHiO5I?autoplay=1",
-      "chaptersCount": 24,
-      "description": "",
-      "featured": true,
-      "status": "published",
-      "id": "story-1791828316162",
-      "createdAt": "2026-10-12T18:05:16.162Z",
-      "updatedAt": "2026-10-12T18:05:16.162Z"
-    },
     {
       "id": "story-1",
       "slug": "ramayana-english",
@@ -409,22 +388,6 @@
     }
   ],
   "storytellers": [
-    {
-      "name": "Test Storyteller",
-      "role": "Classical Vocalist & Narrator",
-      "bio": "",
-      "image": "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.23.29-1.jpeg",
-      "region": "London, UK",
-      "languages": [
-        "English",
-        "Hindi"
-      ],
-      "connectedStoryTitle": "Classical Epics",
-      "status": "published",
-      "id": "st-1791830779065",
-      "createdAt": "2026-10-12T18:46:19.065Z",
-      "updatedAt": "2026-10-12T18:46:19.065Z"
-    },
     {
       "id": "st-1",
       "name": "Neelima Penumarthy",

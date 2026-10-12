@@ -26,10 +26,10 @@ export async function PUT(request: Request) {
     const updates = await request.json();
     const updated = await updateHomepageConfig(updates);
     return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[API /api/cms/admin/homepage] Error updating homepage:", error);
     return NextResponse.json(
-      { success: false, error: error?.message || "Failed to update homepage settings." },
+      { success: false, error: "Failed to update homepage settings." },
       { status: 500 }
     );
   }
