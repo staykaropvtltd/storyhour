@@ -10,8 +10,9 @@ from app.main import app
 
 @pytest.fixture(autouse=True)
 def configure_test_auth_mode(monkeypatch):
-    """Ensure tests default to explicit local JWT mode to avoid external Supabase dependency."""
+    """Ensure tests default to explicit local JWT mode and enabled rate limiting."""
     monkeypatch.setattr(settings, "AUTH_MODE", "local")
+    monkeypatch.setattr(settings, "RATE_LIMIT_ENABLED", True)
 
 
 @pytest.fixture

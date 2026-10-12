@@ -22,7 +22,7 @@ jobs:
       SUPABASE_JWT_SECRET: "ci-test-mock-secret-key-at-least-32-chars-long"
       SUPABASE_JWT_ALGORITHM: "HS256"
       JWT_AUDIENCE: "authenticated"
-      RATE_LIMIT_ENABLED: "false"
+      RATE_LIMIT_ENABLED: "true"
 
     steps:
       - name: Check out repository
