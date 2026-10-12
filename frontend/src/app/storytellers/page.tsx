@@ -6,6 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Play, Pause } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { useCmsContent } from "@/lib/use-cms-content";
 
 interface Storyteller {
   name: string;
@@ -188,13 +189,17 @@ export default function StorytellersPage() {
   const [active, setActive] = useState(0);
   const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
 
+  const { storytellers: cmsStorytellers } = useCmsContent();
+  const activeStorytellers =
+    cmsStorytellers && cmsStorytellers.length > 0 ? cmsStorytellers : STORYTELLERS;
+
   const handleNext = useCallback(() => {
-    setActive((prev) => (prev + 1) % STORYTELLERS.length);
-  }, []);
+    setActive((prev) => (prev + 1) % activeStorytellers.length);
+  }, [activeStorytellers.length]);
 
   const handlePrev = useCallback(() => {
-    setActive((prev) => (prev - 1 + STORYTELLERS.length) % STORYTELLERS.length);
-  }, []);
+    setActive((prev) => (prev - 1 + activeStorytellers.length) % activeStorytellers.length);
+  }, [activeStorytellers.length]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -217,14 +222,14 @@ export default function StorytellersPage() {
 
   const getCardAnimation = (index: number) => {
     if (index === active) return { opacity: 1, scale: 1, rotate: 0, zIndex: 40, y: [0, -50, 0] };
-    const nextIndex = (active + 1) % STORYTELLERS.length;
-    const prevIndex = (active - 1 + STORYTELLERS.length) % STORYTELLERS.length;
+    const nextIndex = (active + 1) % activeStorytellers.length;
+    const prevIndex = (active - 1 + activeStorytellers.length) % activeStorytellers.length;
     if (index === nextIndex) return { opacity: 0.8, scale: 0.94, rotate: 6, zIndex: 20, y: 0 };
     if (index === prevIndex) return { opacity: 0.65, scale: 0.9, rotate: -7, zIndex: 10, y: 0 };
     return { opacity: 0, scale: 0.86, rotate: 0, zIndex: 0, y: 0 };
   };
 
-  const current = STORYTELLERS[active];
+  const current = activeStorytellers[active] || activeStorytellers[0];
 
   return (
     <>
@@ -297,7 +302,7 @@ export default function StorytellersPage() {
               <div className="flex justify-center">
                 <div className="relative w-full max-w-[340px] sm:max-w-[390px] md:max-w-[430px] h-[330px] sm:h-[370px] md:h-[410px]">
                   <AnimatePresence initial={false}>
-                    {STORYTELLERS.map((storyteller, index) => {
+                    {activeStorytellers.map((storyteller, index) => {
                       const anim = getCardAnimation(index);
                       return (
                         <motion.div

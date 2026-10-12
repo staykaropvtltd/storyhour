@@ -2,95 +2,107 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Mic, Plus, Search, MapPin, Globe, Sparkles, BookOpen, Trash2 } from "lucide-react";
-import { useAdmin } from "@/context/AdminContext";
-import { Storyteller } from "@/data/storyhour-data";
+import {
+  Mic,
+  Plus,
+  Search,
+  MapPin,
+  Globe,
+  BookOpen,
+  Trash2,
+  Edit2,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
+import { useAdminCms } from "@/context/AdminCmsContext";
+import { CmsStoryteller } from "@/lib/cms-types";
+import StorytellerModal from "@/components/admin/StorytellerModal";
 
 export default function AdminStorytellersPage() {
-  const { storytellers, addStoryteller, deleteStoryteller } = useAdmin();
+  const { storytellers, removeStoryteller, toggleStorytellerStatus, isLoading } = useAdminCms();
   const [search, setSearch] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [editingStoryteller, setEditingStoryteller] = useState<CmsStoryteller | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // New storyteller form state
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("Classical Vocalist & Epic Narrator");
-  const [region, setRegion] = useState("Varanasi & London");
-  const [languages, setLanguages] = useState("English, Hindi");
-  const [bio, setBio] = useState("");
-  const [connectedStoryTitle, setConnectedStoryTitle] = useState("Ramayana Series");
-  const [portraitImage, setPortraitImage] = useState("https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80");
-
-  const filteredStorytellers = storytellers.filter(
-    (st) =>
+  const filteredStorytellers = storytellers.filter((st) => {
+    const matchesSearch =
       st.name.toLowerCase().includes(search.toLowerCase()) ||
-      st.role.toLowerCase().includes(search.toLowerCase()) ||
-      st.region.toLowerCase().includes(search.toLowerCase())
-  );
+      (st.role && st.role.toLowerCase().includes(search.toLowerCase())) ||
+      (st.region && st.region.toLowerCase().includes(search.toLowerCase())) ||
+      (st.bio && st.bio.toLowerCase().includes(search.toLowerCase()));
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
+    const matchesStatus =
+      selectedStatus === "all" || st.status === selectedStatus;
 
-    addStoryteller({
-      name: name.trim(),
-      role: role.trim(),
-      region: region.trim(),
-      languages: languages.split(",").map((l) => l.trim()),
-      bio: bio.trim(),
-      connectedStoryTitle: connectedStoryTitle.trim(),
-      portraitImage: portraitImage.trim(),
-    });
+    return matchesSearch && matchesStatus;
+  });
 
-    setName("");
-    setBio("");
-    setShowAddModal(false);
+  const handleEdit = (st: CmsStoryteller) => {
+    setEditingStoryteller(st);
+    setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string, stName: string) => {
-    if (window.confirm(`Remove storyteller "${stName}"?`)) {
-      deleteStoryteller(id);
+  const handleAddNew = () => {
+    setEditingStoryteller(null);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string, stName: string) => {
+    if (window.confirm(`Are you sure you want to remove storyteller "${stName}"?`)) {
+      await removeStoryteller(id);
     }
   };
 
   return (
-    <div className="space-y-6 select-none">
-      {/* 1. Header */}
+    <div className="space-y-6">
+      {/* 1. Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#0F0F0F] tracking-tight">
               Storytellers & Voice Cast
             </h1>
-            <span className="px-2 py-0.5 text-xs font-mono rounded-full bg-[#C5A880]/15 text-[#C5A880] border border-[#C5A880]/30 font-semibold">
+            <span className="px-2.5 py-0.5 text-xs font-mono rounded-full bg-[#C9281D]/10 text-[#C9281D] border border-[#C9281D]/20 font-semibold">
               {filteredStorytellers.length} artists
             </span>
           </div>
-          <p className="text-zinc-400 text-xs sm:text-sm mt-1">
-            Voice artists, classical balladeers, puppeteers, and folklore translators.
+          <p className="text-[#6B655C] text-xs sm:text-sm mt-1">
+            Manage classical balladeers, voice artists, translators, and featured story narrators.
           </p>
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A880] to-[#A38257] text-zinc-950 text-xs font-bold shadow-lg shadow-[#C5A880]/20 hover:brightness-110 active:scale-95 transition self-start sm:self-auto"
+          onClick={handleAddNew}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#C9281D] hover:bg-[#A82017] text-white text-xs font-semibold shadow-sm hover:shadow active:scale-95 transition self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add Storyteller</span>
         </button>
       </div>
 
-      {/* 2. Search */}
-      <div className="p-4 rounded-2xl bg-[#121216] border border-[#23232b] flex items-center shadow-lg">
+      {/* 2. Search & Filter */}
+      <div className="p-4 rounded-2xl bg-white border border-[#E8E4DC] flex flex-col sm:flex-row items-center gap-3 shadow-sm">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#8C827A] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search artists by name, voice role, or region..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#C5A880]"
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-xs text-[#0F0F0F] placeholder-[#8C827A] focus:outline-none focus:border-[#C9281D] focus:ring-1 focus:ring-[#C9281D]"
           />
         </div>
+
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="w-full sm:w-40 px-3 py-2 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-xs text-[#0F0F0F] focus:outline-none focus:border-[#C9281D]"
+        >
+          <option value="all">All Status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+        </select>
       </div>
 
       {/* 3. Storytellers Grid */}
@@ -98,58 +110,103 @@ export default function AdminStorytellersPage() {
         {filteredStorytellers.map((st) => (
           <div
             key={st.id}
-            className="rounded-2xl bg-[#121216] border border-[#23232b] p-5 shadow-xl hover:border-zinc-700 transition flex flex-col justify-between group"
+            className="rounded-2xl bg-white border border-[#E8E4DC] p-5 shadow-sm hover:shadow-md hover:border-[#C9281D]/30 transition flex flex-col justify-between group"
           >
             <div>
+              {/* Portrait & Role Header */}
               <div className="flex items-start gap-4">
-                <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-zinc-800 flex-shrink-0 shadow-md">
-                  <Image
-                    src={st.portraitImage}
-                    alt={st.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition duration-300"
-                    unoptimized
-                  />
+                <div className="relative w-16 h-16 rounded-full overflow-hidden bg-[#FAF8F3] border border-[#E8E4DC] flex-shrink-0 shadow-sm">
+                  {st.image ? (
+                    <Image
+                      src={st.image}
+                      alt={st.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition duration-300"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#8C827A]">
+                      <Mic className="w-6 h-6" />
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-serif font-bold text-base text-white truncate group-hover:text-[#E8D3B4] transition">
-                    {st.name}
-                  </h3>
-                  <p className="text-xs text-[#C5A880] truncate mt-0.5">{st.role}</p>
-                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 mt-1">
-                    <MapPin className="w-3 h-3 text-zinc-500" />
-                    <span>{st.region}</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Languages */}
-              <div className="mt-3 flex flex-wrap gap-1">
-                {st.languages.map((lang) => (
-                  <span
-                    key={lang}
-                    className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-zinc-800 text-zinc-300"
-                  >
-                    {lang}
-                  </span>
-                ))}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-serif font-bold text-base text-[#0F0F0F] truncate group-hover:text-[#C9281D] transition">
+                      {st.name}
+                    </h3>
+                    <button
+                      onClick={() => toggleStorytellerStatus(st.id)}
+                      title="Click to toggle publish status"
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition ${
+                        st.status === "published"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                          : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                      }`}
+                    >
+                      {st.status === "published" ? (
+                        <>
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                          <span>Active</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-2.5 h-2.5" />
+                          <span>Draft</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-[#C9281D] font-medium mt-0.5 line-clamp-1">
+                    {st.role}
+                  </p>
+
+                  {st.region && (
+                    <div className="flex items-center gap-1 text-[11px] text-[#8C827A] mt-1">
+                      <MapPin className="w-3 h-3 text-[#8C827A]" />
+                      <span className="truncate">{st.region}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Bio */}
-              <p className="mt-3 text-xs text-zinc-400 line-clamp-3 leading-relaxed">
-                {st.bio}
+              <p className="text-xs text-[#6B655C] leading-relaxed mt-4 line-clamp-3">
+                {st.bio || "No biography entered."}
               </p>
+
+              {/* Meta pills */}
+              <div className="mt-4 pt-3 border-t border-[#E8E4DC] flex flex-wrap gap-1.5">
+                {st.languages && (
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FAF8F3] border border-[#E8E4DC] text-[10px] font-mono text-[#6B655C]">
+                    <Globe className="w-2.5 h-2.5 text-[#8C827A]" />
+                    <span>{Array.isArray(st.languages) ? st.languages.join(", ") : st.languages}</span>
+                  </div>
+                )}
+                {st.connectedStoryTitle && (
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FAF8F3] border border-[#E8E4DC] text-[10px] font-mono text-[#6B655C]">
+                    <BookOpen className="w-2.5 h-2.5 text-[#8C827A]" />
+                    <span className="truncate max-w-[140px]">{st.connectedStoryTitle}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5 text-zinc-500 text-[11px]">
-                <BookOpen className="w-3.5 h-3.5 text-[#C5A880]" />
-                <span className="truncate max-w-[160px]">{st.connectedStoryTitle}</span>
-              </div>
+            {/* Actions footer */}
+            <div className="mt-5 pt-3 border-t border-[#E8E4DC] flex items-center justify-end gap-1.5">
+              <button
+                onClick={() => handleEdit(st)}
+                className="px-3 py-1.5 rounded-xl bg-[#FAF8F3] hover:bg-[#F4EFE6] border border-[#E8E4DC] text-xs font-medium text-[#0F0F0F] flex items-center gap-1.5 transition"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-[#6B655C]" />
+                <span>Edit</span>
+              </button>
               <button
                 onClick={() => handleDelete(st.id, st.name)}
-                className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition"
-                title="Remove artist"
+                className="p-1.5 rounded-xl bg-white hover:bg-red-50 text-[#8C827A] hover:text-[#C9281D] border border-transparent hover:border-red-200 transition"
+                title="Delete Storyteller"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -158,100 +215,18 @@ export default function AdminStorytellersPage() {
         ))}
       </div>
 
-      {/* Add Storyteller Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowAddModal(false)} />
-          <div className="relative w-full max-w-lg rounded-2xl bg-[#131317] border border-[#272730] shadow-2xl p-6 z-10 animate-zoom-in-95 text-zinc-200">
-            <h3 className="font-serif font-bold text-lg text-white mb-4">Add Artist / Storyteller</h3>
-            <form onSubmit={handleCreate} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-zinc-300 mb-1 font-semibold">Artist Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Pandit Radhakrishna Shastri"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-[#C5A880]"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-300 mb-1 font-semibold">Role</label>
-                  <input
-                    type="text"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-300 mb-1 font-semibold">Region / Base</label>
-                  <input
-                    type="text"
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-zinc-300 mb-1 font-semibold">Languages (comma separated)</label>
-                <input
-                  type="text"
-                  value={languages}
-                  onChange={(e) => setLanguages(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-zinc-300 mb-1 font-semibold">Portrait Image URL</label>
-                <input
-                  type="url"
-                  value={portraitImage}
-                  onChange={(e) => setPortraitImage(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white font-mono focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-zinc-300 mb-1 font-semibold">Associated Epic / Story Title</label>
-                <input
-                  type="text"
-                  value={connectedStoryTitle}
-                  onChange={(e) => setConnectedStoryTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-zinc-300 mb-1 font-semibold">Biography</label>
-                <textarea
-                  rows={3}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Master of Carnatic storytelling traditions and expressive Sanskrit recitations..."
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none"
-                />
-              </div>
-              <div className="pt-3 border-t border-zinc-800 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#C5A880] text-zinc-950 font-bold"
-                >
-                  Save Artist
-                </button>
-              </div>
-            </form>
-          </div>
+      {filteredStorytellers.length === 0 && !isLoading && (
+        <div className="py-16 text-center text-[#8C827A] text-xs rounded-2xl bg-white border border-[#E8E4DC]">
+          No storytellers found matching your search.
         </div>
       )}
+
+      {/* Edit / Add Modal */}
+      <StorytellerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        storytellerToEdit={editingStoryteller}
+      />
     </div>
   );
 }

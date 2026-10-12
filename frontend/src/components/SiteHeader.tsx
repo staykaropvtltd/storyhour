@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ShoppingBag, Search, User, Mail, Phone, LogOut, ChevronDown } from "lucide-react";
 import { useLibraryCart } from "@/context/LibraryCartContext";
+import { useCmsContent } from "@/lib/use-cms-content";
 
 interface SiteHeaderProps {
   activeLink?: string;
@@ -25,6 +26,7 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
     phone?: string;
   } | null>(null);
   const { cartCount, setIsSearchOpen, setIsCartDrawerOpen } = useLibraryCart();
+  const { homepage } = useCmsContent();
 
   useEffect(() => {
     const syncSession = () => {
@@ -103,11 +105,17 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
   const isLoggedIn = !!userSession;
   const ctaHref = isLoggedIn ? "/account" : "/login";
   const ctaLabel = isLoggedIn ? (userSession.name || "Profile") : "Login/sign up";
+  const showAnnouncement = !!(homepage?.announcementEnabled && homepage?.announcementText);
 
   return (
     <>
+      {showAnnouncement && (
+        <div className="bg-[#C9281D] text-white text-[11px] sm:text-xs font-semibold py-1.5 px-4 text-center tracking-wide fixed top-0 left-0 right-0 z-[60] shadow-sm flex items-center justify-center gap-2">
+          <span>{homepage.announcementText}</span>
+        </div>
+      )}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${
+        className={`fixed ${showAnnouncement ? "top-7" : "top-0"} left-0 right-0 z-50 w-full transition-all duration-300 ${
           isScrolled || !isHomePage
             ? "bg-white/95 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.06)] border-b border-[#e7e7e7] py-3 sm:py-3.5"
             : "bg-transparent py-5 lg:py-6"

@@ -7,6 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 import BookReader from "@/components/BookReader";
 import AudiobookModal from "@/components/AudiobookModal";
 import { EDITIONS, Edition, AUDIOBOOKS, Audiobook } from "@/data/editions-data";
+import { useCmsContent } from "@/lib/use-cms-content";
 import { useAudio } from "@/context/AudioContext";
 import { useLibraryCart } from "@/context/LibraryCartContext";
 import {
@@ -37,8 +38,11 @@ export default function StoriesEditionsPage() {
   const { isPlaying, togglePlay, playStory } = useAudio();
   const { addToCart, showToast, setIsSearchOpen, isBookUnlocked } = useLibraryCart();
 
-  const topShelf = EDITIONS.slice(0, 4);
-  const bottomShelf = EDITIONS.slice(4, 9);
+  const { editions: cmsEditions } = useCmsContent();
+  const activeEditions = cmsEditions && cmsEditions.length > 0 ? (cmsEditions as unknown as Edition[]) : EDITIONS;
+
+  const topShelf = activeEditions.slice(0, 4);
+  const bottomShelf = activeEditions.slice(4);
 
   return (
     <div className="min-h-screen bg-[#FAF8F3] text-[#0F0F0F] font-sans selection:bg-[#C9281D] selection:text-white flex flex-col justify-between overflow-x-hidden">
