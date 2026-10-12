@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class UserRole(str, Enum):
@@ -75,3 +75,12 @@ class UserUpdateRequest(BaseModel):
     )
 
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def normalize_full_name(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                raise ValueError("Full name cannot be empty or whitespace")
+        return v

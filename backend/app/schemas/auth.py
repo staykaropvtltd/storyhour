@@ -9,12 +9,14 @@ class LoginRequest(BaseModel):
     """
     email: EmailStr = Field(
         ...,
+        max_length=255,
         description="User login email address",
         validation_alias=AliasChoices("email", "email_id", "email id", "emailId", "mail"),
     )
     password: str = Field(
         ...,
         min_length=1,
+        max_length=128,
         description="User password",
         validation_alias=AliasChoices("password", "Password", "pass"),
     )
@@ -84,6 +86,7 @@ class SignUpRequest(BaseModel):
     name: str = Field(
         ...,
         min_length=1,
+        max_length=255,
         description="User's full name (Name:)",
         validation_alias=AliasChoices(
             "name",
@@ -94,6 +97,7 @@ class SignUpRequest(BaseModel):
     )
     email: EmailStr = Field(
         ...,
+        max_length=255,
         description="User's email id (email id :)",
         validation_alias=AliasChoices(
             "email",
@@ -111,6 +115,7 @@ class SignUpRequest(BaseModel):
     password: str = Field(
         ...,
         min_length=6,
+        max_length=128,
         description="User password (password :)",
         validation_alias=AliasChoices(
             "password",
@@ -123,6 +128,7 @@ class SignUpRequest(BaseModel):
     confirm_password: str = Field(
         ...,
         min_length=6,
+        max_length=128,
         description="Confirmation password (confirm the password :)",
         validation_alias=AliasChoices(
             "confirm_password",

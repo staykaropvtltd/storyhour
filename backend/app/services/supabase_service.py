@@ -369,14 +369,15 @@ class SupabaseAuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-    def _sync_user_profile(self, user: Any) -> None:
+    def _sync_user_profile(self, user: Any) -> Optional[Any]:
         """Helper to ensure user profile exists in public.user_profiles."""
-        try:
-            from app.database.session import SessionLocal
-            from app.database.models.profile import UserProfile
-            from app.database.repository import BaseRepository
+        from app.database.session import SessionLocal
+        from app.database.models.profile import UserProfile
+        from app.database.repository import BaseRepository
+        from sqlalchemy.exc import IntegrityError
 
-            with SessionLocal() as db:
+        with SessionLocal() as db:
+            try:
                 repo = BaseRepository(UserProfile)
                 existing = db.query(UserProfile).filter(UserProfile.user_id == str(user.id)).first()
                 metadata = getattr(user, "user_metadata", {}) or {}
@@ -388,18 +389,41 @@ class SupabaseAuthService:
                         logger.warning(
                             f"Profile synchronization bypassed: user {user.id} is marked inactive or soft-deleted."
                         )
-                        return
+                        return existing
                     if full_name and existing.full_name != full_name:
                         repo.update(db, db_obj=existing, obj_in={"full_name": full_name})
+                        db.commit()
+                        db.refresh(existing)
+                    return existing
                 else:
-                    repo.create(db, obj_in={
-                        "user_id": str(user.id),
-                        "email": user.email,
-                        "full_name": full_name,
-                        "subscription_tier": "free",
-                    })
-        except Exception as err:
-            logger.error(f"Failed to sync user profile into database: {str(err)}")
+                    try:
+                        new_profile = repo.create(db, obj_in={
+                            "user_id": str(user.id),
+                            "email": user.email,
+                            "full_name": full_name,
+                            "subscription_tier": "free",
+                        })
+                        db.commit()
+                        db.refresh(new_profile)
+                        return new_profile
+                    except IntegrityError:
+                        db.rollback()
+                        # Handle check-then-insert race: re-check if created concurrently
+                        concurrent = db.query(UserProfile).filter(UserProfile.user_id == str(user.id)).first()
+                        if concurrent:
+                            logger.info(f"Concurrent profile creation resolved for user {user.id}")
+                            return concurrent
+                        raise
+            except HTTPException:
+                db.rollback()
+                raise
+            except Exception as err:
+                db.rollback()
+                logger.error(f"Failed to sync user profile into database: {str(err)}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Database error occurred during user profile synchronization.",
+                )
 
 
 supabase_service = SupabaseAuthService()

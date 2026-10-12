@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 class ContactCreate(BaseModel):
     """Payload schema for submitting a contact or booking enquiry."""
     name: str = Field(..., min_length=2, max_length=255, description="Sender's full name")
-    email: EmailStr = Field(..., description="Valid contact email address")
+    email: EmailStr = Field(..., max_length=255, description="Valid contact email address")
     phone: Optional[str] = Field(None, max_length=50, description="Optional phone number")
     enquiry_type: str = Field(
         "General Enquiry",
@@ -14,7 +14,7 @@ class ContactCreate(BaseModel):
         description="Category of enquiry",
         validation_alias="enquiryType",
     )
-    message: str = Field(..., min_length=10, description="Enquiry body message")
+    message: str = Field(..., min_length=10, max_length=5000, description="Enquiry body message")
 
     model_config = ConfigDict(
         populate_by_name=True,
