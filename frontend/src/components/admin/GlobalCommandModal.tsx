@@ -16,6 +16,19 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Lock body scroll when modal is open so the results list scrolls, not the page
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -30,12 +43,6 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -70,7 +77,7 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 sm:px-6">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white border border-[#E8E4DC] shadow-2xl overflow-hidden z-10 animate-zoom-in-95 text-[#0F0F0F]">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white border border-[#E8E4DC] shadow-2xl z-10 animate-zoom-in-95 text-[#0F0F0F] flex flex-col">
         <div className="flex items-center px-4 py-3.5 border-b border-[#E8E4DC] bg-[#FAF8F3]">
           <Search className="w-5 h-5 text-[#696572] mr-3" />
           <input
@@ -91,7 +98,7 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
           </kbd>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4 divide-y divide-[#E8E4DC] scrollbar-thin">
+        <div className="max-h-[58vh] overflow-y-auto overscroll-contain p-3 space-y-4 divide-y divide-[#E8E4DC]" style={{ scrollbarWidth: 'thin' }}>
           {matchingStories.length > 0 && (
             <div className="pt-2">
               <div className="flex items-center gap-2 px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-[#696572] font-bold">

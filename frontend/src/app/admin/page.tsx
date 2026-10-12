@@ -289,14 +289,36 @@ export default function AdminDashboardPage() {
               </Link>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-xs space-y-1.5">
-              <div className="font-mono text-[10px] text-[#696572] uppercase">Live Headline</div>
-              <div className="font-serif font-bold text-sm text-[#0F0F0F] line-clamp-1">
-                &ldquo;{homepage?.heroHeadline || "the greatest stories ever told"}&rdquo;
+            <div className="p-3.5 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-xs space-y-2.5">
+              <div>
+                <div className="font-mono text-[10px] text-[#696572] uppercase">Live Headline</div>
+                <div className="font-serif font-bold text-sm text-[#0F0F0F] line-clamp-1 mt-0.5">
+                  &ldquo;{homepage?.heroHeadline || "the greatest stories ever told"}&rdquo;
+                </div>
+                <p className="text-[11px] text-[#696572] line-clamp-2 leading-relaxed mt-0.5">
+                  {homepage?.heroSubheadline || "Discover Indian mythology through audiobooks."}
+                </p>
               </div>
-              <p className="text-[11px] text-[#696572] line-clamp-2 leading-relaxed">
-                {homepage?.heroSubheadline || "Discover Indian mythology through audiobooks."}
-              </p>
+              {/* Announcement Banner Row */}
+              {homepage?.announcementText && (
+                <div className="pt-2 border-t border-[#E8E4DC]">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className="font-mono text-[10px] text-[#696572] uppercase">Announcement Bar</div>
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold border ${
+                        homepage.announcementEnabled
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                          : "bg-zinc-100 text-zinc-500 border-zinc-200"
+                      }`}
+                    >
+                      {homepage.announcementEnabled ? "Live" : "Off"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#0F0F0F] font-semibold leading-snug line-clamp-2">
+                    {homepage.announcementText}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

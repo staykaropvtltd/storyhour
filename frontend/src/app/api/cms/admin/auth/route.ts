@@ -48,10 +48,13 @@ export async function POST(request: Request) {
 
     // Generate token and set HTTP-only cookie
     const token = generateAdminToken(trimmedEmail);
+    const host = request.headers.get("host") || "";
+    const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
     const cookieStore = await cookies();
     cookieStore.set(ADMIN_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      // Never use secure on localhost HTTP — even in production mode (npm start)
+      secure: !isLocalhost && process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
