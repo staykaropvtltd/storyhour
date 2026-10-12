@@ -294,7 +294,10 @@ export default function StorytellersPage() {
         </section>
 
         {/* ── §1 Animated Storyteller Showcase ── */}
-        <main className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-8 sm:py-12 md:py-16 pb-16 sm:pb-20 md:pb-20">
+        <main
+          id="storyteller-showcase"
+          className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-8 sm:py-12 md:py-16 pb-16 sm:pb-20 md:pb-20"
+        >
           <div className="w-full max-w-sm md:max-w-4xl lg:max-w-5xl mx-auto antialiased">
             <div className="relative grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 lg:gap-20 items-center">
 
@@ -306,7 +309,7 @@ export default function StorytellersPage() {
                       const anim = getCardAnimation(index);
                       return (
                         <motion.div
-                          key={storyteller.name}
+                          key={storyteller.name || (storyteller as any).id || index}
                           animate={anim}
                           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                           className="absolute inset-0 origin-bottom"
@@ -383,6 +386,94 @@ export default function StorytellersPage() {
             </div>
           </div>
         </main>
+
+        {/* ── §1.5 All Storytellers & Cast Cards Directory ── */}
+        <section id="storyteller-cards" className="bg-[#FAF8F3] border-t border-[#E8E4DC] py-16 sm:py-20 lg:py-24">
+          <div className="max-w-[1340px] mx-auto px-6 sm:px-10">
+            <div className="mb-12 text-center">
+              <span className="inline-block font-mono text-[11px] tracking-widest uppercase text-[#C9281D] mb-3 border border-[#C9281D]/30 rounded-full px-4 py-1.5 bg-white shadow-sm font-semibold">
+                Ensemble &amp; Artists ({activeStorytellers.length})
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-[#0F0F0F] tracking-[-0.03em]">
+                Meet the Storytellers
+              </h2>
+              <p className="font-sans text-sm sm:text-base text-[#5A5A5A] max-w-xl mx-auto mt-3">
+                Classical vocalists, multi-instrumentalists, translators, and young performers bringing ancient epics and cultural lore to life.
+              </p>
+            </div>
+
+            {/* Grid of Storyteller Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+              {activeStorytellers.map((st, index) => {
+                const isCurrentSpotlight = index === active;
+                return (
+                  <div
+                    key={st.name || (st as any).id || index}
+                    onClick={() => {
+                      setActive(index);
+                      const el = document.getElementById("storyteller-showcase");
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth" });
+                      } else {
+                        window.scrollTo({ top: 380, behavior: "smooth" });
+                      }
+                    }}
+                    className={`group bg-white rounded-2xl border transition-all duration-300 p-5 flex flex-col justify-between cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-1.5 ${
+                      isCurrentSpotlight
+                        ? "border-[#C9281D] ring-2 ring-[#C9281D]/20 shadow-md bg-[#FDFBF7]"
+                        : "border-[#E8E4DC] hover:border-[#C9281D]/40"
+                    }`}
+                  >
+                    <div>
+                      {/* Photo Card */}
+                      <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#EBE7DF] mb-4">
+                        <Image
+                          src={st.image}
+                          alt={st.name}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+                          className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                        />
+                        {isCurrentSpotlight && (
+                          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-[#C9281D] text-white text-[10px] font-mono font-bold tracking-wider uppercase shadow-md">
+                            Spotlight
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Role badge */}
+                      <span className="inline-block text-[11px] font-sans font-semibold text-[#C9281D] bg-[#FDF2F0] px-2.5 py-1 rounded-full mb-2">
+                        {st.role}
+                      </span>
+
+                      {/* Name */}
+                      <h3 className="font-serif text-lg sm:text-xl font-bold text-[#0F0F0F] group-hover:text-[#C9281D] transition-colors leading-snug">
+                        {st.name}
+                      </h3>
+
+                      {/* Bio snippet */}
+                      <p className="font-sans text-xs sm:text-[13px] text-[#696572] mt-2 line-clamp-3 leading-relaxed">
+                        {st.bio}
+                      </p>
+                    </div>
+
+                    {/* Bottom action */}
+                    <div className="pt-4 mt-4 border-t border-[#F0ECE1] flex items-center justify-between text-xs font-semibold">
+                      <span className="text-[#C9281D] group-hover:underline">
+                        {isCurrentSpotlight ? "Currently on Stage" : "View in Stage →"}
+                      </span>
+                      {(st as any).region && (
+                        <span className="text-[10px] font-mono text-[#8C827A]">
+                          {(st as any).region}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
 
         {/* ── §2 Testimonials / Voices ── */}
         <section className="bg-[#FAF8F3] border-t border-[#E7E7E7] py-20 lg:py-28 overflow-hidden">

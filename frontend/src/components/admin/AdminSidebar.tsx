@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -105,8 +106,13 @@ export default function AdminSidebar() {
       {/* 1. Brand Logo */}
       <div className="p-5 border-b border-[#E8E4DC] flex items-center justify-between bg-[#FDFCF9]">
         <Link href="/admin" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#C9281D] to-[#8F1712] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-            <span className="font-serif font-black text-white text-xl tracking-wider">S</span>
+          <div className="relative w-10 h-10 rounded-xl bg-white border border-[#E8E4DC] flex items-center justify-center p-1 shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
+            <Image
+              src="https://storyhour.co.uk/wp-content/uploads/2026/01/tp-logo.png"
+              alt="StoryHour Logo"
+              fill
+              className="object-contain p-1"
+            />
           </div>
           <div>
             <div className="flex items-center gap-1.5">

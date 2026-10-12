@@ -15,6 +15,7 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
   const { stories, editions, storytellers } = useAdminCms();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Lock body scroll when modal is open so the results list scrolls, not the page
   useEffect(() => {
@@ -44,6 +45,17 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
+  const handleSelect = (url: string) => {
+    router.push(url);
+    onClose();
+  };
+
+  const handleModalWheel = (e: React.WheelEvent) => {
+    if (listRef.current && !listRef.current.contains(e.target as Node)) {
+      listRef.current.scrollTop += e.deltaY;
+    }
+  };
+
   if (!isOpen) return null;
 
   const cleanQuery = query.toLowerCase().trim();
@@ -68,17 +80,15 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
       st.role.toLowerCase().includes(cleanQuery)
   );
 
-  const handleSelect = (url: string) => {
-    router.push(url);
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 sm:px-6">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white border border-[#E8E4DC] shadow-2xl z-10 animate-zoom-in-95 text-[#0F0F0F] flex flex-col">
-        <div className="flex items-center px-4 py-3.5 border-b border-[#E8E4DC] bg-[#FAF8F3]">
+      <div
+        onWheel={handleModalWheel}
+        className="relative w-full max-w-2xl rounded-2xl bg-white border border-[#E8E4DC] shadow-2xl z-10 animate-zoom-in-95 text-[#0F0F0F] flex flex-col overflow-hidden max-h-[85vh]"
+      >
+        <div className="flex items-center px-4 py-3.5 border-b border-[#E8E4DC] bg-[#FAF8F3] flex-shrink-0">
           <Search className="w-5 h-5 text-[#696572] mr-3" />
           <input
             ref={inputRef}
@@ -98,7 +108,16 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
           </kbd>
         </div>
 
-        <div className="max-h-[58vh] overflow-y-auto overscroll-contain p-3 space-y-4 divide-y divide-[#E8E4DC]" style={{ scrollbarWidth: 'thin' }}>
+        <div
+          ref={listRef}
+          tabIndex={0}
+          className="max-h-[60vh] flex-1 overflow-y-auto p-3 space-y-4 divide-y divide-[#E8E4DC] select-text focus:outline-none"
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "#D1CBBF #FAF8F3",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
           {matchingStories.length > 0 && (
             <div className="pt-2">
               <div className="flex items-center gap-2 px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-[#696572] font-bold">
@@ -106,7 +125,7 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
                 <span>Stories ({matchingStories.length})</span>
               </div>
               <div className="mt-1 space-y-1">
-                {matchingStories.slice(0, 4).map((story) => (
+                {matchingStories.map((story) => (
                   <button
                     key={story.id}
                     onClick={() => handleSelect("/admin/stories")}
@@ -137,7 +156,7 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
                 <span>Editions & Books ({matchingEditions.length})</span>
               </div>
               <div className="mt-1 space-y-1">
-                {matchingEditions.slice(0, 4).map((edition) => (
+                {matchingEditions.map((edition) => (
                   <button
                     key={edition.id}
                     onClick={() => handleSelect("/admin/editions")}
@@ -165,7 +184,7 @@ export default function GlobalCommandModal({ isOpen, onClose }: GlobalCommandMod
                 <span>Storytellers ({matchingStorytellers.length})</span>
               </div>
               <div className="mt-1 space-y-1">
-                {matchingStorytellers.slice(0, 3).map((st) => (
+                {matchingStorytellers.map((st) => (
                   <button
                     key={st.id}
                     onClick={() => handleSelect("/admin/storytellers")}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CmsStory, CmsEdition, CmsStoryteller, CmsHomepageConfig } from "./cms-types";
-import { STORIES } from "@/data/storyhour-data";
+import { STORIES, STORYTELLERS } from "@/data/storyhour-data";
 import { EDITIONS } from "@/data/editions-data";
 
 export interface PublicContentState {
@@ -32,10 +32,24 @@ const FALLBACK_EDITIONS: CmsEdition[] = EDITIONS.map((e) => ({
   updatedAt: "2026-01-01T00:00:00.000Z",
 }));
 
+const FALLBACK_STORYTELLERS: CmsStoryteller[] = STORYTELLERS.map((st, idx) => ({
+  id: st.id || `st-${idx + 1}`,
+  name: st.name,
+  role: st.role,
+  bio: st.bio,
+  image: st.portraitImage || (st as any).image || "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.23.29-1.jpeg",
+  region: st.region || "UK / India",
+  languages: st.languages || ["English"],
+  connectedStoryTitle: st.connectedStoryTitle || "StoryHour Series",
+  status: "published",
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+}));
+
 export function useCmsContent(): PublicContentState {
   const [stories, setStories] = useState<CmsStory[]>(FALLBACK_STORIES);
   const [editions, setEditions] = useState<CmsEdition[]>(FALLBACK_EDITIONS);
-  const [storytellers, setStorytellers] = useState<CmsStoryteller[]>([]);
+  const [storytellers, setStorytellers] = useState<CmsStoryteller[]>(FALLBACK_STORYTELLERS);
   const [homepage, setHomepage] = useState<CmsHomepageConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +64,7 @@ export function useCmsContent(): PublicContentState {
       if (json.success && json.data) {
         setStories(json.data.stories || FALLBACK_STORIES);
         setEditions(json.data.editions || FALLBACK_EDITIONS);
-        setStorytellers(json.data.storytellers || []);
+        setStorytellers(json.data.storytellers && json.data.storytellers.length > 0 ? json.data.storytellers : FALLBACK_STORYTELLERS);
         setHomepage(json.data.homepage || null);
         setError(null);
       }
