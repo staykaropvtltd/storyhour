@@ -23,6 +23,7 @@ export default function AdminEditionsPage() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [editingEdition, setEditingEdition] = useState<CmsEdition | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const filteredEditions = editions.filter((edition) => {
     const matchesSearch =
@@ -51,10 +52,9 @@ export default function AdminEditionsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string, title: string) => {
-    if (window.confirm(`Are you sure you want to delete edition "${title}"? This cannot be undone.`)) {
-      await removeEdition(id);
-    }
+  const handleDelete = async (id: string) => {
+    setConfirmDeleteId(null);
+    await removeEdition(id);
   };
 
   return (
@@ -218,13 +218,31 @@ export default function AdminEditionsPage() {
                   <Edit2 className="w-3.5 h-3.5 text-[#6B655C]" />
                   <span>Edit</span>
                 </button>
-                <button
-                  onClick={() => handleDelete(edition.id, edition.title)}
-                  className="p-1.5 rounded-xl bg-white hover:bg-red-50 text-[#8C827A] hover:text-[#C9281D] border border-transparent hover:border-red-200 transition"
-                  title="Delete Edition"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {confirmDeleteId === edition.id ? (
+                  <div className="flex items-center gap-1 bg-red-50 p-1 rounded-xl border border-red-200 animate-fade-in">
+                    <button
+                      onClick={() => handleDelete(edition.id)}
+                      className="px-2.5 py-1 rounded-lg bg-[#C9281D] hover:bg-[#A82017] text-white text-[11px] font-bold shadow-sm transition active:scale-95"
+                    >
+                      Confirm Delete
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="px-1.5 py-1 text-xs text-[#8C827A] hover:text-[#0F0F0F] rounded-lg transition"
+                      title="Cancel"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteId(edition.id)}
+                    className="p-1.5 rounded-xl bg-white hover:bg-red-50 text-[#8C827A] hover:text-[#C9281D] border border-transparent hover:border-red-200 transition"
+                    title="Delete Edition"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

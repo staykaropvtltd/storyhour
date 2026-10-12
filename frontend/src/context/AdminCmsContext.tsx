@@ -197,6 +197,9 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const removeStory = async (id: string) => {
+    // Optimistic state removal
+    const previous = [...stories];
+    setStories((prev) => prev.filter((s) => s.id !== id));
     try {
       const res = await fetch(`/api/cms/admin/stories/${id}`, {
         method: "DELETE",
@@ -204,12 +207,14 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       const json = await res.json();
       if (json.success) {
-        await refreshData();
         notifyPublicUpdate();
+        await refreshData();
         return { success: true };
       }
+      setStories(previous);
       return { success: false, error: json.error || "Failed to delete" };
     } catch (err: any) {
+      setStories(previous);
       return { success: false, error: err.message };
     }
   };
@@ -247,6 +252,9 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const removeEdition = async (id: string) => {
+    // Optimistic state removal
+    const previous = [...editions];
+    setEditions((prev) => prev.filter((e) => e.id !== id));
     try {
       const res = await fetch(`/api/cms/admin/editions/${id}`, {
         method: "DELETE",
@@ -254,12 +262,14 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       const json = await res.json();
       if (json.success) {
-        await refreshData();
         notifyPublicUpdate();
+        await refreshData();
         return { success: true };
       }
+      setEditions(previous);
       return { success: false, error: json.error || "Failed to delete edition" };
     } catch (err: any) {
+      setEditions(previous);
       return { success: false, error: err.message };
     }
   };
@@ -297,6 +307,9 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const removeStoryteller = async (id: string) => {
+    // Optimistic state removal
+    const previous = [...storytellers];
+    setStorytellers((prev) => prev.filter((s) => s.id !== id));
     try {
       const res = await fetch(`/api/cms/admin/storytellers/${id}`, {
         method: "DELETE",
@@ -304,12 +317,14 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       const json = await res.json();
       if (json.success) {
-        await refreshData();
         notifyPublicUpdate();
+        await refreshData();
         return { success: true };
       }
+      setStorytellers(previous);
       return { success: false, error: json.error || "Failed to delete storyteller" };
     } catch (err: any) {
+      setStorytellers(previous);
       return { success: false, error: err.message };
     }
   };

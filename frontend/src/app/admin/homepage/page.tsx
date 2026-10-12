@@ -7,7 +7,6 @@ import {
   Save,
   CheckCircle2,
   ExternalLink,
-  Eye,
   Megaphone,
   LayoutTemplate,
   Star,
@@ -266,33 +265,6 @@ export default function AdminHomepageConfigPage() {
                 </option>
               ))}
             </select>
-          </div>
-        </div>
-
-        {/* Live Preview Card */}
-        <div className="rounded-2xl bg-[#FAF8F3] border border-[#E8E4DC] p-6 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#6B655C] uppercase tracking-wider">
-            <Eye className="w-3.5 h-3.5" />
-            <span>Live Hero Preview</span>
-          </div>
-
-          <div className="max-w-2xl bg-white p-6 rounded-xl border border-[#E8E4DC] shadow-sm space-y-3">
-            {announcementEnabled && announcementText && (
-              <div className="inline-block px-3 py-1 rounded-full bg-[#C9281D]/10 text-[#C9281D] text-[11px] font-semibold border border-[#C9281D]/20">
-                {announcementText}
-              </div>
-            )}
-            <h2 className="font-serif text-2xl font-bold text-[#0F0F0F] leading-tight">
-              {heroHeadline || "Headline will appear here"}
-            </h2>
-            <p className="text-xs text-[#6B655C] leading-relaxed">
-              {heroSubheadline || "Subheadline description will appear here"}
-            </p>
-            <div className="pt-2">
-              <span className="inline-block px-4 py-2 rounded-xl bg-[#C9281D] text-white text-xs font-semibold shadow-sm">
-                {heroCtaText || "Explore Stories"} →
-              </span>
-            </div>
           </div>
         </div>
 

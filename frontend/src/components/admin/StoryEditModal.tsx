@@ -115,18 +115,13 @@ export default function StoryEditModal({ isOpen, onClose, storyToEdit }: StoryEd
       <div className="relative w-full max-w-3xl my-8 rounded-2xl bg-[#131317] border border-[#272730] shadow-2xl overflow-hidden z-10 animate-zoom-in-95 text-zinc-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#0e0e12]">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#C9281D]/20 text-[#C9281D]">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-serif font-bold text-base text-white">
-                {storyToEdit ? "Edit Story & Narration" : "Publish New Story / Audio"}
-              </h3>
-              <p className="text-[11px] text-zinc-500 font-mono">
-                {storyToEdit ? `ID: ${storyToEdit.id}` : "StoryHour Content Pipeline"}
-              </p>
-            </div>
+          <div>
+            <h3 className="font-serif font-bold text-base text-white">
+              {storyToEdit ? "Edit Story & Narration" : "Publish New Story / Audio"}
+            </h3>
+            <p className="text-[11px] text-zinc-500 font-mono">
+              {storyToEdit ? `ID: ${storyToEdit.id}` : "StoryHour Content Pipeline"}
+            </p>
           </div>
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800">
             <X className="w-5 h-5" />

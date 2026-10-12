@@ -30,6 +30,7 @@ export default function StorytellerModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (storytellerToEdit) {
@@ -56,6 +57,7 @@ export default function StorytellerModal({
       setStatus("published");
     }
     setErrorMessage(null);
+    setConfirmDelete(false);
   }, [storytellerToEdit, isOpen]);
 
   if (!isOpen) return null;
@@ -92,15 +94,18 @@ export default function StorytellerModal({
   };
 
   const handleDelete = async () => {
-    if (storytellerToEdit && window.confirm(`Permanently remove "${storytellerToEdit.name}"?`)) {
-      setIsSubmitting(true);
-      const res = await removeStoryteller(storytellerToEdit.id);
-      setIsSubmitting(false);
-      if (res.success) {
-        onClose();
-      } else {
-        setErrorMessage(res.error || "Failed to remove");
-      }
+    if (!storytellerToEdit) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setIsSubmitting(true);
+    const res = await removeStoryteller(storytellerToEdit.id);
+    setIsSubmitting(false);
+    if (res.success) {
+      onClose();
+    } else {
+      setErrorMessage(res.error || "Failed to remove");
     }
   };
 
@@ -246,16 +251,20 @@ export default function StorytellerModal({
             />
           </div>
 
-          <div className="sticky bottom-0 bg-[#FAF8F3] border-t border-[#E8E4DC] p-4 -mx-6 -mb-6 flex items-center justify-between z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+          <div className="sticky bottom-0 bg-[#FAF8F3] border-t border-[#E8E4DC] px-6 py-4 -mx-6 -mb-6 mt-6 flex items-center justify-between z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
             {storytellerToEdit ? (
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isSubmitting}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition"
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                  confirmDelete
+                    ? "bg-red-600 text-white hover:bg-red-700 animate-pulse"
+                    : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                }`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete Profile</span>
+                <span>{confirmDelete ? "Confirm Permanent Delete" : "Delete Profile"}</span>
               </button>
             ) : <div />}
 

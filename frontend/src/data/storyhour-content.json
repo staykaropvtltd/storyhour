@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-12T18:28:50.672Z",
+  "lastUpdated": "2026-10-12T18:53:27.028Z",
   "homepage": {
     "heroHeadline": "the greatest stories ever told",
     "heroSubheadline": "Discover Indian mythology, culture, and history through soulful audiobooks, live puppet storytelling, and screen-free calm bedtimes. In Hindi, English & Telugu.",
@@ -119,7 +119,7 @@
       "culturalNote": "Accompanied by traditional live puppet gestures and percussive rhythm.",
       "status": "published",
       "createdAt": "2026-01-01T00:00:00.000Z",
-      "updatedAt": "2026-01-01T00:00:00.000Z"
+      "updatedAt": "2026-10-12T18:49:36.413Z"
     },
     {
       "id": "story-5",
@@ -409,6 +409,22 @@
     }
   ],
   "storytellers": [
+    {
+      "name": "Test Storyteller",
+      "role": "Classical Vocalist & Narrator",
+      "bio": "",
+      "image": "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.23.29-1.jpeg",
+      "region": "London, UK",
+      "languages": [
+        "English",
+        "Hindi"
+      ],
+      "connectedStoryTitle": "Classical Epics",
+      "status": "published",
+      "id": "st-1791830779065",
+      "createdAt": "2026-10-12T18:46:19.065Z",
+      "updatedAt": "2026-10-12T18:46:19.065Z"
+    },
     {
       "id": "st-1",
       "name": "Neelima Penumarthy",

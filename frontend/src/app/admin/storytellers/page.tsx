@@ -24,6 +24,7 @@ export default function AdminStorytellersPage() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [editingStoryteller, setEditingStoryteller] = useState<CmsStoryteller | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const filteredStorytellers = storytellers.filter((st) => {
     const matchesSearch =
@@ -48,10 +49,9 @@ export default function AdminStorytellersPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string, stName: string) => {
-    if (window.confirm(`Are you sure you want to remove storyteller "${stName}"?`)) {
-      await removeStoryteller(id);
-    }
+  const handleDelete = async (id: string) => {
+    setConfirmDeleteId(null);
+    await removeStoryteller(id);
   };
 
   return (
@@ -203,13 +203,31 @@ export default function AdminStorytellersPage() {
                 <Edit2 className="w-3.5 h-3.5 text-[#6B655C]" />
                 <span>Edit</span>
               </button>
-              <button
-                onClick={() => handleDelete(st.id, st.name)}
-                className="p-1.5 rounded-xl bg-white hover:bg-red-50 text-[#8C827A] hover:text-[#C9281D] border border-transparent hover:border-red-200 transition"
-                title="Delete Storyteller"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {confirmDeleteId === st.id ? (
+                <div className="flex items-center gap-1 bg-red-50 p-1 rounded-xl border border-red-200 animate-fade-in">
+                  <button
+                    onClick={() => handleDelete(st.id)}
+                    className="px-2.5 py-1 rounded-lg bg-[#C9281D] hover:bg-[#A82017] text-white text-[11px] font-bold shadow-sm transition active:scale-95"
+                  >
+                    Confirm Delete
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="px-1.5 py-1 text-xs text-[#8C827A] hover:text-[#0F0F0F] rounded-lg transition"
+                    title="Cancel"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDeleteId(st.id)}
+                  className="p-1.5 rounded-xl bg-white hover:bg-red-50 text-[#8C827A] hover:text-[#C9281D] border border-transparent hover:border-red-200 transition"
+                  title="Delete Storyteller"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
         ))}

@@ -34,6 +34,7 @@ export default function StoryModal({ isOpen, onClose, storyToEdit }: StoryModalP
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (storyToEdit) {
@@ -72,6 +73,7 @@ export default function StoryModal({ isOpen, onClose, storyToEdit }: StoryModalP
       setStatus("published");
     }
     setErrorMessage(null);
+    setConfirmDelete(false);
   }, [storyToEdit, isOpen]);
 
   if (!isOpen) return null;
@@ -117,15 +119,18 @@ export default function StoryModal({ isOpen, onClose, storyToEdit }: StoryModalP
   };
 
   const handleDelete = async () => {
-    if (storyToEdit && window.confirm(`Permanently delete "${storyToEdit.title}"?`)) {
-      setIsSubmitting(true);
-      const res = await removeStory(storyToEdit.id);
-      setIsSubmitting(false);
-      if (res.success) {
-        onClose();
-      } else {
-        setErrorMessage(res.error || "Failed to delete");
-      }
+    if (!storyToEdit) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setIsSubmitting(true);
+    const res = await removeStory(storyToEdit.id);
+    setIsSubmitting(false);
+    if (res.success) {
+      onClose();
+    } else {
+      setErrorMessage(res.error || "Failed to delete");
     }
   };
 
@@ -136,18 +141,13 @@ export default function StoryModal({ isOpen, onClose, storyToEdit }: StoryModalP
       <div className="relative w-full max-w-3xl my-8 rounded-2xl bg-white border border-[#E8E4DC] shadow-2xl overflow-hidden z-10 animate-zoom-in-95 text-[#0F0F0F]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E4DC] bg-[#FAF8F3]">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#FDF2F0] text-[#C9281D]">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-serif font-bold text-base text-[#0F0F0F]">
-                {storyToEdit ? "Edit Story & Narration" : "Publish New Story / Audio"}
-              </h3>
-              <p className="text-[11px] text-[#696572] font-mono">
-                {storyToEdit ? `ID: ${storyToEdit.id}` : "StoryHour Content Pipeline"}
-              </p>
-            </div>
+          <div>
+            <h3 className="font-serif font-bold text-base text-[#0F0F0F]">
+              {storyToEdit ? "Edit Story & Narration" : "Publish New Story / Audio"}
+            </h3>
+            <p className="text-[11px] text-[#696572] font-mono">
+              {storyToEdit ? `ID: ${storyToEdit.id}` : "StoryHour Content Pipeline"}
+            </p>
           </div>
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-black rounded-lg hover:bg-zinc-100">
             <X className="w-5 h-5" />
@@ -396,16 +396,20 @@ export default function StoryModal({ isOpen, onClose, storyToEdit }: StoryModalP
           </div>
 
           {/* Footer Actions */}
-          <div className="sticky bottom-0 bg-[#FAF8F3] border-t border-[#E8E4DC] p-4 -mx-6 -mb-6 flex items-center justify-between z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+          <div className="sticky bottom-0 bg-[#FAF8F3] border-t border-[#E8E4DC] px-6 py-4 -mx-6 -mb-6 mt-6 flex items-center justify-between z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
             {storyToEdit ? (
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isSubmitting}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition"
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                  confirmDelete
+                    ? "bg-red-600 text-white hover:bg-red-700 animate-pulse"
+                    : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                }`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete Story</span>
+                <span>{confirmDelete ? "Confirm Permanent Delete" : "Delete Story"}</span>
               </button>
             ) : <div />}
 

@@ -37,6 +37,7 @@ export default function EditionModal({ isOpen, onClose, editionToEdit }: Edition
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (editionToEdit) {
@@ -129,15 +130,18 @@ export default function EditionModal({ isOpen, onClose, editionToEdit }: Edition
   };
 
   const handleDelete = async () => {
-    if (editionToEdit && window.confirm(`Permanently delete "${editionToEdit.title}"?`)) {
-      setIsSubmitting(true);
-      const res = await removeEdition(editionToEdit.id);
-      setIsSubmitting(false);
-      if (res.success) {
-        onClose();
-      } else {
-        setErrorMessage(res.error || "Failed to delete");
-      }
+    if (!editionToEdit) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setIsSubmitting(true);
+    const res = await removeEdition(editionToEdit.id);
+    setIsSubmitting(false);
+    if (res.success) {
+      onClose();
+    } else {
+      setErrorMessage(res.error || "Failed to delete");
     }
   };
 
@@ -346,16 +350,20 @@ export default function EditionModal({ isOpen, onClose, editionToEdit }: Edition
             />
           </div>
 
-          <div className="sticky bottom-0 bg-[#FAF8F3] border-t border-[#E8E4DC] p-4 -mx-6 -mb-6 flex items-center justify-between z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+          <div className="sticky bottom-0 bg-[#FAF8F3] border-t border-[#E8E4DC] px-6 py-4 -mx-6 -mb-6 mt-6 flex items-center justify-between z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
             {editionToEdit ? (
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isSubmitting}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition"
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                  confirmDelete
+                    ? "bg-red-600 text-white hover:bg-red-700 animate-pulse"
+                    : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                }`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete Edition</span>
+                <span>{confirmDelete ? "Confirm Permanent Delete" : "Delete Edition"}</span>
               </button>
             ) : <div />}
 
