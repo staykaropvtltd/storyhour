@@ -65,9 +65,15 @@ export const metadata: Metadata = {
     images: ["https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.28.53.jpeg"],
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/cropped-tp-logo-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/cropped-tp-logo-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
     shortcut: "/favicon.ico",
-    apple: "https://storyhour.co.uk/wp-content/uploads/2026/01/tp-logo.png",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 

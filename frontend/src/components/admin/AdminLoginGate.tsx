@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { useAdminCms } from "@/context/AdminCmsContext";
 import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 
@@ -43,14 +44,22 @@ export default function AdminLoginGate({ children }: { children: React.ReactNode
     <div className="min-h-screen bg-[#FAF8F3] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo & Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C9281D] flex items-center justify-center">
-              <Lock className="w-5 h-5 text-white" />
-            </div>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="relative h-12 w-48 sm:h-14 sm:w-56 mb-4">
+            <Image
+              src="/tp-logo.png"
+              alt="StoryHour Logo"
+              fill
+              priority
+              className="object-contain"
+              sizes="(max-width: 640px) 192px, 224px"
+            />
           </div>
-          <h1 className="font-serif text-2xl font-extrabold text-[#0F0F0F]">StoryHour Console</h1>
-          <p className="text-sm text-[#696572] mt-1">Sign in to manage your content</p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C9281D]/10 text-[#C9281D] text-xs font-semibold mb-2">
+            <Lock className="w-3.5 h-3.5" />
+            <span>Admin Console</span>
+          </div>
+          <p className="text-sm text-[#696572]">Sign in to manage your content</p>
         </div>
 
         {/* Login Card */}
