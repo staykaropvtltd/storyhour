@@ -68,7 +68,12 @@ export default function SignupPage() {
           if (typeof window !== "undefined") {
             const params = new URLSearchParams(window.location.search);
             const redirectParam = params.get("redirect");
-            if (redirectParam && redirectParam.startsWith("/")) {
+            if (
+              redirectParam &&
+              redirectParam.startsWith("/") &&
+              !redirectParam.startsWith("//") &&
+              !redirectParam.includes("\\")
+            ) {
               dest = redirectParam;
             }
           }

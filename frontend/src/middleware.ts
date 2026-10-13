@@ -63,36 +63,12 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // ─── Admin Route Guard ───
-  // Protect /admin pages (not API routes, which have their own auth check)
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/api")) {
-    const host = request.headers.get("host") || "";
-    const isLocalhost =
-      host.includes("localhost") ||
-      host.includes("127.0.0.1") ||
-      host.startsWith("192.168.");
-
-    // On localhost, allow admin access unconditionally (dev convenience)
-    if (!isLocalhost) {
-      // Check for the admin cookie
-      const adminToken = request.cookies.get("storyhour_admin_token")?.value;
-      if (!adminToken) {
-        // Redirect unauthenticated users to login page
-        const loginUrl = request.nextUrl.clone();
-        loginUrl.pathname = "/login";
-        loginUrl.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(loginUrl);
-      }
-    }
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    // Match admin pages and admin API auth route
-    "/admin/:path*",
+    // Rate limit auth endpoint
     "/api/cms/admin/auth",
   ],
 };
