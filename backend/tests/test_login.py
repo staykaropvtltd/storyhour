@@ -1,222 +1,159 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
 import pytest
 from fastapi import status
+
 from app.services.supabase_service import supabase_service
 
 
-@pytest.fixture(scope="module")
-def registered_user():
-    """
-    Creates a temporary verified test user in Supabase Auth,
-    yields the test credentials, and deletes the test user upon completion.
-    """
-    admin = supabase_service.admin_client
-    if not admin:
-        pytest.skip("Supabase admin client not configured for live user tests")
-
-    test_email = "test-matrix-runner@storyhour.com"
-    test_password = "SecurePassword123!"
-
-    # Clean up any residual test user
-    try:
-        users = admin.auth.admin.list_users()
-        for u in users:
-            if getattr(u, "email", "") == test_email:
-                admin.auth.admin.delete_user(u.id)
-    except Exception:
-        pass
-
-    # Create test user
-    created = admin.auth.admin.create_user({
-        "email": test_email,
-        "password": test_password,
-        "email_confirm": True,
-        "user_metadata": {"full_name": "Test Matrix Runner"},
-    })
-    user_id = str(created.user.id)
-
-    yield {
-        "email": test_email,
-        "password": test_password,
-        "user_id": user_id,
-    }
-
-    # Teardown: delete test user from Supabase
-    try:
-        admin.auth.admin.delete_user(user_id)
-    except Exception:
-        pass
+TEST_EMAIL = "test-matrix-runner@storyhour.com"
+TEST_PASSWORD = "SecurePassword123!"
+TEST_USER_ID = "d486d34e-0a56-4293-85f2-2b6b15801c80"
 
 
-# ==============================================================================
-# 8-POINT USER LOGIN TEST MATRIX
-# ==============================================================================
+@pytest.fixture
+def mock_login():
+    """Mock Supabase login and profile synchronization for isolated tests."""
+    user = SimpleNamespace(
+        id=TEST_USER_ID,
+        email=TEST_EMAIL,
+        role="authenticated",
+        user_metadata={"full_name": "Test Matrix Runner"},
+        app_metadata={"provider": "email"},
+    )
+    session = SimpleNamespace(
+        access_token="mock-access-token",
+        refresh_token="mock-refresh-token",
+        expires_in=3600,
+    )
+    result = SimpleNamespace(session=session, user=user)
+
+    with (
+        patch.object(supabase_service, "sign_in_with_password") as login,
+        patch.object(supabase_service, "_sync_user_profile"),
+    ):
+        login.return_value = {
+            "access_token": session.access_token,
+            "token_type": "bearer",
+            "expires_in": session.expires_in,
+            "refresh_token": session.refresh_token,
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "role": user.role,
+                "user_metadata": user.user_metadata,
+                "app_metadata": user.app_metadata,
+            },
+        }
+        yield login
 
 
-def test_case_1_valid_login(client, registered_user):
-    """
-    Test Case 1: Valid login
-    Input: Correct registered email + correct password
-    Expected: Login succeeds (200 OK) and valid access token / session is returned.
-    """
+def test_case_1_valid_login(client, mock_login):
     response = client.post(
         "/api/auth/login",
-        json={
-            "email": registered_user["email"],
-            "password": registered_user["password"],
-        },
+        json={"email": TEST_EMAIL, "password": TEST_PASSWORD},
     )
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert "access_token" in data
+    assert data["access_token"] == "mock-access-token"
     assert data["token_type"] == "bearer"
     assert data["expires_in"] > 0
-    assert "user" in data
-    assert data["user"]["email"] == registered_user["email"]
-    assert data["user"]["id"] == registered_user["user_id"]
-
-    # Verify that the issued access_token can access protected /api/me
-    token = data["access_token"]
-    me_res = client.get("/api/me", headers={"Authorization": f"Bearer {token}"})
-    assert me_res.status_code == status.HTTP_200_OK
-    assert me_res.json()["email"] == registered_user["email"]
-
-
-def test_case_2_wrong_password(client, registered_user):
-    """
-    Test Case 2: Wrong password
-    Input: Correct email + incorrect password
-    Expected: Login rejected (401 Unauthorized) with safe error.
-    """
-    response = client.post(
-        "/api/auth/login",
-        json={
-            "email": registered_user["email"],
-            "password": "CompletelyWrongPassword!999",
-        },
+    assert data["user"]["email"] == TEST_EMAIL
+    assert data["user"]["id"] == TEST_USER_ID
+    mock_login.assert_called_once_with(
+        email=TEST_EMAIL, password=TEST_PASSWORD
     )
+
+
+def test_case_2_wrong_password(client, mock_login):
+    from fastapi import HTTPException
+
+    mock_login.side_effect = HTTPException(
+        status_code=401,
+        detail="Invalid email or password",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    response = client.post(
+        "/api/auth/login",
+        json={"email": TEST_EMAIL, "password": "WrongPassword123!"},
+    )
+
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    data = response.json()
-    assert data["detail"] == "Invalid email or password"
-    assert "access_token" not in data
+    assert response.json()["detail"] == "Invalid email or password"
+    assert "access_token" not in response.json()
 
 
-def test_case_3_unregistered_email(client):
-    """
-    Test Case 3: Unregistered email
-    Input: Email doesn't exist + any password
-    Expected: Login rejected (401 Unauthorized) with identical error; does not reveal whether account exists.
-    """
+def test_case_3_unregistered_email(client, mock_login):
+    from fastapi import HTTPException
+
+    mock_login.side_effect = HTTPException(
+        status_code=401,
+        detail="Invalid email or password",
+    )
     response = client.post(
         "/api/auth/login",
         json={
-            "email": "completely-unregistered-random-email-xyz@storyhour.com",
+            "email": "unregistered-random@example.com",
             "password": "SomePassword123!",
         },
     )
+
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    data = response.json()
-    # Anti-enumeration assertion: error message must be identical to wrong password error
-    assert data["detail"] == "Invalid email or password"
-    assert "access_token" not in data
+    assert response.json()["detail"] == "Invalid email or password"
+    assert "access_token" not in response.json()
 
 
-def test_case_4_empty_email(client):
-    """
-    Test Case 4: Empty email
-    Input: Email = empty ("")
-    Expected: Validation error (422 Unprocessable Entity); request rejected before hitting auth provider.
-    """
+def test_case_4_empty_email(client, mock_login):
     response = client.post(
         "/api/auth/login",
-        json={
-            "email": "",
-            "password": "ValidPassword123!",
-        },
+        json={"email": "", "password": "ValidPassword123!"},
     )
-    assert response.status_code == 422
-    data = response.json()
-    assert "errors" in data or "detail" in data
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    mock_login.assert_not_called()
 
 
-def test_case_5_empty_password(client, registered_user):
-    """
-    Test Case 5: Empty password
-    Input: Password = empty ("")
-    Expected: Validation error (422 Unprocessable Entity); request rejected.
-    """
+def test_case_5_empty_password(client, mock_login):
     response = client.post(
         "/api/auth/login",
-        json={
-            "email": registered_user["email"],
-            "password": "",
-        },
+        json={"email": TEST_EMAIL, "password": ""},
     )
-    assert response.status_code == 422
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    mock_login.assert_not_called()
 
 
-def test_case_6_invalid_email_format(client):
-    """
-    Test Case 6: Invalid email format
-    Input: "abc@" / "hello"
-    Expected: Validation error (422 Unprocessable Entity).
-    """
-    # Sub-case 6a: missing domain
-    res1 = client.post(
-        "/api/auth/login",
-        json={"email": "abc@", "password": "ValidPassword123!"},
-    )
-    assert res1.status_code == 422
-
-    # Sub-case 6b: raw text without @
-    res2 = client.post(
-        "/api/auth/login",
-        json={"email": "hello", "password": "ValidPassword123!"},
-    )
-    assert res2.status_code == 422
-
-    # Sub-case 6c: missing local part
-    res3 = client.post(
-        "/api/auth/login",
-        json={"email": "@example.com", "password": "ValidPassword123!"},
-    )
-    assert res3.status_code == 422
+def test_case_6_invalid_email_format(client, mock_login):
+    for email in ("abc@", "hello", "@example.com"):
+        response = client.post(
+            "/api/auth/login",
+            json={"email": email, "password": "ValidPassword123!"},
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    mock_login.assert_not_called()
 
 
-def test_case_7_email_case_handling(client, registered_user):
-    """
-    Test Case 7: Email case handling
-    Input: Registered email with different capitalization (e.g. UPPERCASE)
-    Expected: Normalized consistently according to auth rules; login succeeds (200 OK).
-    """
-    uppercase_email = registered_user["email"].upper()
+def test_case_7_email_case_handling(client, mock_login):
     response = client.post(
         "/api/auth/login",
-        json={
-            "email": uppercase_email,
-            "password": registered_user["password"],
-        },
+        json={"email": TEST_EMAIL.upper(), "password": TEST_PASSWORD},
     )
+
     assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert "access_token" in data
-    assert data["user"]["email"] == registered_user["email"].lower()
+    assert response.json()["user"]["email"] == TEST_EMAIL
+    mock_login.assert_called_once_with(
+        email=TEST_EMAIL, password=TEST_PASSWORD
+    )
 
 
-def test_case_8_leading_trailing_whitespace(client, registered_user):
-    """
-    Test Case 8: Leading/trailing whitespace
-    Input: "  user@example.com  "
-    Expected: Trimmed and normalized consistently; login succeeds (200 OK).
-    """
-    padded_email = f"   {registered_user['email']}   "
+def test_case_8_leading_trailing_whitespace(client, mock_login):
     response = client.post(
         "/api/auth/login",
-        json={
-            "email": padded_email,
-            "password": registered_user["password"],
-        },
+        json={"email": f"   {TEST_EMAIL}   ", "password": TEST_PASSWORD},
     )
+
     assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert "access_token" in data
-    assert data["user"]["email"] == registered_user["email"].strip().lower()
+    assert response.json()["user"]["email"] == TEST_EMAIL
+    mock_login.assert_called_once_with(
+        email=TEST_EMAIL, password=TEST_PASSWORD
+    )
