@@ -24,8 +24,9 @@ from app.services.supabase_service import supabase_service
 # ==============================================================================
 
 class MockRedisPipeline:
-    def __init__(self, storage):
+    def __init__(self, storage, lock=None):
         self.storage = storage
+        self.lock = lock
         self.commands = []
 
     def zremrangebyscore(self, key, min_score, max_score):
@@ -45,6 +46,12 @@ class MockRedisPipeline:
         return self
 
     def execute(self):
+        if self.lock:
+            with self.lock:
+                return self._execute_inner()
+        return self._execute_inner()
+
+    def _execute_inner(self):
         results = []
         for cmd in self.commands:
             action = cmd[0]
@@ -74,28 +81,34 @@ class MockRedisClient:
     """Mock Redis client simulating Redis sorted sets for sliding window rate limiting."""
     def __init__(self):
         self.storage = {}
+        import threading
+        self.lock = threading.Lock()
 
     def pipeline(self):
-        return MockRedisPipeline(self.storage)
+        return MockRedisPipeline(self.storage, self.lock)
 
     def zrange(self, key, start, stop, withscores=False):
-        entries = self.storage.get(key, [])
-        if not entries:
-            return []
-        if withscores:
-            return [(entries[0][0], entries[0][1])]
-        return [entries[0][0]]
+        with self.lock:
+            entries = self.storage.get(key, [])
+            if not entries:
+                return []
+            if withscores:
+                return [(entries[0][0], entries[0][1])]
+            return [entries[0][0]]
 
     def zrem(self, key, *members):
-        entries = self.storage.get(key, [])
-        self.storage[key] = [e for e in entries if e[0] not in members]
+        with self.lock:
+            entries = self.storage.get(key, [])
+            self.storage[key] = [e for e in entries if e[0] not in members]
 
     def keys(self, pattern):
-        return list(self.storage.keys())
+        with self.lock:
+            return list(self.storage.keys())
 
     def delete(self, *keys):
-        for k in keys:
-            self.storage.pop(k, None)
+        with self.lock:
+            for k in keys:
+                self.storage.pop(k, None)
 
 
 def _make_mock_request(client_ip="192.168.1.50", path="/test/endpoint"):
@@ -213,6 +226,40 @@ def test_rl01_fail_open_setting_behavior(monkeypatch):
     monkeypatch.setattr(settings, "RATE_LIMIT_FAIL_OPEN", True)
     asyncio.run(limiter(req))
     asyncio.run(limiter(req))  # Passes without raising 429
+
+
+def test_rl01_concurrent_requests_across_instances_enforce_exact_quota():
+    """
+    RL-01: When multiple concurrent threads submit requests across separate limiter instances,
+    the shared Redis backend strictly enforces the exact request quota.
+    """
+    import concurrent.futures
+
+    mock_redis = MockRedisClient()
+    limit = 5
+    worker_1 = RateLimiter(requests_limit=limit, window_seconds=60, key_prefix="concurrent_test", use_path=False, redis_client=mock_redis)
+    worker_2 = RateLimiter(requests_limit=limit, window_seconds=60, key_prefix="concurrent_test", use_path=False, redis_client=mock_redis)
+
+    results = []
+
+    def _call(worker_id):
+        req = _make_mock_request("10.10.10.10")
+        try:
+            if worker_id % 2 == 0:
+                asyncio.run(worker_1(req))
+            else:
+                asyncio.run(worker_2(req))
+            return 200
+        except HTTPException as exc:
+            return exc.status_code
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(_call, i) for i in range(10)]
+        for f in concurrent.futures.as_completed(futures):
+            results.append(f.result())
+
+    assert results.count(200) == limit
+    assert results.count(status.HTTP_429_TOO_MANY_REQUESTS) == 10 - limit
 
 
 # ==============================================================================
