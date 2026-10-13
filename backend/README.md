@@ -62,8 +62,13 @@ Configure variables by **name only** (never commit secrets to version control):
 | `ENVIRONMENT` | Runtime mode (`development`, `test`, `production`) | `development` |
 | `HOST` | Bind address | `127.0.0.1` |
 | `PORT` | Bind port | `8001` |
-| `CORS_ORIGINS` | Allowed CORS origins list | `["http://localhost:3000"]` |
+| `CORS_ORIGINS` | Allowed CORS origins list (No `*` when credentials enabled) | `["http://localhost:3000"]` |
 | `DATABASE_URL` | PostgreSQL connection string (`psycopg` driver) | `postgresql+psycopg://postgres:postgres@localhost:5432/storyhour` |
+| `DB_POOL_SIZE` | SQLAlchemy steady-state connection pool size | `10` (1–50) |
+| `DB_MAX_OVERFLOW` | SQLAlchemy burst connection overflow allowance | `20` (0–50) |
+| `DB_CONNECT_TIMEOUT` | PostgreSQL network connect timeout in seconds | `5` (1–30) |
+| `DB_POOL_TIMEOUT` | Seconds to wait for available connection from pool | `30` |
+| `DB_POOL_RECYCLE` | Stale connection recycle interval in seconds | `1800` (60–7200) |
 | `AUTH_MODE` | Token verification mode (`supabase` or `local`) | `supabase` (prod) / `local` (dev/test) |
 | `SUPABASE_URL` | Supabase project URL | `https://<project-id>.supabase.co` |
 | `SUPABASE_ANON_KEY` | Public anonymous API key | Public client key |
@@ -72,6 +77,27 @@ Configure variables by **name only** (never commit secrets to version control):
 | `SUPABASE_JWT_ALGORITHM` | JWT signing algorithm | `HS256` |
 | `JWT_AUDIENCE` | Expected JWT audience claim | `authenticated` |
 | `RATE_LIMIT_ENABLED` | Global toggle for rate limiting | `true` |
+| `RATE_LIMIT_STORAGE` | Rate limiting backend (`memory` or `redis`) | `memory` |
+| `REDIS_URL` | Centralized Redis connection URL for distributed rate limiting | `redis://localhost:6379/0` (Optional) |
+| `ENABLE_HSTS` | Strict-Transport-Security header toggle (production only) | `false` |
+
+---
+
+### Database Connection Pool Budgeting (DB-04)
+
+The theoretical maximum database connection budget is calculated as:
+$$\text{Max Connections} = \text{Worker Processes} \times \text{Container Replicas} \times (\text{DB\_POOL\_SIZE} + \text{DB\_MAX\_OVERFLOW})$$
+
+- **Direct PostgreSQL Connections (Port 5432):**
+  - Supabase Free / Nano tier allows ~60 direct connections. Micro tier allows ~120 connections.
+  - For multi-worker deployments (e.g. 4 Uvicorn workers × 2 replicas = 8 processes), set `DB_POOL_SIZE=5` and `DB_MAX_OVERFLOW=5` so maximum connections remain $\le 80$.
+- **Supabase Transaction Pooler (Port 6543 / Supavisor):**
+  - When connecting to Supavisor, connection pooling is handled externally by Supavisor. Client-side pool sizes can be reduced accordingly.
+
+### Database Connection Timeout & Degraded Startup (DB-03)
+
+- PostgreSQL connections enforce an explicit network connect timeout (`DB_CONNECT_TIMEOUT=5` seconds) via `psycopg` `connect_args`.
+- If PostgreSQL is unreachable at application startup, the startup probe aborts after 5 seconds instead of hanging. The service boots in degraded mode, reporting `503 Service Unavailable` on `/health/ready` while keeping `/health/live` responsive.
 
 ---
 

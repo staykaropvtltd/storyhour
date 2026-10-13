@@ -5,7 +5,13 @@ from app.core.rate_limit import (
     auth_rate_limiter,
     auth_signup_limiter,
 )
-from app.schemas.auth import LoginRequest, LoginResponse, SignUpRequest, SignUpResponse
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    LogoutResponse,
+    SignUpRequest,
+    SignUpResponse,
+)
 from app.services.supabase_service import supabase_service
 
 router = APIRouter(tags=["Authentication"])
@@ -92,3 +98,34 @@ def login(credentials: LoginRequest) -> LoginResponse:
 def login_alias(credentials: LoginRequest) -> LoginResponse:
     """Convenience alias for /api/login."""
     return login(credentials=credentials)
+
+
+@router.post(
+    "/auth/logout",
+    response_model=LogoutResponse,
+    status_code=status.HTTP_200_OK,
+    summary="User logout (API-02)",
+    description=(
+        "Terminates active session. In Supabase mode, notifies auth provider to sign out; "
+        "in stateless JWT mode, confirms session closure for client token disposal."
+    ),
+)
+def logout() -> LogoutResponse:
+    """
+    Terminates the user session.
+    Stateless JWT tokens are discarded client-side; in remote mode, Supabase session is revoked.
+    """
+    result = supabase_service.sign_out()
+    return LogoutResponse(**result)
+
+
+@router.post(
+    "/logout",
+    response_model=LogoutResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+    summary="User logout alias (API-02)",
+)
+def logout_alias() -> LogoutResponse:
+    """Convenience alias for /api/logout."""
+    return logout()

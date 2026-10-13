@@ -402,7 +402,7 @@ def test_b12_3_patch_me_rejects_whitespace_via_api(api_client: TestClient, valid
         json={"full_name": "     "},
         headers={"Authorization": f"Bearer {valid_token}"},
     )
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 # ==============================================================================
@@ -454,7 +454,7 @@ def test_b12_4_contact_api_rejects_oversized_message(api_client: TestClient):
             "message": "X" * 5001,
         },
     )
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 # ==============================================================================

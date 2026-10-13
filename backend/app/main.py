@@ -111,6 +111,8 @@ OPENAPI_TAGS = [
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
     validate_configuration(settings)
+    from app.core.logging import configure_global_logging_filters
+    configure_global_logging_filters()
 
     # B-08.1: Startup database connectivity diagnostic probe (schema managed exclusively by Alembic)
     try:
@@ -142,10 +144,10 @@ app = FastAPI(
     openapi_tags=OPENAPI_TAGS,
 )
 
-# Configure CORS for Next.js frontend (e.g. http://localhost:3000)
+# Configure CORS for Next.js frontend (SEC-03: No wildcard fallback when credentials enabled)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else ["*"],
+    allow_origins=settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else [],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -155,13 +157,25 @@ app.add_middleware(
 app.add_middleware(ResponseCachingMiddleware)
 
 
-# Request Context & Correlation ID Middleware
+def _apply_security_headers(headers: dict) -> dict:
+    """Apply standard HTTP security headers (SEC-01)."""
+    headers["X-Content-Type-Options"] = "nosniff"
+    headers["X-Frame-Options"] = "DENY"
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    headers["X-XSS-Protection"] = "1; mode=block"
+    if getattr(settings, "ENABLE_HSTS", False) and getattr(settings, "ENVIRONMENT", "") == "production":
+        headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return headers
+
+
+# Request Context, Correlation ID, and Security Headers Middleware (SEC-01)
 @app.middleware("http")
 async def request_context_middleware(request: Request, call_next):
     request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
     request.state.request_id = request_id
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
+    _apply_security_headers(response.headers)
     return response
 
 
@@ -172,6 +186,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     req_id = getattr(request.state, "request_id", None)
     if req_id and "X-Request-ID" not in headers:
         headers["X-Request-ID"] = req_id
+    _apply_security_headers(headers)
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -190,7 +205,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         field = " -> ".join(str(loc) for loc in err.get("loc", []))
         errors.append({"field": field, "message": err.get("msg")})
     req_id = getattr(request.state, "request_id", None)
-    headers = {"X-Request-ID": req_id} if req_id else None
+    headers = {"X-Request-ID": req_id} if req_id else {}
+    _apply_security_headers(headers)
     return JSONResponse(
         status_code=422,
         content={
@@ -206,7 +222,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def database_exception_handler(request: Request, exc: SQLAlchemyError):
     req_id = getattr(request.state, "request_id", "unknown")
     logger.error(f"[Req {req_id}] Database operation error at {request.method} {request.url.path}: {str(exc)}")
-    headers = {"X-Request-ID": req_id} if req_id != "unknown" else None
+    headers = {"X-Request-ID": req_id} if req_id != "unknown" else {}
+    _apply_security_headers(headers)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
@@ -221,7 +238,8 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError):
 async def generic_exception_handler(request: Request, exc: Exception):
     req_id = getattr(request.state, "request_id", "unknown")
     logger.error(f"[Req {req_id}] Unhandled server error at {request.method} {request.url.path}: {str(exc)}")
-    headers = {"X-Request-ID": req_id} if req_id != "unknown" else None
+    headers = {"X-Request-ID": req_id} if req_id != "unknown" else {}
+    _apply_security_headers(headers)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={

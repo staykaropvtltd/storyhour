@@ -195,3 +195,12 @@ class SignUpResponse(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+
+class LogoutResponse(BaseModel):
+    """Response returned upon user logout (API-02)."""
+    message: str = "User logged out successfully"
+    session_active: bool = False
+    detail: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
+

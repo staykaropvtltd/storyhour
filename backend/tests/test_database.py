@@ -20,7 +20,15 @@ from app.database.models import UserProfile
 @pytest.fixture
 def in_memory_session():
     """Provides an isolated in-memory SQLite database session for unit testing."""
+    from sqlalchemy import event
     test_engine = create_engine("sqlite:///:memory:", echo=False)
+
+    @event.listens_for(test_engine, "connect")
+    def _set_sqlite_foreign_keys(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     Base.metadata.create_all(bind=test_engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
     db = TestingSessionLocal()
@@ -44,6 +52,7 @@ def test_database_package_exports():
         check_database_health,
         get_database_diagnostics,
         init_db,
+        validate_test_database_target,
     )
     assert engine is not None
     assert SessionLocal is not None
@@ -54,6 +63,7 @@ def test_database_package_exports():
     assert callable(check_database_health)
     assert callable(get_database_diagnostics)
     assert callable(init_db)
+    assert callable(validate_test_database_target)
 
 
 def test_models_registry_and_reexport():
@@ -213,11 +223,17 @@ def test_get_database_diagnostics_unit():
 @pytest.mark.integration
 def test_live_database_health_and_diagnostics():
     """
-    OPTIONAL INTEGRATION TEST (B-11.2):
-    Tests health check and diagnostics against the live PostgreSQL database.
-    Requires a running database specified in DATABASE_URL.
+    OPTIONAL INTEGRATION TEST (B-11.2, DB-01):
+    Tests health check and diagnostics against an isolated PostgreSQL test database.
+    Requires a verified safe test database specified in DATABASE_URL.
     Skipped by default in unit test runs (-m 'not integration').
     """
+    from app.config import settings
+    from app.database.safety import validate_test_database_target
+
+    # Guard: Fail safely before attempting any connection if target is unsafe (DB-01)
+    validate_test_database_target(settings.DATABASE_URL, settings.ENVIRONMENT)
+
     is_healthy = check_database_health()
     assert is_healthy is True
 

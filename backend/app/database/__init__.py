@@ -28,6 +28,9 @@ from app.database.repository import (
 from app.database.init_db import (
     init_db,
 )
+from app.database.safety import (
+    validate_test_database_target,
+)
 
 __all__ = [
     # Engine & Session
@@ -49,4 +52,6 @@ __all__ = [
     "BaseRepository",
     # Bootstrap
     "init_db",
+    # Test Database Safety Guard (DB-01)
+    "validate_test_database_target",
 ]

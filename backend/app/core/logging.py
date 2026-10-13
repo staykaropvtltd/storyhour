@@ -78,6 +78,30 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
+def configure_global_logging_filters() -> None:
+    """
+    Attaches SensitiveDataFilter to root, Uvicorn, and SQLAlchemy loggers (SEC-02).
+    Ensures that server access/error logs and third-party logs pass through credential
+    scrubbing without introducing duplicate handlers or duplicate log lines.
+    """
+    filter_instance = SensitiveDataFilter()
+    target_loggers = [
+        "",  # root logger
+        "uvicorn",
+        "uvicorn.access",
+        "uvicorn.error",
+        "fastapi",
+        "sqlalchemy.engine",
+    ]
+    for name in target_loggers:
+        lg = logging.getLogger(name)
+        if not any(isinstance(f, SensitiveDataFilter) for f in lg.filters):
+            lg.addFilter(filter_instance)
+        for h in lg.handlers:
+            if not any(isinstance(f, SensitiveDataFilter) for f in h.filters):
+                h.addFilter(filter_instance)
+
+
 def setup_logging(log_level: str = "INFO") -> logging.Logger:
     """Configures application-wide logging with safety filters."""
     logger = logging.getLogger("storyhour")
@@ -95,6 +119,7 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
         handler.addFilter(SensitiveDataFilter())
         logger.addHandler(handler)
 
+    configure_global_logging_filters()
     return logger
 
 

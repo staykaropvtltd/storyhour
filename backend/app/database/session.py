@@ -26,11 +26,13 @@ if settings.DATABASE_URL.startswith("sqlite"):
 else:
     engine = create_engine(
         settings.DATABASE_URL,
-        pool_pre_ping=True,       # Auto-detect dropped connections and reconnect
-        pool_size=10,             # Keep connections ready for concurrent requests
-        max_overflow=20,          # Allow bursts under peak traffic
-        pool_recycle=1800,        # Recycle connections every 30 minutes to prevent stale connections
-        echo=False,               # Set to True only for verbose SQL debugging
+        connect_args={"connect_timeout": settings.DB_CONNECT_TIMEOUT},
+        pool_pre_ping=True,                     # Auto-detect dropped connections and reconnect
+        pool_size=settings.DB_POOL_SIZE,       # Keep connections ready for concurrent requests
+        max_overflow=settings.DB_MAX_OVERFLOW, # Allow bursts under peak traffic
+        pool_timeout=settings.DB_POOL_TIMEOUT, # Maximum seconds to wait for a connection from pool
+        pool_recycle=settings.DB_POOL_RECYCLE, # Recycle connections periodically to prevent staleness
+        echo=False,                            # Set to True only for verbose SQL debugging
     )
 
 # SessionLocal factory for creating independent database sessions

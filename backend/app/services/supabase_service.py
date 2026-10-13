@@ -369,6 +369,26 @@ class SupabaseAuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+    def sign_out(self) -> Dict[str, Any]:
+        """
+        Terminates the active session (API-02).
+        In 'supabase' mode: attempts remote session sign-out via Supabase Auth API.
+        In 'local' mode: returns clean session termination response.
+        """
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                self.anon_client.auth.sign_out()
+                logger.info("Remote Supabase session signed out.")
+            except Exception as exc:
+                logger.debug(f"Remote Supabase sign_out notice: {str(exc)}")
+
+        return {
+            "message": "User logged out successfully",
+            "session_active": False,
+            "detail": "Session terminated. Client application should discard local tokens.",
+        }
+
     def _sync_user_profile(self, user: Any) -> Optional[Any]:
         """Helper to ensure user profile exists in public.user_profiles."""
         from app.database.session import SessionLocal

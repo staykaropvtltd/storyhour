@@ -88,6 +88,7 @@ def db_session():
     from app.database.base import Base
     import app.database.models  # noqa: F401
 
+    from sqlalchemy import create_engine, event
     from sqlalchemy.pool import StaticPool
     test_engine = create_engine(
         "sqlite:///:memory:",
@@ -95,6 +96,13 @@ def db_session():
         poolclass=StaticPool,
         echo=False,
     )
+
+    @event.listens_for(test_engine, "connect")
+    def _set_sqlite_foreign_keys(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     Base.metadata.create_all(bind=test_engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
     db = TestingSessionLocal()

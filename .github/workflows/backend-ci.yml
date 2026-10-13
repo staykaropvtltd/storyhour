@@ -7,8 +7,8 @@ on:
     branches: [ "main", "Backend-Adithya" ]
 
 jobs:
-  test:
-    name: Run Isolated Backend Unit & Regression Tests
+  unit-tests:
+    name: Run Isolated Backend Unit & Regression Tests (SQLite)
     runs-on: ubuntu-latest
 
     env:
@@ -43,3 +43,60 @@ jobs:
       - name: Run safe unit test suite
         run: |
           python -m pytest backend/tests/ -v -m "not integration"
+
+  postgres-integration:
+    name: Run PostgreSQL Integration Tests (Alembic + Disposable DB)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: storyhour_test
+          POSTGRES_USER: postgres_test
+          POSTGRES_PASSWORD: test_password_12345
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PROJECT_NAME: "StoryHour Backend API"
+      ENVIRONMENT: "test"
+      AUTH_MODE: "local"
+      DATABASE_URL: "postgresql+psycopg://postgres_test:test_password_12345@localhost:5432/storyhour_test"
+      SUPABASE_URL: "https://placeholder-project.supabase.co"
+      SUPABASE_ANON_KEY: "placeholder-anon-key-for-isolated-ci-testing"
+      SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-key-for-isolated-ci-testing"
+      SUPABASE_JWT_SECRET: "ci-test-mock-secret-key-at-least-32-chars-long"
+      SUPABASE_JWT_ALGORITHM: "HS256"
+      JWT_AUDIENCE: "authenticated"
+      RATE_LIMIT_ENABLED: "true"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Apply Alembic migrations to disposable PostgreSQL test database
+        run: |
+          cd backend
+          alembic upgrade head
+
+      - name: Run PostgreSQL Integration Tests
+        run: |
+          python -m pytest backend/tests/ -v -m "integration"

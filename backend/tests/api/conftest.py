@@ -13,12 +13,20 @@ from app.main import app
 @pytest.fixture
 def api_db():
     """Provides a thread-safe in-memory database session for FastAPI TestClient execution."""
+    from sqlalchemy import event
     test_engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
         echo=False,
     )
+
+    @event.listens_for(test_engine, "connect")
+    def _set_sqlite_foreign_keys(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     Base.metadata.create_all(bind=test_engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
     session = TestingSessionLocal()

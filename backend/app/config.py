@@ -43,12 +43,25 @@ class Settings(BaseSettings):
     JWT_AUDIENCE: Optional[str] = "authenticated"
     JWT_ISSUER: Optional[str] = None
 
-    # Phase 6 Rate Limiting
+    # Database connection pool and timeout configuration (DB-03, DB-04)
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 1800
+    DB_CONNECT_TIMEOUT: int = 5
+
+    # Rate Limiting & Distributed Storage (RL-01)
     RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_STORAGE: str = "memory"  # "memory" or "redis"
+    REDIS_URL: Optional[str] = None
+    RATE_LIMIT_FAIL_OPEN: bool = False
     CONTACT_RATE_LIMIT_PER_MINUTE: int = 30
     AUTH_RATE_LIMIT_PER_MINUTE: int = 30
     ANALYTICS_RATE_LIMIT_PER_MINUTE: int = 120
     TRUST_PROXY_HEADERS: bool = False
+
+    # Security Headers (SEC-01)
+    ENABLE_HSTS: bool = False
 
     # Phase 6 HTTP Caching
     HTTP_CACHE_MAX_AGE_SECONDS: int = 60
@@ -56,11 +69,20 @@ class Settings(BaseSettings):
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",") if i.strip()]
+        if isinstance(v, str):
+            v_str = v.strip()
+            if v_str.startswith("[") and v_str.endswith("]"):
+                import json
+                try:
+                    parsed = json.loads(v_str)
+                    if isinstance(parsed, list):
+                        return [str(i).strip() for i in parsed if str(i).strip()]
+                except Exception:
+                    pass
+            return [i.strip() for i in v_str.split(",") if i.strip()]
         if isinstance(v, list):
-            return v
-        raise ValueError(v)
+            return [str(i).strip() for i in v if str(i).strip()]
+        raise ValueError("Invalid CORS_ORIGINS format")
 
     def validate_settings(self) -> None:
         """Validate settings instance against runtime security requirements."""
@@ -76,6 +98,7 @@ class Settings(BaseSettings):
 
 ALLOWED_AUTH_MODES = {"supabase", "local"}
 ALLOWED_JWT_ALGORITHMS = {"HS256", "HS384", "HS512"}
+ALLOWED_RATE_LIMIT_STORAGES = {"memory", "redis"}
 
 
 def validate_configuration(cfg: Optional[Settings] = None) -> None:
@@ -93,13 +116,43 @@ def validate_configuration(cfg: Optional[Settings] = None) -> None:
     if not cfg.DATABASE_URL or not str(cfg.DATABASE_URL).strip():
         errors.append("DATABASE_URL is required and must not be empty.")
 
-    # 2. Validate AUTH_MODE against explicit allowlist
+    # 2. Database pool and timeout configuration (DB-03, DB-04)
+    if not (1 <= cfg.DB_POOL_SIZE <= 50):
+        errors.append("DB_POOL_SIZE must be between 1 and 50.")
+    if not (0 <= cfg.DB_MAX_OVERFLOW <= 50):
+        errors.append("DB_MAX_OVERFLOW must be between 0 and 50.")
+    if not (1 <= cfg.DB_CONNECT_TIMEOUT <= 30):
+        errors.append("DB_CONNECT_TIMEOUT must be between 1 and 30 seconds.")
+    if not (60 <= cfg.DB_POOL_RECYCLE <= 7200):
+        errors.append("DB_POOL_RECYCLE must be between 60 and 7200 seconds.")
+
+    # 3. Rate limit storage configuration (RL-01)
+    if cfg.RATE_LIMIT_STORAGE not in ALLOWED_RATE_LIMIT_STORAGES:
+        errors.append(
+            f"Invalid RATE_LIMIT_STORAGE '{cfg.RATE_LIMIT_STORAGE}'. Allowed: {sorted(list(ALLOWED_RATE_LIMIT_STORAGES))}."
+        )
+    if cfg.RATE_LIMIT_STORAGE == "redis" and (not cfg.REDIS_URL or not str(cfg.REDIS_URL).strip()):
+        errors.append("REDIS_URL is required when RATE_LIMIT_STORAGE is 'redis'.")
+
+    # 4. CORS configuration (SEC-03)
+    if isinstance(cfg.CORS_ORIGINS, list):
+        if "*" in cfg.CORS_ORIGINS:
+            errors.append(
+                "Insecure CORS configuration: Wildcard origin '*' is not permitted when credentials are supported."
+            )
+        for origin in cfg.CORS_ORIGINS:
+            if not (origin.startswith("http://") or origin.startswith("https://")):
+                errors.append(f"Invalid CORS origin '{origin}': must start with http:// or https://.")
+    else:
+        errors.append("CORS_ORIGINS must be a valid list of HTTP/HTTPS origin URLs.")
+
+    # 5. Validate AUTH_MODE against explicit allowlist
     if not cfg.AUTH_MODE or cfg.AUTH_MODE not in ALLOWED_AUTH_MODES:
         errors.append(
             f"Invalid AUTH_MODE '{cfg.AUTH_MODE}'. Allowed modes are: {sorted(list(ALLOWED_AUTH_MODES))}."
         )
     else:
-        # 3. Validate mode-specific required settings
+        # 6. Validate mode-specific required settings
         if cfg.AUTH_MODE == "supabase":
             if not cfg.SUPABASE_URL or not str(cfg.SUPABASE_URL).strip():
                 errors.append("SUPABASE_URL is required when AUTH_MODE is 'supabase'.")
