@@ -1,5 +1,11 @@
-import { test, describe } from "node:test";
+import { test, describe, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import {
+  checkContactRateLimit,
+  resetContactRateLimit,
+  maskEmail,
+  maskPhone,
+} from "../src/lib/security.ts";
 
 /**
  * Pure validation engine matching the server-side business logic
@@ -143,4 +149,51 @@ describe("Contact Form Validation & Spam Defense", () => {
       assert.equal(validateContactEnquiry("invalid string").valid, false);
     });
   });
+
+  describe("API Rate Limiting Defense (Fix #6, DoS)", () => {
+    beforeEach(() => {
+      resetContactRateLimit();
+    });
+
+    test("allows up to 5 requests within the window for the same IP", () => {
+      const ip = "192.168.1.50";
+      for (let i = 0; i < 5; i++) {
+        assert.equal(checkContactRateLimit(ip), true, `Request ${i + 1} should be permitted`);
+      }
+    });
+
+    test("blocks the 6th request from the same IP with false", () => {
+      const ip = "10.0.0.99";
+      for (let i = 0; i < 5; i++) {
+        checkContactRateLimit(ip);
+      }
+      assert.equal(checkContactRateLimit(ip), false, "6th request within window must be rate limited");
+    });
+
+    test("isolates rate limits per IP address", () => {
+      const ipA = "1.2.3.4";
+      const ipB = "5.6.7.8";
+      for (let i = 0; i < 5; i++) {
+        checkContactRateLimit(ipA);
+      }
+      assert.equal(checkContactRateLimit(ipA), false);
+      assert.equal(checkContactRateLimit(ipB), true, "Distinct IP should have independent quota");
+    });
+  });
+
+  describe("PII Log Anonymization & Redaction (Fix #8, CWE-532)", () => {
+    test("masks user email local-part while preserving destination domain", () => {
+      assert.equal(maskEmail("abhishek.edla@example.com"), "a***a@example.com");
+      assert.equal(maskEmail("hi@test.co.uk"), "***@test.co.uk");
+      assert.equal(maskEmail("a@b.com"), "***@b.com");
+    });
+
+    test("masks phone numbers keeping only the last 4 digits", () => {
+      assert.equal(maskPhone("+44 7911 123456"), "***3456");
+      assert.equal(maskPhone("07911123456"), "***3456");
+      assert.equal(maskPhone(""), "N/A");
+      assert.equal(maskPhone(null), "N/A");
+    });
+  });
 });
+
