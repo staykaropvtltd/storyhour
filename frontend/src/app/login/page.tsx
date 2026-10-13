@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Loader2,
 } from "lucide-react";
+import { sanitizeRedirectParam } from "@/lib/security";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -66,15 +67,7 @@ export default function LoginPage() {
           let dest = "/account";
           if (typeof window !== "undefined") {
             const params = new URLSearchParams(window.location.search);
-            const redirectParam = params.get("redirect");
-            if (
-              redirectParam &&
-              redirectParam.startsWith("/") &&
-              !redirectParam.startsWith("//") &&
-              !redirectParam.includes("\\")
-            ) {
-              dest = redirectParam;
-            }
+            dest = sanitizeRedirectParam(params.get("redirect"), "/account");
           }
           router.push(dest);
         }, 800);

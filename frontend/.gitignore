@@ -35,4 +35,4 @@ next-env.d.ts
 .agents/.kilo/
 testskill.md
 # Reports & Documentation Exports
-StoryHour_Frontend_Test_Cases_Report.*
+StoryHour_Frontend_*_Report.*
