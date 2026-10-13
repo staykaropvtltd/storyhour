@@ -33,3 +33,5 @@ next-env.d.ts
 # Temporary Scratch & Artifacts
 /scratch/
 .agents/.kilo/
+testskill.md
+
