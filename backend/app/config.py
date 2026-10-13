@@ -160,6 +160,16 @@ def validate_configuration(cfg: Optional[Settings] = None) -> None:
         for origin in cfg.CORS_ORIGINS:
             if not (origin.startswith("http://") or origin.startswith("https://")):
                 errors.append(f"Invalid CORS origin '{origin}': must start with http:// or https://.")
+
+        if cfg.ENVIRONMENT.lower() == "production":
+            is_only_localhost = all(
+                ("localhost" in origin.lower() or "127.0.0.1" in origin)
+                for origin in cfg.CORS_ORIGINS
+            )
+            if is_only_localhost:
+                errors.append(
+                    "Production CORS configuration error: In production ENVIRONMENT, CORS_ORIGINS must include your production domain (cannot rely solely on development localhost origins)."
+                )
     else:
         errors.append("CORS_ORIGINS must be a valid list of HTTP/HTTPS origin URLs.")
 

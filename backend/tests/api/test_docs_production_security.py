@@ -10,9 +10,11 @@ def restore_environment_settings(monkeypatch):
     """Ensure settings are cleanly restored after each test."""
     orig_env = settings.ENVIRONMENT
     orig_override = getattr(settings, "ENABLE_DOCS_IN_PROD", False)
+    orig_cors = list(settings.CORS_ORIGINS) if isinstance(settings.CORS_ORIGINS, list) else settings.CORS_ORIGINS
     yield
     settings.ENVIRONMENT = orig_env
     settings.ENABLE_DOCS_IN_PROD = orig_override
+    settings.CORS_ORIGINS = orig_cors
 
 
 def test_docs_available_in_development_environment(monkeypatch):
@@ -48,6 +50,7 @@ def test_docs_disabled_in_production_by_default(monkeypatch):
     """BT-14: In production, documentation endpoints return 404 by default."""
     monkeypatch.setattr(settings, "ENVIRONMENT", "production")
     monkeypatch.setattr(settings, "ENABLE_DOCS_IN_PROD", False)
+    monkeypatch.setattr(settings, "CORS_ORIGINS", ["https://storyhour.co.uk", "http://localhost:3000"])
 
     app = create_app()
     with TestClient(app) as client:
@@ -66,6 +69,7 @@ def test_docs_enabled_in_production_with_explicit_override(monkeypatch):
     """BT-14: When ENABLE_DOCS_IN_PROD=True in production, docs are explicitly enabled."""
     monkeypatch.setattr(settings, "ENVIRONMENT", "production")
     monkeypatch.setattr(settings, "ENABLE_DOCS_IN_PROD", True)
+    monkeypatch.setattr(settings, "CORS_ORIGINS", ["https://storyhour.co.uk", "http://localhost:3000"])
 
     app = create_app()
     with TestClient(app) as client:
@@ -80,6 +84,7 @@ def test_docs_disabled_in_production_with_falsy_override(monkeypatch, falsy_valu
     monkeypatch.setattr(settings, "ENVIRONMENT", "production")
     parsed_override = settings.parse_enable_docs_in_prod(falsy_value)
     monkeypatch.setattr(settings, "ENABLE_DOCS_IN_PROD", parsed_override)
+    monkeypatch.setattr(settings, "CORS_ORIGINS", ["https://storyhour.co.uk", "http://localhost:3000"])
 
     app = create_app()
     with TestClient(app) as client:
@@ -92,6 +97,7 @@ def test_api_endpoints_work_regardless_of_docs_status(monkeypatch):
     """BT-14: Standard API endpoints continue to work normally when docs are disabled."""
     monkeypatch.setattr(settings, "ENVIRONMENT", "production")
     monkeypatch.setattr(settings, "ENABLE_DOCS_IN_PROD", False)
+    monkeypatch.setattr(settings, "CORS_ORIGINS", ["https://storyhour.co.uk", "http://localhost:3000"])
     monkeypatch.setattr("app.routers.health.check_database_health", lambda: True)
 
     app = create_app()
@@ -103,3 +109,32 @@ def test_api_endpoints_work_regardless_of_docs_status(monkeypatch):
         live_res = client.get("/api/health/live")
         assert live_res.status_code == 200
         assert live_res.json()["status"] == "alive"
+
+
+def test_production_cors_rejects_only_localhost():
+    """Production configuration must reject CORS if only development localhost origins are specified."""
+    from app.config import Settings, validate_configuration
+    prod_cfg = Settings(
+        DATABASE_URL="sqlite:///:memory:",
+        ENVIRONMENT="production",
+        AUTH_MODE="local",
+        SUPABASE_JWT_SECRET="x" * 32,
+        CORS_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"],
+    )
+    with pytest.raises(ValueError) as exc:
+        validate_configuration(prod_cfg)
+    assert "Production CORS configuration error" in str(exc.value)
+
+
+def test_production_cors_accepts_valid_domain():
+    """Production configuration accepts valid HTTPS production domains."""
+    from app.config import Settings, validate_configuration
+    prod_cfg = Settings(
+        DATABASE_URL="sqlite:///:memory:",
+        ENVIRONMENT="production",
+        AUTH_MODE="local",
+        SUPABASE_JWT_SECRET="x" * 32,
+        CORS_ORIGINS=["https://storyhour.co.uk", "https://storyhourglobal.com"],
+    )
+    # Must validate cleanly without raising
+    validate_configuration(prod_cfg)
