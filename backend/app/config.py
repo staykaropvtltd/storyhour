@@ -66,6 +66,23 @@ class Settings(BaseSettings):
     # Phase 6 HTTP Caching
     HTTP_CACHE_MAX_AGE_SECONDS: int = 60
 
+    # API Documentation in Production (BT-14)
+    ENABLE_DOCS_IN_PROD: bool = False
+
+    @field_validator("ENABLE_DOCS_IN_PROD", mode="before")
+    @classmethod
+    def parse_enable_docs_in_prod(cls, v: Any) -> bool:
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            clean = v.strip().lower()
+            if clean in ("true", "1", "yes", "on"):
+                return True
+            return False
+        if isinstance(v, (int, float)):
+            return bool(v == 1)
+        return False
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
