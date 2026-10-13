@@ -1,28 +1,33 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import React, { useState, useEffect } from "react";
+import { Agentation } from "agentation";
 
-const AgentationComponent = dynamic(
-  () => import("agentation").then((mod) => mod.Agentation),
-  { ssr: false }
-);
-
+/**
+ * AgentationProvider provides the on-page visual feedback and annotation toolbar
+ * for AI coding agents, allowing users to click elements and submit structured annotations.
+ */
 export default function AgentationProvider() {
   const [mounted, setMounted] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.includes("192.168.") ||
+        window.location.search.includes("agentation"));
+
+    if (process.env.NODE_ENV === "development" || isLocalhost) {
+      setShouldRender(true);
+    }
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || !shouldRender) {
+    return null;
+  }
 
-  return (
-    <AgentationComponent
-      endpoint="http://localhost:4747"
-      onSessionCreated={(sessionId: string) => {
-        console.log("Agentation session started:", sessionId);
-      }}
-    />
-  );
+  return <Agentation />;
 }

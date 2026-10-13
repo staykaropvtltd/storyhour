@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import Lenis from "@studio-freight/lenis";
@@ -30,13 +30,23 @@ export default function SmoothScrollProvider({ children }: { children: React.Rea
     lenisRef.current = instance;
     setLenis(instance);
 
+    // Sync Lenis scroll with GSAP ScrollTrigger to prevent jitter
+    instance.on("scroll", () => {
+      if (typeof window !== "undefined") {
+        const { ScrollTrigger } = require("gsap/ScrollTrigger");
+        if (ScrollTrigger) ScrollTrigger.update();
+      }
+    });
+
+    let rafId: number;
     function raf(time: number) {
       instance.raf(time);
-      requestAnimationFrame(raf);
+      rafId = requestAnimationFrame(raf);
     }
-    requestAnimationFrame(raf);
+    rafId = requestAnimationFrame(raf);
 
     return () => {
+      cancelAnimationFrame(rafId);
       instance.destroy();
       lenisRef.current = null;
       setLenis(null);

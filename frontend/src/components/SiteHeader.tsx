@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ShoppingBag } from "lucide-react";
+import { Menu, X, ShoppingBag, Search, User, Mail, Phone, LogOut, ChevronDown } from "lucide-react";
 import { useLibraryCart } from "@/context/LibraryCartContext";
+import { useCmsContent } from "@/lib/use-cms-content";
 
 interface SiteHeaderProps {
   activeLink?: string;
@@ -17,7 +18,33 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
   const isHomePage = pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { cartCount } = useLibraryCart();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [userSession, setUserSession] = useState<{
+    name: string;
+    fullName?: string;
+    email: string;
+    phone?: string;
+  } | null>(null);
+  const { cartCount, setIsSearchOpen, setIsCartDrawerOpen } = useLibraryCart();
+  const { homepage } = useCmsContent();
+
+  useEffect(() => {
+    const syncSession = () => {
+      try {
+        const stored = localStorage.getItem("storyhour_user_session");
+        if (stored) {
+          setUserSession(JSON.parse(stored));
+        } else {
+          setUserSession(null);
+        }
+      } catch {
+        setUserSession(null);
+      }
+    };
+    syncSession();
+    window.addEventListener("storage", syncSession);
+    return () => window.removeEventListener("storage", syncSession);
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +54,17 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Escape key closes mobile menu
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
 
   // Determine active item based on current pathname or explicit prop
   let activeLink = activeLinkProp;
@@ -64,12 +102,20 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
     { label: "Trailer", href: "/trailers" },
   ];
 
-  const ctaHref = "/stories";
+  const isLoggedIn = !!userSession;
+  const ctaHref = isLoggedIn ? "/account" : "/login";
+  const ctaLabel = isLoggedIn ? (userSession.name || "Profile") : "Login/sign up";
+  const showAnnouncement = !!(homepage?.announcementEnabled && homepage?.announcementText);
 
   return (
     <>
+      {showAnnouncement && (
+        <div className="bg-[#C9281D] text-white text-[11px] sm:text-xs font-semibold py-1.5 px-4 text-center tracking-wide fixed top-0 left-0 right-0 z-[60] shadow-sm flex items-center justify-center gap-2">
+          <span>{homepage.announcementText}</span>
+        </div>
+      )}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${
+        className={`fixed ${showAnnouncement ? "top-7" : "top-0"} left-0 right-0 z-50 w-full transition-all duration-300 ${
           isScrolled || !isHomePage
             ? "bg-white/95 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.06)] border-b border-[#e7e7e7] py-3 sm:py-3.5"
             : "bg-transparent py-5 lg:py-6"
@@ -120,12 +166,24 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
             })}
           </nav>
 
-          {/* 3. Right: Cart Button & High-Contrast Pill CTA Button */}
+          {/* 3. Right: Search Button, Cart Button & High-Contrast Pill CTA Button */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Cart Button */}
-            <Link
-              href="/cart"
-              className="relative inline-flex items-center justify-center w-11 h-11 rounded-full bg-white hover:bg-gray-50 border border-black/10 text-[#0f0f0f] hover:text-[#C9281D] transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#C9281D]"
+            {/* Search Button (fixes F-07) */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="relative inline-flex items-center justify-center w-11 h-11 rounded-full bg-white hover:bg-gray-50 border border-black/10 text-[#0f0f0f] hover:text-[#C9281D] transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#C9281D] cursor-pointer"
+              aria-label="Search stories and audiobooks"
+              title="Search (Press / or Ctrl+K)"
+            >
+              <Search className="w-5 h-5 transition-transform duration-200" />
+            </button>
+
+            {/* Cart Button (opens CartDrawer, fixes C-04 / FT-22) */}
+            <button
+              type="button"
+              onClick={() => setIsCartDrawerOpen(true)}
+              className="relative inline-flex items-center justify-center w-11 h-11 rounded-full bg-white hover:bg-gray-50 border border-black/10 text-[#0f0f0f] hover:text-[#C9281D] transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#C9281D] cursor-pointer"
               aria-label={`View Cart (${cartCount} items)`}
             >
               <ShoppingBag className="w-5 h-5 transition-transform duration-200" />
@@ -134,21 +192,112 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
-            <Link
-              href={ctaHref}
-              className="inline-flex items-center justify-center bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-[15px] px-6 sm:px-7 py-2.5 sm:py-3 rounded-full transition-all duration-200 shadow-sm hover:shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#C9281D]"
-            >
-              <span>Try it for free!</span>
-            </Link>
+            {isLoggedIn ? (
+              <div
+                className="relative"
+                onMouseEnter={() => setProfileMenuOpen(true)}
+                onMouseLeave={() => setProfileMenuOpen(false)}
+              >
+                <Link
+                  href="/account"
+                  className="inline-flex items-center justify-center gap-2 bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-[15px] px-5 sm:px-6 py-2.5 sm:py-3 rounded-full transition-all duration-200 shadow-sm hover:shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#C9281D]"
+                  aria-haspopup="true"
+                  aria-expanded={profileMenuOpen}
+                >
+                  <User className="w-4 h-4 text-white/90" />
+                  <span className="max-w-[130px] truncate capitalize">{userSession?.fullName || userSession?.name || "Profile"}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-white/70 transition-transform duration-200 ${profileMenuOpen ? "rotate-180" : ""}`} />
+                </Link>
+
+                {/* Hover Profile Popover Card */}
+                {profileMenuOpen && (
+                  <div className="absolute right-0 top-full pt-2 z-50 w-80 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="bg-white rounded-2xl p-5 shadow-[0_16px_40px_rgba(0,0,0,0.12)] border border-black/10 text-[#0f0f0f]">
+                      {/* Avatar & Name Header */}
+                      <div className="flex items-center gap-3.5 pb-4 border-b border-black/5">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#DE3124] via-[#C9281D] to-[#FC7819] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+                          {((userSession?.fullName || userSession?.name || "U").charAt(0)).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-bold text-base text-[#0f0f0f] capitalize truncate">
+                            {userSession?.fullName || userSession?.name || "Reader Account"}
+                          </h4>
+                        </div>
+                      </div>
+
+                      {/* Contact Details */}
+                      <div className="py-3.5 space-y-2.5 text-xs text-black/75">
+                        <div className="flex items-center gap-2.5">
+                          <Mail className="w-4 h-4 text-[#C9281D] shrink-0" />
+                          <span className="truncate font-medium">{userSession?.email || "reader@storyhour.co.uk"}</span>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <Phone className="w-4 h-4 text-[#C9281D] shrink-0" />
+                          <span className="font-medium">{userSession?.phone || "+44 (0) 7911 123456"}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Links */}
+                      <div className="pt-3 border-t border-black/5 space-y-1.5">
+                        <Link
+                          href="/account"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-bold text-[#0f0f0f] hover:bg-[#FAF8F3] hover:text-[#C9281D] transition-colors"
+                        >
+                          <span className="flex items-center gap-2">
+                            <User className="w-3.5 h-3.5" />
+                            View Full Profile &amp; Library
+                          </span>
+                          <span className="text-black/40">→</span>
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              localStorage.removeItem("storyhour_user_session");
+                            } catch {}
+                            setUserSession(null);
+                            setProfileMenuOpen(false);
+                            window.location.href = "/";
+                          }}
+                          className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-[15px] px-6 sm:px-7 py-2.5 sm:py-3 rounded-full transition-all duration-200 shadow-sm hover:shadow-[0_6px_20px_rgba(201,40,29,0.35)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#C9281D]"
+              >
+                <span>Login/sign up</span>
+              </Link>
+            )}
           </div>
 
-          {/* 4. Mobile Menu Trigger & Mobile Cart */}
+          {/* 4. Mobile Menu Trigger & Mobile Cart & Mobile Search */}
           <div className="flex md:hidden items-center gap-2">
-            <Link
-              href="/cart"
-              className="relative w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none"
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="relative w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none cursor-pointer"
+              aria-label="Search stories"
+            >
+              <Search className="w-4.5 h-4.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCartDrawerOpen(true)}
+              className="relative w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none cursor-pointer"
               aria-label={`View Cart (${cartCount} items)`}
             >
               <ShoppingBag className="w-4.5 h-4.5" />
@@ -157,11 +306,15 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
+            {/* Mobile menu button with aria-expanded (fixes FT-24) */}
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
+              className="w-10 h-10 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center text-[#0f0f0f] focus:outline-none cursor-pointer"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -171,7 +324,10 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
 
         {/* 5. Mobile Slide-Down Drawer Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-x-0 top-[64px] sm:top-[68px] bg-white border-b border-gray-200 shadow-xl px-6 py-6 transition-all duration-300 animate-in slide-in-from-top-4 z-50">
+          <div
+            id="mobile-navigation"
+            className="md:hidden fixed inset-x-0 top-[64px] sm:top-[68px] bg-white border-b border-gray-200 shadow-xl px-6 py-6 transition-all duration-300 animate-in slide-in-from-top-4 z-50"
+          >
             <div className="flex flex-col gap-3">
               {navLinks.map((link) => (
                 <Link
@@ -185,10 +341,13 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/cart"
-                onClick={() => setMobileMenuOpen(false)}
-                className="py-2 text-lg font-bold border-b border-gray-100 flex items-center justify-between text-[#0f0f0f]"
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsCartDrawerOpen(true);
+                }}
+                className="py-2 text-lg font-bold border-b border-gray-100 flex items-center justify-between text-[#0f0f0f] text-left w-full"
               >
                 <span className="flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-[#C9281D]" />
@@ -197,15 +356,62 @@ export default function SiteHeader({ activeLink: activeLinkProp }: SiteHeaderPro
                 <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#DE3124] to-[#C9281D] text-white text-xs font-black shadow-[0_2px_6px_rgba(201,40,29,0.35)]">
                   {cartCount}
                 </span>
-              </Link>
+              </button>
               <div className="pt-3">
-                <Link
-                  href={ctaHref}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-base py-3.5 rounded-full transition-all duration-200 shadow-md"
-                >
-                  <span>Try it for free!</span>
-                </Link>
+                {isLoggedIn ? (
+                  <div className="rounded-2xl border border-black/10 bg-[#FAF8F3] p-4 space-y-3 text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#DE3124] to-[#FC7819] flex items-center justify-center text-white font-bold text-base shrink-0">
+                        {((userSession?.fullName || userSession?.name || "U").charAt(0)).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-sm text-[#0f0f0f] capitalize truncate">
+                          {userSession?.fullName || userSession?.name || "Reader Account"}
+                        </div>
+                        <div className="text-[11px] text-black/60 truncate">
+                          {userSession?.email}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-black/75 flex items-center gap-2 pt-1.5 border-t border-black/5">
+                      <Phone className="w-3.5 h-3.5 text-[#C9281D]" />
+                      <span>{userSession?.phone || "+44 (0) 7911 123456"}</span>
+                    </div>
+
+                    <div className="pt-2 flex items-center gap-2">
+                      <Link
+                        href="/account"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex-1 py-2.5 rounded-xl bg-[#0f0f0f] text-white text-xs font-bold text-center"
+                      >
+                        My Library
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          try {
+                            localStorage.removeItem("storyhour_user_session");
+                          } catch {}
+                          setUserSession(null);
+                          setMobileMenuOpen(false);
+                          window.location.href = "/";
+                        }}
+                        className="px-3.5 py-2.5 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold cursor-pointer"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={ctaHref}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center bg-[#0f0f0f] hover:bg-gradient-to-r hover:from-[#DE3124] hover:to-[#C9281D] text-white font-bold text-base py-3.5 rounded-full transition-all duration-200 shadow-md"
+                  >
+                    <span>Login/sign up</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

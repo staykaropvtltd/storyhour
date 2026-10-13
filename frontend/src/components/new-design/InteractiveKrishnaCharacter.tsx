@@ -34,8 +34,14 @@ export default function InteractiveKrishnaCharacter({
 
   return (
     <div
-      className={`relative select-none cursor-pointer group ${className}`}
+      className={`relative select-none cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9281D] rounded-2xl ${className}`}
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       role="button"
       tabIndex={0}
       aria-label="Interactive Lord Krishna Storyteller Puppet Doll"

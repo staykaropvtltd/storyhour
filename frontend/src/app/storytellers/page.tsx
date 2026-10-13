@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Play, Pause } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { useCmsContent } from "@/lib/use-cms-content";
 
 interface Storyteller {
   name: string;
@@ -155,11 +156,13 @@ function TestimonialColumn({
   direction = "up",
   duration = 40,
   className = "",
+  isPaused = false,
 }: {
   items: Testimonial[];
   direction?: "up" | "down";
   duration?: number;
   className?: string;
+  isPaused?: boolean;
 }) {
   const prefersReducedMotion = useReducedMotion();
   const doubled = [...items, ...items]; // duplicate for seamless loop
@@ -171,6 +174,7 @@ function TestimonialColumn({
           animation: prefersReducedMotion
             ? "none"
             : `testimonial-scroll-${direction} ${duration}s linear infinite`,
+          animationPlayState: isPaused ? "paused" : "running",
         }}
       >
         {doubled.map((item, i) => (
@@ -183,17 +187,32 @@ function TestimonialColumn({
 
 export default function StorytellersPage() {
   const [active, setActive] = useState(0);
+  const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
+
+  const { storytellers: cmsStorytellers } = useCmsContent();
+  const activeStorytellers =
+    cmsStorytellers && cmsStorytellers.length > 0 ? cmsStorytellers : STORYTELLERS;
 
   const handleNext = useCallback(() => {
-    setActive((prev) => (prev + 1) % STORYTELLERS.length);
-  }, []);
+    setActive((prev) => (prev + 1) % activeStorytellers.length);
+  }, [activeStorytellers.length]);
 
   const handlePrev = useCallback(() => {
-    setActive((prev) => (prev - 1 + STORYTELLERS.length) % STORYTELLERS.length);
-  }, []);
+    setActive((prev) => (prev - 1 + activeStorytellers.length) % activeStorytellers.length);
+  }, [activeStorytellers.length]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
       if (e.key === "ArrowLeft") handlePrev();
       else if (e.key === "ArrowRight") handleNext();
     };
@@ -203,14 +222,14 @@ export default function StorytellersPage() {
 
   const getCardAnimation = (index: number) => {
     if (index === active) return { opacity: 1, scale: 1, rotate: 0, zIndex: 40, y: [0, -50, 0] };
-    const nextIndex = (active + 1) % STORYTELLERS.length;
-    const prevIndex = (active - 1 + STORYTELLERS.length) % STORYTELLERS.length;
+    const nextIndex = (active + 1) % activeStorytellers.length;
+    const prevIndex = (active - 1 + activeStorytellers.length) % activeStorytellers.length;
     if (index === nextIndex) return { opacity: 0.8, scale: 0.94, rotate: 6, zIndex: 20, y: 0 };
     if (index === prevIndex) return { opacity: 0.65, scale: 0.9, rotate: -7, zIndex: 10, y: 0 };
     return { opacity: 0, scale: 0.86, rotate: 0, zIndex: 0, y: 0 };
   };
 
-  const current = STORYTELLERS[active];
+  const current = activeStorytellers[active] || activeStorytellers[0];
 
   return (
     <>
@@ -275,7 +294,10 @@ export default function StorytellersPage() {
         </section>
 
         {/* ── §1 Animated Storyteller Showcase ── */}
-        <main className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-8 sm:py-12 md:py-16 pb-16 sm:pb-20 md:pb-20">
+        <main
+          id="storyteller-showcase"
+          className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-8 sm:py-12 md:py-16 pb-16 sm:pb-20 md:pb-20"
+        >
           <div className="w-full max-w-sm md:max-w-4xl lg:max-w-5xl mx-auto antialiased">
             <div className="relative grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 lg:gap-20 items-center">
 
@@ -283,11 +305,11 @@ export default function StorytellersPage() {
               <div className="flex justify-center">
                 <div className="relative w-full max-w-[340px] sm:max-w-[390px] md:max-w-[430px] h-[330px] sm:h-[370px] md:h-[410px]">
                   <AnimatePresence initial={false}>
-                    {STORYTELLERS.map((storyteller, index) => {
+                    {activeStorytellers.map((storyteller, index) => {
                       const anim = getCardAnimation(index);
                       return (
                         <motion.div
-                          key={storyteller.name}
+                          key={storyteller.name || (storyteller as any).id || index}
                           animate={anim}
                           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                           className="absolute inset-0 origin-bottom"
@@ -377,8 +399,28 @@ export default function StorytellersPage() {
                 Stories That Stay With You
               </h2>
               <p className="font-sans text-[16px] text-[#5A5A5A] max-w-[480px] mx-auto leading-[1.65]">
-                Heard by educators, families, cultural voices, and communities from London to Hyderabad — this is how StoryHour's work has been experienced.
+                Heard by educators, families, cultural voices, and communities from London to Hyderabad — this is how StoryHour&apos;s work has been experienced.
               </p>
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setIsTestimonialsPaused((prev) => !prev)}
+                  aria-label={isTestimonialsPaused ? "Resume auto-scrolling testimonials" : "Pause auto-scrolling testimonials"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E7E7E7] bg-white text-[#0F0F0F] text-xs font-medium hover:bg-neutral-50 transition-colors cursor-pointer shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9281D]"
+                >
+                  {isTestimonialsPaused ? (
+                    <>
+                      <Play className="w-3.5 h-3.5 text-[#C9281D] fill-[#C9281D]" />
+                      <span>Resume Scroll</span>
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-3.5 h-3.5 text-[#C9281D]" />
+                      <span>Pause Scroll</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Three-Column Scrolling Grid */}
@@ -392,6 +434,7 @@ export default function StorytellersPage() {
                 items={COL_A}
                 direction="up"
                 duration={36}
+                isPaused={isTestimonialsPaused}
                 className="overflow-hidden h-full"
               />
 
@@ -400,6 +443,7 @@ export default function StorytellersPage() {
                 items={COL_B}
                 direction="down"
                 duration={44}
+                isPaused={isTestimonialsPaused}
                 className="overflow-hidden h-full hidden md:block"
               />
 
@@ -408,6 +452,7 @@ export default function StorytellersPage() {
                 items={COL_C}
                 direction="up"
                 duration={30}
+                isPaused={isTestimonialsPaused}
                 className="overflow-hidden h-full hidden lg:block"
               />
             </div>

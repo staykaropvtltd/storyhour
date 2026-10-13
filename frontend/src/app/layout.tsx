@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Fraunces, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AudioProvider } from "@/context/AudioContext";
 import { LibraryCartProvider } from "@/context/LibraryCartContext";
@@ -8,6 +8,7 @@ import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
 import Toast from "@/components/Toast";
 import AgentationProvider from "@/components/AgentationProvider";
+import CookieConsent from "@/components/CookieConsent";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -16,9 +17,31 @@ const plusJakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "StoryHour — The Magical Storytelling Platform for Kids & Families",
   description: "Discover Indian mythology, culture, and history through soulful audiobooks, live puppet storytelling, and screen-free calm bedtimes. In Hindi, English & Telugu.",
+  metadataBase: new URL("https://storyhour.co.uk"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "StoryHour — Stories That Live Beyond Time",
     description: "Bringing Indian mythology, culture, and history to life through soulful audiobooks and puppet storytelling.",
@@ -35,8 +58,16 @@ export const metadata: Metadata = {
     locale: "en_GB",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "StoryHour — Stories That Live Beyond Time",
+    description: "Bringing Indian mythology, culture, and history to life through soulful audiobooks and puppet storytelling.",
+    images: ["https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.28.53.jpeg"],
+  },
   icons: {
-    icon: "https://storyhour.co.uk/wp-content/uploads/2026/01/tp-logo.png",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "https://storyhour.co.uk/wp-content/uploads/2026/01/tp-logo.png",
   },
 };
 
@@ -46,7 +77,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={plusJakarta.variable}>
+    <html
+      lang="en"
+      className={`${plusJakarta.variable} ${fraunces.variable} ${inter.variable} ${geistMono.variable}`}
+    >
       <body className={`${plusJakarta.className} bg-[#FAF8F3] text-[#0f0f0f] antialiased selection:bg-[#C9281D] selection:text-white min-h-screen flex flex-col overflow-x-hidden font-sans`}>
         <SmoothScrollProvider>
           <AudioProvider>
@@ -56,6 +90,7 @@ export default function RootLayout({
               <CartDrawer />
               <Toast />
               <AgentationProvider />
+              <CookieConsent />
             </LibraryCartProvider>
           </AudioProvider>
         </SmoothScrollProvider>

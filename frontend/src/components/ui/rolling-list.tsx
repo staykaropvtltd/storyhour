@@ -33,7 +33,7 @@ export default function RollingList({
   const handleKeyDown = (e: React.KeyboardEvent, item: TrailerItem) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (item.videoUrl && onSelectTrailer) {
+      if (onSelectTrailer) {
         onSelectTrailer(item);
       }
     }
@@ -48,16 +48,16 @@ export default function RollingList({
         return (
           <div
             key={item.id}
-            role={hasVideo ? "button" : "group"}
+            role="button"
             tabIndex={0}
-            aria-label={`${item.title} — ${item.category}, ${item.language}${hasVideo ? " (Watch trailer)" : ""}`}
+            aria-label={`${item.title} — ${item.category}, ${item.language}${hasVideo ? " (Watch trailer)" : " (Trailer in production — View details)"}`}
             onMouseEnter={() => setHoveredId(item.id)}
             onMouseLeave={() => setHoveredId(null)}
             onFocus={() => setHoveredId(item.id)}
             onBlur={() => setHoveredId(null)}
             onClick={() => {
               setHoveredId(item.id);
-              if (hasVideo && onSelectTrailer) {
+              if (onSelectTrailer) {
                 onSelectTrailer(item);
               }
             }}
@@ -66,7 +66,7 @@ export default function RollingList({
               "group relative w-full border-b border-[#E8E4DC] transition-colors duration-300 select-none",
               "py-3 sm:py-4 md:py-5 lg:py-6 px-2 sm:px-4",
               "outline-none focus-visible:bg-black/[0.02]",
-              hasVideo ? "cursor-pointer" : "cursor-default"
+              "cursor-pointer"
             )}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 relative">
@@ -88,11 +88,11 @@ export default function RollingList({
                       </h2>
                     </div>
 
-                    {/* State 2: Hovered Rolling Title (Italic + StoryHour Red Accent) */}
+                    {/* State 2: Hovered Rolling Title (Italic + StoryHour Red Accent - aria-hidden to avoid duplicate heading) */}
                     <div className="flex h-[60px] sm:h-[76px] md:h-[88px] lg:h-[96px] xl:h-[108px] items-center">
-                      <h2 className="font-serif italic font-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[54px] text-[#C9281D] uppercase tracking-tight leading-[1] select-none whitespace-nowrap">
+                      <span aria-hidden="true" className="font-serif italic font-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[54px] text-[#C9281D] uppercase tracking-tight leading-[1] select-none whitespace-nowrap block">
                         {item.title}
-                      </h2>
+                      </span>
                     </div>
                   </div>
                 </div>
