@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import Lenis from "@studio-freight/lenis";
+import Lenis from "lenis";
 
 interface SmoothScrollContextType {
   lenis: Lenis | null;

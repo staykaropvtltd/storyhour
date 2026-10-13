@@ -66,6 +66,7 @@ export async function POST(request: Request) {
             Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
             "Content-Type": "application/json",
           },
+          signal: AbortSignal.timeout(8000),
           body: JSON.stringify({
             from: "StoryHour Contact <onboarding@resend.dev>",
             to: [toEmail],
