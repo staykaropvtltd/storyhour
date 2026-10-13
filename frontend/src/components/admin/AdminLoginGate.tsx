@@ -5,9 +5,9 @@ import { useAdminCms } from "@/context/AdminCmsContext";
 import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function AdminLoginGate({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, login } = useAdminCms();
+  const { isAuthenticated, login, loading, authChecked } = useAdminCms();
 
-  const [email, setEmail] = useState("admin@storyhour.co.uk");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -24,6 +24,18 @@ export default function AdminLoginGate({ children }: { children: React.ReactNode
     }
     setIsLoggingIn(false);
   };
+
+  // While initially checking session authentication, show a clean indicator
+  if (!authChecked && loading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F3] flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 rounded-xl bg-[#C9281D] flex items-center justify-center mb-3">
+          <Lock className="w-5 h-5 text-white animate-pulse" />
+        </div>
+        <p className="text-xs font-semibold text-[#696572]">Verifying session…</p>
+      </div>
+    );
+  }
 
   if (isAuthenticated) return <>{children}</>;
 
@@ -54,7 +66,7 @@ export default function AdminLoginGate({ children }: { children: React.ReactNode
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="admin@storyhour.co.uk"
+                placeholder="Enter admin email"
                 className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-sm text-[#0F0F0F] placeholder-[#696572] focus:outline-none focus:border-[#C9281D] transition"
               />
             </div>

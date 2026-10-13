@@ -19,6 +19,7 @@ interface AdminCmsContextType {
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
+  authChecked: boolean;
   adminUser: { email: string; role: string } | null;
 
   // Real API Actions
@@ -57,11 +58,9 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [stats, setStats] = useState<CmsDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // default true for seamless initial admin render, verified on check
-  const [adminUser, setAdminUser] = useState<{ email: string; role: string } | null>({
-    email: "admin@storyhour.co.uk",
-    role: "admin",
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [adminUser, setAdminUser] = useState<{ email: string; role: string } | null>(null);
 
   const notifyPublicUpdate = () => {
     if (typeof window !== "undefined") {
@@ -90,12 +89,16 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (token) headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const res = await fetch("/api/cms/admin/content", { headers });
+      const res = await fetch("/api/cms/admin/content", {
+        headers,
+        credentials: "include",
+      });
 
       if (res.status === 401) {
         setIsAuthenticated(false);
         setAdminUser(null);
         setLoading(false);
+        setAuthChecked(true);
         return;
       }
 
@@ -114,6 +117,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setError(err.message);
     } finally {
       setLoading(false);
+      setAuthChecked(true);
     }
   }, []);
 
@@ -128,6 +132,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const res = await fetch("/api/cms/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action: "login", email, password }),
       });
       const json = await res.json();
@@ -136,6 +141,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           localStorage.setItem("storyhour_admin_token", json.token);
         }
         setIsAuthenticated(true);
+        setAuthChecked(true);
         setAdminUser(json.admin);
         await refreshData();
         return { success: true };
@@ -156,11 +162,13 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await fetch("/api/cms/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action: "logout" }),
       });
     } finally {
       setIsAuthenticated(false);
       setAdminUser(null);
+      setAuthChecked(true);
     }
   };
 
@@ -172,6 +180,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const res = await fetch(url, {
         method,
         headers: getAuthHeaders(),
+        credentials: "include",
         body: JSON.stringify(storyData),
       });
       const json = await res.json();
@@ -204,6 +213,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const res = await fetch(`/api/cms/admin/stories/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
+        credentials: "include",
       });
       const json = await res.json();
       if (json.success) {
@@ -227,6 +237,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const res = await fetch(url, {
         method,
         headers: getAuthHeaders(),
+        credentials: "include",
         body: JSON.stringify(editionData),
       });
       const json = await res.json();
@@ -362,6 +373,7 @@ export const AdminCmsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isLoading: loading,
         error,
         isAuthenticated,
+        authChecked,
         adminUser,
         refreshData,
         refreshContent: refreshData,
