@@ -40,19 +40,19 @@ class StoryUpdate(BaseModel):
     slug: Optional[str] = Field(None, min_length=1, max_length=255)
     short_description: Optional[str] = None
     long_description: Optional[str] = None
-    cover_image: Optional[str] = None
-    hero_media: Optional[str] = None
+    cover_image: Optional[str] = Field(None, max_length=1024)
+    hero_media: Optional[str] = Field(None, max_length=1024)
     status: Optional[StoryStatus] = None
     themes: Optional[List[str]] = None
-    narrator: Optional[str] = None
+    narrator: Optional[str] = Field(None, max_length=255)
     duration: Optional[int] = Field(None, ge=0)
-    age_group: Optional[str] = None
+    age_group: Optional[str] = Field(None, max_length=64)
     cultural_context: Optional[str] = None
     transcript: Optional[str] = None
-    product_id: Optional[str] = None
+    product_id: Optional[str] = Field(None, max_length=64)
     featured: Optional[bool] = None
-    seo_title: Optional[str] = None
-    seo_description: Optional[str] = None
+    seo_title: Optional[str] = Field(None, max_length=255)
+    seo_description: Optional[str] = Field(None, max_length=500)
     category_ids: Optional[List[str]] = None
     language_ids: Optional[List[str]] = None
 

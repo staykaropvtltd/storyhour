@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import require_active_user
 from app.schemas.library import UserLibraryResponse
 from app.schemas.user import AuthenticatedUser
 from app.services.library_service import LibraryService
@@ -21,7 +21,7 @@ library_service = LibraryService()
 def get_my_library(
     skip: int = Query(0, ge=0, description="Pagination offset"),
     limit: int = Query(50, ge=1, le=100, description="Pagination limit"),
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_active_user),
     db: Session = Depends(get_db),
 ) -> UserLibraryResponse:
     """

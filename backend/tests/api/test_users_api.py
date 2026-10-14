@@ -15,6 +15,18 @@ def _create_profile(
     subscription_tier="standard",
     is_active=True,
 ):
+    profile = api_db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    if profile:
+        profile.email = email
+        profile.full_name = full_name
+        profile.avatar_url = avatar_url
+        profile.subscription_tier = subscription_tier
+        profile.is_active = is_active
+        profile.is_deleted = False
+        api_db.commit()
+        api_db.refresh(profile)
+        return profile
+
     profile = UserProfile(
         user_id=user_id,
         email=email,
@@ -50,23 +62,22 @@ def test_get_me_returns_local_profile(api_client, api_db, valid_token):
     assert data["role"] == "Customer"
 
 
-def test_get_me_without_local_profile_uses_auth_metadata(
+def test_get_me_without_local_profile_returns_404(
     api_client,
+    api_db,
     valid_token,
 ):
-    """Existing authentication behavior remains compatible without a local profile."""
+    """Missing profile returns 404 and does not fall back to active user."""
+    api_db.query(UserProfile).filter(UserProfile.user_id == TEST_USER_ID).delete()
+    api_db.commit()
+
     response = api_client.get(
         "/api/me",
         headers={"Authorization": f"Bearer {valid_token}"},
     )
 
-    assert response.status_code == 200
-
-    data = response.json()
-    assert data["id"] == TEST_USER_ID
-    assert data["email"] == TEST_EMAIL
-    assert data["full_name"] == "Adithya Goud"
-    assert data["role"] == "Customer"
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User profile not found"
 
 
 def test_update_me_full_name(api_client, api_db, valid_token):
@@ -143,9 +154,13 @@ def test_update_me_cannot_modify_identity_or_role(
 
 def test_update_me_without_local_profile_returns_404(
     api_client,
+    api_db,
     valid_token,
 ):
     """PATCH requires an existing local UserProfile."""
+    api_db.query(UserProfile).filter(UserProfile.user_id == TEST_USER_ID).delete()
+    api_db.commit()
+
     response = api_client.patch(
         "/api/me",
         headers={"Authorization": f"Bearer {valid_token}"},

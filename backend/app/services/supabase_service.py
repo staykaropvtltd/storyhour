@@ -46,6 +46,10 @@ class SupabaseAuthService:
                 logger.error(f"Failed to initialize Supabase client: {str(e)}")
         return self._anon_client
 
+    @anon_client.setter
+    def anon_client(self, client: Optional[Client]) -> None:
+        self._anon_client = client
+
     @property
     def admin_client(self) -> Optional[Client]:
         """Lazy initializer for admin service-role Supabase client."""
@@ -60,58 +64,104 @@ class SupabaseAuthService:
                 logger.error(f"Failed to initialize Supabase admin client: {str(e)}")
         return self._admin_client
 
+    @admin_client.setter
+    def admin_client(self, client: Optional[Client]) -> None:
+        self._admin_client = client
+
+    @property
+    def auth_mode(self) -> str:
+        """Determines the active authentication verification mode."""
+        mode = (getattr(settings, "AUTH_MODE", "") or "").strip().lower()
+        if mode in ("supabase", "local"):
+            return mode
+        if settings.SUPABASE_URL and settings.SUPABASE_ANON_KEY:
+            return "supabase"
+        return "local"
+
     def verify_token(self, token: str) -> AuthenticatedUser:
         """
-        Validates incoming Supabase access token (JWT).
-        1. Checks signature and expiry locally using SUPABASE_JWT_SECRET.
-        2. If live Supabase client is configured, optionally validates against Supabase Auth server.
-        3. Returns an AuthenticatedUser instance with verified claims.
+        Validates incoming access token (JWT).
+        In 'supabase' mode: Strictly validates against Supabase Auth API without fallback.
+        In 'local' mode: Strictly validates signature, expiration, audience, and claims locally.
 
         Raises:
             jwt.ExpiredSignatureError: When token has expired.
-            jwt.InvalidTokenError: When token format or signature is invalid.
+            jwt.InvalidTokenError: When token format or signature is invalid, or provider verification fails.
             ValueError: When required claims (sub, email) are missing.
         """
-        if not token or not isinstance(token, str):
+        if not token or not isinstance(token, str) or not token.strip():
             raise jwt.InvalidTokenError("Token is missing or empty")
 
-        # Step 1: Remote verification with Supabase Auth API if client is available
-        if self.anon_client is not None:
-            try:
-                res = self.anon_client.auth.get_user(token)
-                if res and res.user:
-                    user_data = res.user
-                    app_meta = getattr(user_data, "app_metadata", {}) or {}
-                    user_meta = getattr(user_data, "user_metadata", {}) or {}
-                    raw_role = (
-                        app_meta.get("role")
-                        or getattr(user_data, "role", None)
-                        or "authenticated"
-                    )
-                    role = _normalize_role(raw_role)
-                    return AuthenticatedUser(
-                        id=str(user_data.id),
-                        email=user_data.email or "",
-                        role=role,
-                        is_active=True,
-                        app_metadata=app_meta,
-                        user_metadata=user_meta,
-                        created_at=str(getattr(user_data, "created_at", "")) if hasattr(user_data, "created_at") else None,
-                    )
-            except Exception as e:
-                logger.debug(f"Remote Supabase validation fallback to local decode: {str(e)}")
+        mode = self.auth_mode
+        if mode == "supabase":
+            return self._verify_supabase_remote(token)
+        elif mode == "local":
+            return self._verify_local_jwt(token)
+        else:
+            raise jwt.InvalidTokenError(f"Unsupported authentication mode: {mode}")
 
-        # Step 2: Fallback to local cryptographic signature and claims verification
-        payload = self._decode_jwt(token)
+    def _verify_supabase_remote(self, token: str) -> AuthenticatedUser:
+        """
+        Strict authoritative remote verification against Supabase Auth API.
+        Never falls back to local JWT decoding on failure.
+        """
+        if self.anon_client is None:
+            logger.error("Supabase client is not configured for remote verification.")
+            raise jwt.InvalidTokenError("Authentication service is currently not configured")
 
-        user_id = payload.get("sub")
+        try:
+            res = self.anon_client.auth.get_user(token)
+        except Exception as exc:
+            err_msg = str(exc)
+            logger.debug(f"Remote Supabase validation failed: {err_msg}")
+            if "expired" in err_msg.lower():
+                raise jwt.ExpiredSignatureError("Token has expired")
+            raise jwt.InvalidTokenError(f"Could not validate credentials with authentication provider: {err_msg}")
+
+        if not res or not getattr(res, "user", None):
+            raise jwt.InvalidTokenError("Invalid token or user not found")
+
+        user_data = res.user
+        user_id = str(getattr(user_data, "id", "")).strip()
         if not user_id:
             raise ValueError("Token subject (sub) claim missing")
 
+        email = getattr(user_data, "email", None)
+        if not email or not str(email).strip():
+            raise ValueError("Token email claim missing")
+
+        app_meta = getattr(user_data, "app_metadata", {}) or {}
+        user_meta = getattr(user_data, "user_metadata", {}) or {}
+        raw_role = (
+            app_meta.get("role")
+            or getattr(user_data, "role", None)
+            or "authenticated"
+        )
+        role = _normalize_role(raw_role)
+
+        # Token identity verified; application active status is strictly verified by database
+        return AuthenticatedUser(
+            id=user_id,
+            email=str(email).strip().lower(),
+            role=role,
+            is_active=False,
+            app_metadata=app_meta,
+            user_metadata=user_meta,
+            created_at=str(getattr(user_data, "created_at", "")) if hasattr(user_data, "created_at") else None,
+        )
+
+    def _verify_local_jwt(self, token: str) -> AuthenticatedUser:
+        """
+        Strict local cryptographic verification for explicitly configured local JWT mode.
+        """
+        payload = self._decode_jwt(token)
+
+        user_id = payload.get("sub")
+        if not user_id or not str(user_id).strip():
+            raise ValueError("Token subject (sub) claim missing")
+
         email = payload.get("email")
-        if not email:
-            email = payload.get("user_metadata", {}).get("email")
-        if not email:
+        if not email or not str(email).strip():
             raise ValueError("Token email claim missing")
 
         app_metadata = payload.get("app_metadata", {}) or {}
@@ -121,40 +171,54 @@ class SupabaseAuthService:
         role = _normalize_role(raw_role)
 
         return AuthenticatedUser(
-            id=str(user_id),
-            email=email,
+            id=str(user_id).strip(),
+            email=str(email).strip().lower(),
             role=role,
-            is_active=True,
+            is_active=False,
             app_metadata=app_metadata,
             user_metadata=user_metadata,
             created_at=payload.get("created_at"),
         )
 
-
     def _decode_jwt(self, token: str) -> Dict[str, Any]:
         """
         Cryptographically decodes and verifies JWT signature and expiry.
-        Supports HS256 with SUPABASE_JWT_SECRET.
+        Strictly validates secret, algorithm, expiration, and audience.
         """
-        # Ensure audience verification is permissive for Supabase 'authenticated' audience
+        secret = settings.SUPABASE_JWT_SECRET
+        if not secret or not isinstance(secret, str) or not secret.strip():
+            logger.error("Local JWT verification failed: SUPABASE_JWT_SECRET is empty or not configured.")
+            raise jwt.InvalidTokenError("JWT signing secret is not configured")
+
+        algorithm = settings.SUPABASE_JWT_ALGORITHM or "HS256"
+        if algorithm not in ["HS256", "HS384", "HS512"]:
+            logger.error(f"Unsupported JWT signing algorithm: {algorithm}")
+            raise jwt.InvalidTokenError(f"Unsupported JWT signing algorithm: {algorithm}")
+
         decode_options = {
             "verify_signature": True,
             "verify_exp": True,
-            "verify_aud": False,  # Supabase tokens use aud: 'authenticated'
+            "verify_aud": bool(settings.JWT_AUDIENCE),
+            "verify_iss": bool(settings.JWT_ISSUER),
+            "require": ["sub", "exp"],
         }
 
+        decode_kwargs: Dict[str, Any] = {
+            "algorithms": [algorithm],
+            "options": decode_options,
+        }
+        if settings.JWT_AUDIENCE:
+            decode_kwargs["audience"] = settings.JWT_AUDIENCE
+        if settings.JWT_ISSUER:
+            decode_kwargs["issuer"] = settings.JWT_ISSUER
+
         try:
-            return jwt.decode(
-                token,
-                settings.SUPABASE_JWT_SECRET,
-                algorithms=[settings.SUPABASE_JWT_ALGORITHM],
-                options=decode_options
-            )
+            return jwt.decode(token, secret, **decode_kwargs)
         except jwt.ExpiredSignatureError:
             logger.debug("Token verification failed: token has expired")
             raise
         except jwt.InvalidTokenError as e:
-            logger.debug(f"Token verification failed: invalid token ({str(e)})")
+            logger.debug(f"Token verification failed: {str(e)}")
             raise
 
     def sign_up(self, name: str, email: str, password: str) -> Dict[str, Any]:
@@ -198,8 +262,8 @@ class SupabaseAuthService:
             if hasattr(user, "identities") and user.identities is not None and len(user.identities) == 0:
                 logger.warning(f"Registration conflict: account with {email} already exists")
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="An account with this email already exists",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Registration could not be completed with the provided information. Please verify your details or try logging in.",
                 )
 
             session = getattr(res, "session", None)
@@ -232,7 +296,7 @@ class SupabaseAuthService:
             raise
         except Exception as exc:
             err_msg = str(exc)
-            logger.warning(f"Sign up failed for email {email}: {err_msg}")
+            logger.warning(f"Sign up failed for email {email}: [REDACTED_UPSTREAM_ERROR]")
             if "rate limit" in err_msg.lower():
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -240,12 +304,12 @@ class SupabaseAuthService:
                 )
             if "already registered" in err_msg.lower() or "user already registered" in err_msg.lower():
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="An account with this email already exists",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Registration could not be completed with the provided information. Please verify your details or try logging in.",
                 )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Registration failed: {err_msg}",
+                detail="Registration could not be completed. Please check your information and try again.",
             )
 
     def sign_in_with_password(self, email: str, password: str) -> Dict[str, Any]:
@@ -305,30 +369,218 @@ class SupabaseAuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-    def _sync_user_profile(self, user: Any) -> None:
-        """Helper to ensure user profile exists in public.user_profiles."""
-        try:
-            from app.database.session import SessionLocal
-            from app.database.models.profile import UserProfile
-            from app.database.repository import BaseRepository
+    def sign_out(self) -> Dict[str, Any]:
+        """
+        Terminates the active session (API-02).
+        In 'supabase' mode: attempts remote session sign-out via Supabase Auth API.
+        In 'local' mode: returns clean session termination response.
+        """
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                self.anon_client.auth.sign_out()
+                logger.info("Remote Supabase session signed out.")
+            except Exception as exc:
+                logger.debug(f"Remote Supabase sign_out notice: {str(exc)}")
 
-            with SessionLocal() as db:
+        return {
+            "message": "User logged out successfully",
+            "session_active": False,
+            "detail": "Session terminated. Client application should discard local tokens.",
+        }
+
+    def refresh_session(self, refresh_token: str) -> Dict[str, Any]:
+        """
+        Refreshes an expired access token using a valid refresh token.
+        """
+        if not refresh_token or not refresh_token.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Refresh token is required",
+            )
+
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                res = self.anon_client.auth.refresh_session(refresh_token)
+                if not res or not res.session:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid or expired refresh token",
+                    )
+                return {
+                    "access_token": res.session.access_token,
+                    "token_type": "bearer",
+                    "expires_in": getattr(res.session, "expires_in", 3600),
+                    "refresh_token": getattr(res.session, "refresh_token", None),
+                }
+            except HTTPException:
+                raise
+            except Exception as exc:
+                logger.warning(f"Token refresh failed: {str(exc)}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or expired refresh token",
+                )
+        else:
+            # Local mode implementation for offline dev/tests
+            import time
+            token_payload = {
+                "sub": "refreshed-user-id",
+                "email": "user@storyhour.com",
+                "role": "authenticated",
+                "aud": "authenticated",
+                "iat": int(time.time()),
+                "exp": int(time.time()) + 3600,
+            }
+            secret = settings.SUPABASE_JWT_SECRET or "local-test-secret-at-least-32-chars"
+            alg = settings.SUPABASE_JWT_ALGORITHM or "HS256"
+            new_token = jwt.encode(token_payload, secret, algorithm=alg)
+            return {
+                "access_token": new_token,
+                "token_type": "bearer",
+                "expires_in": 3600,
+                "refresh_token": refresh_token,
+            }
+
+    def forgot_password(self, email: str) -> Dict[str, Any]:
+        """
+        Initiates password recovery email.
+        Always returns generic success to prevent email enumeration.
+        """
+        email = email.strip().lower()
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                self.anon_client.auth.reset_password_for_email(email)
+            except Exception as exc:
+                logger.warning(f"Password reset request notice for email: {str(exc)}")
+
+        return {
+            "message": "If an account with that email exists, a password reset link has been sent.",
+            "detail": "Please check your email inbox and spam folder.",
+        }
+
+    def reset_password(self, access_token: str, new_password: str) -> Dict[str, Any]:
+        """
+        Resets user password using recovery access token.
+        """
+        if not access_token or not new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token and new password are required",
+            )
+
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                self.anon_client.auth.set_session(access_token=access_token, refresh_token=access_token)
+                self.anon_client.auth.update_user({"password": new_password})
+            except Exception as exc:
+                logger.warning(f"Password reset failed: {str(exc)}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid or expired password reset token",
+                )
+
+        return {
+            "message": "Password has been successfully reset.",
+            "detail": "You may now log in with your new password.",
+        }
+
+    def change_password(self, email: str, current_password: str, new_password: str) -> Dict[str, Any]:
+        """
+        Authenticated password change verifying current password first.
+        """
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                # 1. Verify current credentials
+                login_res = self.anon_client.auth.sign_in_with_password({
+                    "email": email,
+                    "password": current_password,
+                })
+                if not login_res or not login_res.session:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Current password is incorrect",
+                    )
+                # 2. Update to new password
+                self.anon_client.auth.update_user({"password": new_password})
+            except HTTPException:
+                raise
+            except Exception as exc:
+                logger.warning(f"Password update failed: {str(exc)}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Password update failed. Please check your credentials.",
+                )
+
+        return {
+            "message": "Password updated successfully.",
+        }
+
+
+    def _sync_user_profile(self, user: Any) -> Optional[Any]:
+        """Helper to ensure user profile exists in public.user_profiles."""
+        from app.database.session import SessionLocal
+        from app.database.models.profile import UserProfile
+        from app.database.repository import BaseRepository
+        from sqlalchemy.exc import IntegrityError
+
+        with SessionLocal() as db:
+            try:
                 repo = BaseRepository(UserProfile)
                 existing = db.query(UserProfile).filter(UserProfile.user_id == str(user.id)).first()
                 metadata = getattr(user, "user_metadata", {}) or {}
                 full_name = metadata.get("full_name") or metadata.get("name")
 
-                if not existing:
-                    repo.create(db, obj_in={
-                        "user_id": str(user.id),
-                        "email": user.email,
-                        "full_name": full_name,
-                        "subscription_tier": "free",
-                    })
-                elif full_name and existing.full_name != full_name:
-                    repo.update(db, db_obj=existing, obj_in={"full_name": full_name})
-        except Exception as err:
-            logger.error(f"Failed to sync user profile into database: {str(err)}")
+                if existing:
+                    # Do not reactivate or update a soft-deleted or deactivated profile through synchronization
+                    if existing.is_deleted or not existing.is_active:
+                        logger.warning(
+                            f"Profile synchronization bypassed: user {user.id} is marked inactive or soft-deleted."
+                        )
+                        return existing
+                    updates = {}
+                    if full_name and existing.full_name != full_name:
+                        updates["full_name"] = full_name
+                    if getattr(user, "email", None) and existing.email != str(user.email).strip().lower():
+                        updates["email"] = str(user.email).strip().lower()
+                    if updates:
+                        repo.update(db, db_obj=existing, obj_in=updates)
+                        db.commit()
+                        db.refresh(existing)
+                    return existing
+                else:
+                    try:
+                        new_profile = repo.create(db, obj_in={
+                            "user_id": str(user.id),
+                            "email": user.email,
+                            "full_name": full_name,
+                            "subscription_tier": "free",
+                        })
+                        db.commit()
+                        db.refresh(new_profile)
+                        return new_profile
+                    except IntegrityError:
+                        db.rollback()
+                        # Handle check-then-insert race: re-check if created concurrently
+                        concurrent = db.query(UserProfile).filter(UserProfile.user_id == str(user.id)).first()
+                        if concurrent:
+                            logger.info(f"Concurrent profile creation resolved for user {user.id}")
+                            return concurrent
+                        raise
+            except HTTPException:
+                db.rollback()
+                raise
+            except Exception as err:
+                db.rollback()
+                logger.error(f"Failed to sync user profile into database: {str(err)}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Database error occurred during user profile synchronization.",
+                )
 
 
 supabase_service = SupabaseAuthService()

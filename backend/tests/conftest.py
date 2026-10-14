@@ -8,11 +8,22 @@ from app.config import settings
 from app.main import app
 
 
+@pytest.fixture(autouse=True)
+def configure_test_auth_mode(monkeypatch):
+    """Ensure tests default to explicit local JWT mode and enabled rate limiting."""
+    monkeypatch.setattr(settings, "AUTH_MODE", "local")
+    monkeypatch.setattr(settings, "RATE_LIMIT_ENABLED", True)
+
+
 @pytest.fixture
-def client():
-    """TestClient fixture for FastAPI application."""
+def client(db_session, monkeypatch):
+    """TestClient fixture for FastAPI application bound to isolated SQLite db."""
+    from app.database import get_db
+    app.dependency_overrides[get_db] = lambda: db_session
+    monkeypatch.setattr("app.routers.health.check_database_health", lambda: True)
     with TestClient(app) as test_client:
         yield test_client
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -77,10 +88,36 @@ def db_session():
     from app.database.base import Base
     import app.database.models  # noqa: F401
 
-    test_engine = create_engine("sqlite:///:memory:", echo=False)
+    from sqlalchemy import create_engine, event
+    from sqlalchemy.pool import StaticPool
+    test_engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
+
+    @event.listens_for(test_engine, "connect")
+    def _set_sqlite_foreign_keys(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     Base.metadata.create_all(bind=test_engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
     db = TestingSessionLocal()
+    from app.database.models.profile import UserProfile
+    test_user = UserProfile(
+        user_id="d486d34e-0a56-4293-85f2-2b6b15801c80",
+        email="storyteller@storyhour.com",
+        full_name="Adithya Goud",
+        subscription_tier="free",
+        is_active=True,
+        is_deleted=False,
+    )
+    db.add(test_user)
+    db.commit()
+
     try:
         yield db
     finally:

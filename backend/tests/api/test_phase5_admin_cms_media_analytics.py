@@ -365,7 +365,7 @@ def test_contact_submissions_admin_management(api_client, api_db, admin_headers)
         json={"status": "invalid_status_xyz"},
         headers=admin_headers,
     )
-    assert bad_patch.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert bad_patch.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
     # Admin updates status
     patch_res = api_client.patch(
@@ -454,13 +454,13 @@ def test_analytics_ingestion_and_privacy_filtering(api_client, api_db, admin_hea
         "/api/v1/analytics/events",
         json={"event_type": "unauthorized_custom_event", "properties": {}},
     )
-    assert bad_type_res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert bad_type_res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
     oversized_res = api_client.post(
         "/api/v1/analytics/events",
         json={"event_type": "story_view", "properties": {f"key_{i}": i for i in range(55)}},
     )
-    assert oversized_res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert oversized_res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
     # 2. Anonymous Telemetry Ingestion with nested sensitive keys to sanitize
     nested_payload = {

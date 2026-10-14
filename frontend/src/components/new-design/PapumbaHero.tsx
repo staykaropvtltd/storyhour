@@ -2,20 +2,40 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Headphones, Play, ArrowDown } from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
 import { STORIES } from "@/data/storyhour-data";
+import { useCmsContent } from "@/lib/use-cms-content";
 
 import InteractiveKrishnaCharacter from "./InteractiveKrishnaCharacter";
 
 export default function PapumbaHero() {
   const { playStory, isPlaying, togglePlay } = useAudio();
+  const { homepage, stories } = useCmsContent();
   const heroRef = useRef<HTMLDivElement>(null);
 
+  const headline = homepage?.heroHeadline || "the magic storytelling world for kids";
+  const subheadline =
+    homepage?.heroSubheadline ||
+    "trusted by families for calm, screen-free indian audiobooks & epics";
+  const ctaText = homepage?.heroCtaText || "Explore Audiobooks";
+  const ctaDestination = homepage?.heroCtaDestination || "/stories";
+
   const handleStartListening = () => {
-    if (STORIES && STORIES.length > 0) {
-      playStory(STORIES[0]);
-      if (!isPlaying) togglePlay();
+    if (isPlaying) {
+      togglePlay();
+    } else {
+      if (homepage?.featuredStoryId && stories && stories.length > 0) {
+        const featured = stories.find((s) => s.id === homepage.featuredStoryId);
+        if (featured) {
+          playStory(featured as any);
+          return;
+        }
+      }
+      if (STORIES && STORIES.length > 0) {
+        playStory(STORIES[0]);
+      }
     }
   };
 
@@ -52,21 +72,19 @@ export default function PapumbaHero() {
 
       {/* 2. Central Composition Zone (Untitled UI Component Hierarchy) */}
       <div className="relative z-20 flex flex-col items-center text-center max-w-[620px] md:max-w-[720px] lg:max-w-[800px] xl:max-w-[840px] px-4 mt-4 sm:mt-10 lg:mt-12">
-        {/* Main Display Headline (Untitled UI Display Typography + Papumba Scale, 2 Clean Lines) */}
-        <h1 className="text-[2.8rem] sm:text-[4rem] md:text-[5.2rem] lg:text-[6.2rem] xl:text-[7rem] font-extrabold text-white tracking-[-0.035em] leading-[0.96] drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)] lowercase select-none">
-          the magic storytelling
-          <br />
-          world for kids
+        {/* Main Display Headline */}
+        <h1 className="text-[clamp(2.2rem,9.5vw,2.8rem)] sm:text-[4rem] md:text-[5.2rem] lg:text-[6.2rem] xl:text-[7rem] font-extrabold text-white tracking-[-0.035em] leading-[0.96] drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)] lowercase select-none">
+          {headline}
         </h1>
 
-        {/* Supporting Statement (Untitled UI Text lg/xl) */}
+        {/* Supporting Statement */}
         <p className="text-white font-medium text-base sm:text-lg md:text-[1.25rem] mt-3.5 sm:mt-4 max-w-lg drop-shadow-[0_1px_4px_rgba(0,0,0,0.2)] lowercase leading-snug">
-          trusted by families for calm, screen-free indian audiobooks &amp; epics
+          {subheadline}
         </p>
 
-        {/* Button Group (Untitled UI Button Group Component) */}
+        {/* Button Group */}
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-6 sm:mt-7">
-          {/* Primary Button (Untitled UI Button - Primary White) */}
+          {/* Primary Button */}
           <button
             onClick={handleStartListening}
             className="group inline-flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3 rounded-full bg-white text-gray-900 hover:bg-gray-50 font-semibold text-sm sm:text-base shadow-sm border border-gray-200 transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer focus:outline-none focus:ring-4 focus:ring-white/40"
@@ -76,14 +94,14 @@ export default function PapumbaHero() {
             <span className="font-bold">{isPlaying ? "Playing Sample..." : "Start Listening Free"}</span>
           </button>
 
-          {/* Secondary Button (Untitled UI Button - Secondary Dark) */}
-          <a
-            href="#audiobooks"
+          {/* Secondary Button */}
+          <Link
+            href={ctaDestination}
             className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 rounded-full bg-gray-950/85 hover:bg-gray-950 backdrop-blur-sm text-white font-semibold text-sm sm:text-base shadow-sm border border-white/20 transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer focus:outline-none focus:ring-4 focus:ring-gray-900/30"
           >
             <Play className="w-4 h-4 fill-white text-white" />
-            <span className="font-bold">Explore Audiobooks</span>
-          </a>
+            <span className="font-bold">{ctaText}</span>
+          </Link>
         </div>
       </div>
 

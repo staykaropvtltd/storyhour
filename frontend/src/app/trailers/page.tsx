@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { X } from "lucide-react";
+import { X, Clock } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import RollingList, { TrailerItem } from "@/components/ui/rolling-list";
@@ -205,15 +205,35 @@ export default function TrailersPage() {
               </button>
             </div>
 
-            {/* Video Player Embed */}
+            {/* Video Player Embed or Coming Soon Card */}
             <div className="relative aspect-video w-full bg-black">
-              <iframe
-                src={`https://www.youtube.com/embed/${selectedTrailer.videoUrl}?autoplay=1&rel=0`}
-                title={selectedTrailer.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="w-full h-full border-0"
-              />
+              {selectedTrailer.videoUrl ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${selectedTrailer.videoUrl}?autoplay=1&rel=0`}
+                  title={selectedTrailer.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                  className="w-full h-full border-0"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#1A1816] flex flex-col items-center justify-center p-8 text-center">
+                  <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-3 text-[#C9281D]">
+                    <Clock className="w-7 h-7" />
+                  </div>
+                  <span className="font-mono text-xs uppercase tracking-widest text-[#C9281D] font-bold">
+                    Archival Production
+                  </span>
+                  <h4 className="mt-2 font-serif text-xl sm:text-2xl text-white font-normal">
+                    Trailer Coming Soon
+                  </h4>
+                  <p className="mt-2 text-sm text-white/70 max-w-md font-sans leading-relaxed">
+                    {selectedTrailer.description ||
+                      "Written by teenagers and produced as an audiobook across English, Hindi & Telugu. Production trailer premiere is coming soon."}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

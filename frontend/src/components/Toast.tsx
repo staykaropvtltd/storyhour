@@ -2,19 +2,39 @@
 
 import React from "react";
 import { useLibraryCart } from "@/context/LibraryCartContext";
-import { Sparkles } from "lucide-react";
+import { X } from "lucide-react";
 
 export default function Toast() {
-  const { toastMessage } = useLibraryCart();
+  const { toastMessage, dismissToast } = useLibraryCart();
 
   if (!toastMessage) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#0f0f0f] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10 animate-fade-in text-sm font-sans font-medium">
-      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#DE3124] to-[#C9281D] flex items-center justify-center flex-shrink-0 shadow-[0_2px_8px_rgba(201,40,29,0.4)]">
-        <Sparkles className="w-3.5 h-3.5 text-white" />
+    <aside
+      aria-live="polite"
+      aria-atomic="true"
+      className="fixed bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none max-w-[92vw] sm:max-w-lg"
+    >
+      <div
+        onClick={dismissToast}
+        className="pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#141414]/95 text-white shadow-[0_12px_36px_rgba(0,0,0,0.3)] border border-white/10 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-[#1a1a1a] cursor-pointer animate-in fade-in slide-in-from-bottom-2 select-none"
+      >
+        <span className="w-2 h-2 rounded-full bg-[#DE3124] shrink-0" aria-hidden="true" />
+        <span className="text-[13px] font-medium text-white/95 truncate">
+          {toastMessage}
+        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            dismissToast();
+          }}
+          className="ml-1 p-0.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+          aria-label="Close notification"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
-      <span>{toastMessage}</span>
-    </div>
+    </aside>
   );
 }

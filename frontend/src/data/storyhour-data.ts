@@ -12,7 +12,8 @@ export interface Story {
   durationMinutes: number;
   coverImage: string;
   audioPreviewUrl: string; // YouTube embed or audio stream
-  sampleAudioAudioSrc?: string; // Direct audio fallback
+  sampleAudioSrc?: string; // Direct audio fallback
+  sampleAudioAudioSrc?: string; // Alias for backwards compatibility
   chaptersCount: number;
   description: string;
   featured?: boolean;
@@ -149,11 +150,11 @@ export const STORIES: Story[] = [
     audience: "Children (5-8)",
     category: "Wisdom & Bravery",
     format: "Puppet Stories & Skits",
-    duration: "24m",
-    durationMinutes: 24,
+    duration: "1h 45m",
+    durationMinutes: 105,
     coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/Hanuman-2-1024x683.jpg",
     audioPreviewUrl: "https://www.youtube.com/embed/vcZeX0jPYg4?autoplay=1",
-    chaptersCount: 3,
+    chaptersCount: 12,
     description: "Discover how Hanuman conquered doubt and giant sea demons to reach Lanka, teaching children that quiet devotion and purpose can cross any ocean.",
     featured: false,
     culturalNote: "Accompanied by traditional live puppet gestures and percussive rhythm."
@@ -168,11 +169,11 @@ export const STORIES: Story[] = [
     audience: "Children (5-8)",
     category: "Folk Tales",
     format: "Audiobook",
-    duration: "16m",
-    durationMinutes: 16,
+    duration: "48m",
+    durationMinutes: 48,
     coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/Grand-Finale-5-scaled.jpg",
     audioPreviewUrl: "https://www.youtube.com/embed/1otr4iUMGbU?autoplay=1",
-    chaptersCount: 2,
+    chaptersCount: 6,
     description: "When the proud king of the jungle demands daily sacrifice, a tiny rabbit uses intellect and the illusion of a well to save every forest creature.",
     featured: false,
     culturalNote: "From ancient India's premier compendium of moral and political fables."
@@ -206,7 +207,7 @@ export const PRODUCTS: Product[] = [
     nativeTitle: "प्राचीन भारतीय महाकाव्य",
     language: "Hindi",
     price: 74.99,
-    currency: "$",
+    currency: "£",
     coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.30.26.jpeg",
     format: "Complete 42-Chapter Digital Audiobook",
     badge: "Bestseller",
@@ -220,7 +221,7 @@ export const PRODUCTS: Product[] = [
     nativeTitle: "An Ancient Indian Epic",
     language: "English",
     price: 84.99,
-    currency: "$",
+    currency: "£",
     coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.28.53.jpeg",
     format: "Complete 40-Chapter Digital Audiobook",
     badge: "Signature Release",
@@ -234,7 +235,7 @@ export const PRODUCTS: Product[] = [
     nativeTitle: "శ్రీరామాయణం ప్రాచీన కావ్యం",
     language: "Telugu",
     price: 64.99,
-    currency: "$",
+    currency: "£",
     coverImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.28.56.jpeg",
     format: "Complete 38-Chapter Digital Audiobook",
     badge: "Popular in Telugu Diaspora",
@@ -253,7 +254,7 @@ export const STORYTELLERS: Storyteller[] = [
     bio: "With decades of theatrical performance, puppet storytelling, and cultural education across India and the United Kingdom, bringing epic mythology and oral heritage to young minds through authentic voice modulation and physical theatre.",
     portraitImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.23.29-1.jpeg",
     performanceImage: "https://storyhour.co.uk/wp-content/uploads/2026/01/WhatsApp-Image-2026-01-19-at-17.23.21.jpeg",
-    connectedStoryTitle: "Ramayana Epic Triology"
+    connectedStoryTitle: "Ramayana Epic Trilogy"
   },
   {
     id: "storyteller-2",

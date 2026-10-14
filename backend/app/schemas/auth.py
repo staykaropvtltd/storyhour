@@ -9,12 +9,14 @@ class LoginRequest(BaseModel):
     """
     email: EmailStr = Field(
         ...,
+        max_length=255,
         description="User login email address",
         validation_alias=AliasChoices("email", "email_id", "email id", "emailId", "mail"),
     )
     password: str = Field(
         ...,
         min_length=1,
+        max_length=128,
         description="User password",
         validation_alias=AliasChoices("password", "Password", "pass"),
     )
@@ -84,6 +86,7 @@ class SignUpRequest(BaseModel):
     name: str = Field(
         ...,
         min_length=1,
+        max_length=255,
         description="User's full name (Name:)",
         validation_alias=AliasChoices(
             "name",
@@ -94,6 +97,7 @@ class SignUpRequest(BaseModel):
     )
     email: EmailStr = Field(
         ...,
+        max_length=255,
         description="User's email id (email id :)",
         validation_alias=AliasChoices(
             "email",
@@ -111,6 +115,7 @@ class SignUpRequest(BaseModel):
     password: str = Field(
         ...,
         min_length=6,
+        max_length=128,
         description="User password (password :)",
         validation_alias=AliasChoices(
             "password",
@@ -123,6 +128,7 @@ class SignUpRequest(BaseModel):
     confirm_password: str = Field(
         ...,
         min_length=6,
+        max_length=128,
         description="Confirmation password (confirm the password :)",
         validation_alias=AliasChoices(
             "confirm_password",
@@ -188,4 +194,71 @@ class SignUpResponse(BaseModel):
     user: Dict[str, Any]
 
     model_config = ConfigDict(extra="ignore")
+
+
+class LogoutResponse(BaseModel):
+    """Response returned upon user logout (API-02)."""
+    message: str = "User logged out successfully"
+    session_active: bool = False
+    detail: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class RefreshTokenRequest(BaseModel):
+    """Request payload to refresh expired access tokens."""
+    refresh_token: str = Field(..., min_length=1, description="Valid Supabase refresh token")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class RefreshTokenResponse(BaseModel):
+    """Response returned upon successful token refresh."""
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: Optional[int] = 3600
+    refresh_token: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Request payload to initiate password reset link email."""
+    email: EmailStr = Field(..., max_length=255, description="Registered user email address")
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v = v.strip().lower()
+            if not v:
+                raise ValueError("Email cannot be empty or whitespace")
+        return v
+
+
+class ResetPasswordRequest(BaseModel):
+    """Request payload to set new password using password recovery token."""
+    access_token: str = Field(..., min_length=1, description="Recovery access token received via email")
+    new_password: str = Field(..., min_length=6, max_length=128, description="New secure password")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ChangePasswordRequest(BaseModel):
+    """Request payload for authenticated password change."""
+    current_password: str = Field(..., min_length=1, max_length=128, description="Current password")
+    new_password: str = Field(..., min_length=6, max_length=128, description="New password")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class MessageResponse(BaseModel):
+    """Standard message response for account operations."""
+    message: str
+    detail: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
+
 

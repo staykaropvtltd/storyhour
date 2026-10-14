@@ -2,9 +2,10 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: path.resolve(__dirname),
+  outputFileTracingRoot: path.resolve(process.cwd()),
+  poweredByHeader: false,
   images: {
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",
@@ -21,7 +22,77 @@ const nextConfig: NextConfig = {
         hostname: "img.fablecdn.net",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        pathname: "/**",
+      },
     ],
+  },
+  async headers() {
+    const isProd = process.env.NODE_ENV === "production";
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          ...(isProd
+            ? [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=31536000",
+                },
+              ]
+            : []),
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "base-uri 'self'",
+              "object-src 'none'",
+              "frame-ancestors 'none'",
+              `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} https://www.youtube.com https://www.youtube-nocookie.com`,
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com data:",
+              "img-src 'self' data: blob: https://storyhour.co.uk https://images.unsplash.com https://img.fablecdn.net https://i.ytimg.com",
+              "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+              "media-src 'self' data: blob: https://storyhour.co.uk",
+              `connect-src 'self'${isProd ? "" : " ws: wss:"} https://storyhour.co.uk https://*.supabase.co https://api.resend.com`,
+            ].join("; "),
+          },
+        ],
+      },
+      // Prevent search engines from indexing admin pages
+      {
+        source: "/admin/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        ],
+      },
+      // Prevent search engines from indexing API routes
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [
@@ -44,6 +115,11 @@ const nextConfig: NextConfig = {
         source: "/books",
         destination: "/stories",
         permanent: true,
+      },
+      {
+        source: "/new-design",
+        destination: "/",
+        permanent: false,
       },
     ];
   },

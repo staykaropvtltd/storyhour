@@ -1,0 +1,138 @@
+"use client";
+
+import React, { useState } from "react";
+import Image from "next/image";
+import { useAdminCms } from "@/context/AdminCmsContext";
+import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+
+export default function AdminLoginGate({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, login, loading, authChecked } = useAdminCms();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError(null);
+
+    const result = await login(email, password);
+    if (!result.success) {
+      setLoginError(result.error || "Invalid credentials. Try again.");
+    }
+    setIsLoggingIn(false);
+  };
+
+  // While initially checking session authentication, show a clean indicator
+  if (!authChecked && loading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F3] flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 rounded-xl bg-[#C9281D] flex items-center justify-center mb-3">
+          <Lock className="w-5 h-5 text-white animate-pulse" />
+        </div>
+        <p className="text-xs font-semibold text-[#696572]">Verifying session…</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) return <>{children}</>;
+
+  return (
+    <div className="min-h-screen bg-[#FAF8F3] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo & Brand */}
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="relative h-12 w-48 sm:h-14 sm:w-56 mb-4">
+            <Image
+              src="/tp-logo.png"
+              alt="StoryHour Logo"
+              fill
+              priority
+              className="object-contain"
+              sizes="(max-width: 640px) 192px, 224px"
+            />
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C9281D]/10 text-[#C9281D] text-xs font-semibold mb-2">
+            <Lock className="w-3.5 h-3.5" />
+            <span>Admin Console</span>
+          </div>
+          <p className="text-sm text-[#696572]">Sign in to manage your content</p>
+        </div>
+
+        {/* Login Card */}
+        <div className="bg-white border border-[#E8E4DC] rounded-2xl shadow-sm p-8">
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-bold text-[#0F0F0F] mb-1.5">
+                Admin Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="Enter admin email"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-sm text-[#0F0F0F] placeholder-[#696572] focus:outline-none focus:border-[#C9281D] transition"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-bold text-[#0F0F0F] mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter admin password"
+                  className="w-full px-4 py-2.5 pr-11 rounded-xl bg-[#FAF8F3] border border-[#E8E4DC] text-sm text-[#0F0F0F] placeholder-[#696572] focus:outline-none focus:border-[#C9281D] transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#696572] hover:text-[#0F0F0F] transition"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {loginError && (
+              <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold">
+                {loginError}
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#C9281D] hover:bg-[#B52218] text-white text-sm font-bold transition active:scale-[0.98] disabled:opacity-60"
+            >
+              {isLoggingIn ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Signing in…</span>
+                </>
+              ) : (
+                <span>Sign in to CMS</span>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-[11px] text-[#696572] mt-6 font-mono">
+            StoryHour Publishing Console 2.0
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

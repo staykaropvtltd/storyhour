@@ -119,7 +119,7 @@ def test_negative_position_rejected(api_client, api_db, make_token):
         json={"story_id": story.id, "chapter_id": ch.id, "position_seconds": -15},
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 def test_completion_threshold_auto_marking(api_client, api_db, make_token):

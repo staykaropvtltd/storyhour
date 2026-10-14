@@ -2,8 +2,11 @@ from typing import Callable, List, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
+from sqlalchemy.orm import Session
 
 from app.core.logging import logger
+from app.database import get_db
+from app.database.models.profile import UserProfile
 from app.schemas.user import AuthenticatedUser
 from app.services.supabase_service import supabase_service
 
@@ -56,19 +59,51 @@ def get_current_user(
 
 def require_active_user(
     current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> AuthenticatedUser:
     """
-    Enforces that the authenticated user account is active.
+    Enforces that the authenticated user account has an active, non-deleted
+    profile in the application database.
 
     Raises:
-        HTTPException: 403 FORBIDDEN if user is deactivated or suspended.
+        HTTPException: 403 FORBIDDEN if user is deactivated, suspended, soft-deleted, or profile is missing.
+        HTTPException: 500 INTERNAL_SERVER_ERROR if database lookup fails.
     """
-    if not current_user.is_active:
+    try:
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+    except Exception as exc:
+        logger.error(f"Database error during account status verification for {current_user.id}: {str(exc)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred while verifying account status.",
+        )
+
+    if profile is None:
+        logger.warning(f"Access denied: No application profile found for user {current_user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account profile not found",
+        )
+
+    if profile.is_deleted:
+        logger.warning(f"Access denied for soft-deleted user: {current_user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account has been deactivated",
+        )
+
+    if not profile.is_active:
         logger.warning(f"Access denied for inactive user: {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user account",
         )
+
+    current_user.is_active = True
     return current_user
 
 

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 export default function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart, cartTotal, cartCount } = useLibraryCart();
+  const { cartItems, updateQuantity, removeFromCart, cartTotal, cartCount, isUserLoggedIn, openAuthModal } = useLibraryCart();
   const router = useRouter();
 
   const subtotal = cartTotal;
@@ -140,6 +140,9 @@ export default function CartPage() {
               <div className="space-y-3.5">
                 {cartItems.map((item: CartItem) => {
                   const isAudio = item.type === "audiobook" || item.id.startsWith("ab-");
+                  const itemPrice = typeof item.price === "number" ? item.price : (item.product?.price ?? 18.5);
+                  const itemImage = item.coverImage || item.product?.coverImage || "/images/ramayana_epic.jpg";
+                  const itemTitle = item.title || item.product?.title || "StoryHour Edition";
                   return (
                     <div
                       key={item.id}
@@ -150,8 +153,8 @@ export default function CartPage() {
                         {/* 3D Visual Box / CD */}
                         <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-[#FAF8F3] border border-black/10 shadow-md">
                           <Image
-                            src={item.coverImage}
-                            alt={item.title}
+                            src={itemImage}
+                            alt={itemTitle}
                             fill
                             className="object-cover"
                             sizes="96px"
@@ -177,7 +180,7 @@ export default function CartPage() {
                           </div>
 
                           <h3 className="font-serif text-base sm:text-lg font-bold text-[#0f0f0f] truncate leading-tight">
-                            {item.title}
+                            {itemTitle}
                           </h3>
 
                           {item.nativeTitle && (
@@ -192,7 +195,7 @@ export default function CartPage() {
 
                           <div className="mt-2 sm:hidden flex items-center justify-between">
                             <span className="font-mono text-base font-extrabold text-[#0f0f0f]">
-                              ${(item.price * item.quantity).toFixed(2)}
+                              £{(itemPrice * item.quantity).toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -205,17 +208,17 @@ export default function CartPage() {
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-[#0f0f0f] flex items-center justify-center shadow-xs transition-transform active:scale-90"
-                            aria-label={`Decrease quantity of ${item.title}`}
+                            aria-label={`Decrease quantity of ${itemTitle}`}
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </button>
-                          <span className="w-9 text-center font-mono text-sm font-bold text-[#0f0f0f]">
+                          <span data-testid="cart-item-qty" className="w-9 text-center font-mono text-sm font-bold text-[#0f0f0f]">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-[#0f0f0f] flex items-center justify-center shadow-xs transition-transform active:scale-90"
-                            aria-label={`Increase quantity of ${item.title}`}
+                            aria-label={`Increase quantity of ${itemTitle}`}
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
@@ -224,11 +227,11 @@ export default function CartPage() {
                         {/* Item Total Price */}
                         <div className="hidden sm:block text-right min-w-[90px]">
                           <span className="font-mono text-lg font-extrabold text-[#0f0f0f] block">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            £{(itemPrice * item.quantity).toFixed(2)}
                           </span>
                           {item.quantity > 1 && (
                             <span className="text-[11px] font-mono text-[#7A756D] block">
-                              ${item.price.toFixed(2)} each
+                              £{itemPrice.toFixed(2)} each
                             </span>
                           )}
                         </div>
@@ -260,7 +263,7 @@ export default function CartPage() {
                   <div className="flex justify-between items-center text-[#5a5a5a]">
                     <span>Items Subtotal ({cartCount})</span>
                     <span className="font-mono font-bold text-[#0f0f0f]">
-                      ${subtotal.toFixed(2)}
+                      £{subtotal.toFixed(2)}
                     </span>
                   </div>
 
@@ -271,13 +274,13 @@ export default function CartPage() {
                         FREE
                       </span>
                     </span>
-                    <span className="font-mono font-bold text-emerald-600">$0.00</span>
+                    <span className="font-mono font-bold text-emerald-600">£0.00</span>
                   </div>
 
                   <div className="flex justify-between items-center text-[#5a5a5a]">
                     <span>Estimated Tax</span>
                     <span className="font-mono font-bold text-[#0f0f0f]">
-                      ${tax.toFixed(2)}
+                      £{tax.toFixed(2)}
                     </span>
                   </div>
 
@@ -285,16 +288,22 @@ export default function CartPage() {
                     <span className="text-base font-extrabold text-[#0f0f0f]">Total</span>
                     <div className="text-right">
                       <span className="font-serif text-3xl font-extrabold text-[#0f0f0f] block leading-none">
-                        ${finalTotal.toFixed(2)}
+                        £{finalTotal.toFixed(2)}
                       </span>
-                      <span className="text-[11px] font-mono text-[#7A756D]">USD · One-time payment</span>
+                      <span className="text-[11px] font-mono text-[#7A756D]">GBP · One-time payment</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Primary CTA */}
                 <button
-                  onClick={() => router.push("/checkout")}
+                  onClick={() => {
+                    if (!isUserLoggedIn()) {
+                      router.push("/login?redirect=/checkout");
+                      return;
+                    }
+                    router.push("/checkout");
+                  }}
                   className="w-full py-4 rounded-full bg-gradient-to-r from-[#DE3124] via-[#C9281D] to-[#991B1B] hover:from-[#E6392D] hover:to-[#B52218] text-white font-extrabold text-base transition-all duration-200 shadow-[0_10px_26px_rgba(201,40,29,0.42)] hover:shadow-[0_14px_32px_rgba(201,40,29,0.55)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer focus:outline-none focus:ring-4 focus:ring-[#C9281D]/30"
                 >
                   <span>Proceed to Checkout</span>

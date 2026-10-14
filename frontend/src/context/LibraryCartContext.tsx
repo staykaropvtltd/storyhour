@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { Product } from "@/data/storyhour-data";
+import { getEditionById } from "@/data/editions-data";
 
 export interface CartItem {
   id: string;
@@ -77,6 +78,9 @@ export interface AddToCartInput {
   format?: string;
   language?: string;
   type?: "book" | "audiobook";
+  slug?: string;
+  description?: string;
+  chaptersCount?: number;
 }
 
 interface LibraryCartContextType {
@@ -84,7 +88,7 @@ interface LibraryCartContextType {
   toggleSaveStory: (storyId: string) => boolean;
   isStorySaved: (storyId: string) => boolean;
   cartItems: CartItem[];
-  addToCart: (item: AddToCartInput | Product, quantity?: number) => void;
+  addToCart: (item: AddToCartInput | Product, quantity?: number) => boolean;
   updateQuantity: (itemId: string, quantity: number) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
@@ -110,6 +114,14 @@ interface LibraryCartContextType {
   setIsCartDrawerOpen: (open: boolean) => void;
   toastMessage: string | null;
   showToast: (msg: string) => void;
+  dismissToast: () => void;
+  isAuthModalOpen: boolean;
+  setIsAuthModalOpen: (open: boolean) => void;
+  authModalTitle: string;
+  authModalDescription: string;
+  openAuthModal: (options?: { title?: string; description?: string; pendingItem?: AddToCartInput | Product }) => void;
+  closeAuthModal: () => void;
+  isUserLoggedIn: () => boolean;
 }
 
 const LibraryCartContext = createContext<LibraryCartContextType | undefined>(undefined);
@@ -120,7 +132,8 @@ const ORDERS_STORAGE_KEY = "storyhour_orders_v2";
 const SAVED_STORIES_KEY = "storyhour_saved_stories_v2";
 
 export function LibraryCartProvider({ children }: { children: React.ReactNode }) {
-  const [savedStoryIds, setSavedStoryIds] = useState<string[]>(["story-1"]);
+  // Saved story ids initializes cleanly as empty array (fixes C-08)
+  const [savedStoryIds, setSavedStoryIds] = useState<string[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [unlockedBookIds, setUnlockedBookIds] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -128,34 +141,138 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalTitle, setAuthModalTitle] = useState<string>("Log in to Shop");
+  const [authModalDescription, setAuthModalDescription] = useState<string>(
+    "Please sign in or create an account to add stories to your cart, unlock editions, and access your digital library."
+  );
+
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Hydrate state from localStorage safely after mount
   useEffect(() => {
     try {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
       if (storedCart) {
-        setCartItems(JSON.parse(storedCart));
+        const parsed = JSON.parse(storedCart);
+        if (Array.isArray(parsed)) {
+          const normalized: CartItem[] = parsed
+            .filter((item) => item && typeof item === "object")
+            .map((item: any) => {
+              const prod = item.product || {};
+              const id = item.id || prod.id || "edition-1";
+              const title = item.title || prod.title || "StoryHour Edition";
+              const coverImage = item.coverImage || prod.coverImage || "/images/ramayana_epic.jpg";
+              const price = typeof item.price === "number" ? item.price : (typeof prod.price === "number" ? prod.price : 18.5);
+              const format = item.format || prod.format || "Digital Collector Edition";
+              const language = item.language || prod.language || "English";
+              const isDigital = item.type === "book" || item.type === "audiobook" || !format.toLowerCase().includes("physical");
+              // Cap digital items at quantity 1
+              const quantity = isDigital ? 1 : Math.min(Math.max(1, Number(item.quantity) || 1), 5);
+              const type = item.type || (id.startsWith("ab-") ? "audiobook" : "book");
+              const authorOrNarrator = item.authorOrNarrator || "StoryHour Ensemble";
+              return {
+                id,
+                title,
+                nativeTitle: item.nativeTitle,
+                subtitle: item.subtitle,
+                authorOrNarrator,
+                coverImage,
+                price,
+                currency: item.currency || prod.currency || "£",
+                format,
+                language,
+                type,
+                quantity,
+                product: {
+                  id,
+                  title,
+                  coverImage,
+                  price,
+                  currency: item.currency || prod.currency || "£",
+                  format,
+                  language,
+                },
+              };
+            });
+          setCartItems(normalized);
+        }
       }
 
-      const storedUnlocked = localStorage.getItem(UNLOCKED_STORAGE_KEY);
-      if (storedUnlocked) {
-        setUnlockedBookIds(JSON.parse(storedUnlocked));
+      const session = localStorage.getItem("storyhour_user_session");
+      if (session) {
+        const storedUnlocked = localStorage.getItem(UNLOCKED_STORAGE_KEY);
+        if (storedUnlocked) {
+          const parsed = JSON.parse(storedUnlocked);
+          if (Array.isArray(parsed)) {
+            setUnlockedBookIds(parsed.filter((id) => typeof id === "string"));
+          }
+        }
+      } else {
+        setUnlockedBookIds([]);
+        localStorage.removeItem(UNLOCKED_STORAGE_KEY);
       }
 
       const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
       if (storedOrders) {
-        setOrders(JSON.parse(storedOrders));
+        const parsedOrders = JSON.parse(storedOrders);
+        if (Array.isArray(parsedOrders)) {
+          const normalizedOrders: Order[] = parsedOrders.map((o: any) => ({
+            ...o,
+            total: typeof o.total === "number" ? o.total : (o.subtotal || 18.5),
+            subtotal: typeof o.subtotal === "number" ? o.subtotal : (o.total || 18.5),
+            tax: typeof o.tax === "number" ? o.tax : 0,
+            items: Array.isArray(o.items)
+              ? o.items.map((it: any) => ({
+                  ...it,
+                  coverImage: it.coverImage || "/images/ramayana_epic.jpg",
+                  title: it.title || "StoryHour Edition",
+                }))
+              : [],
+          }));
+          setOrders(normalizedOrders);
+        }
       }
 
       const storedSaved = localStorage.getItem(SAVED_STORIES_KEY);
       if (storedSaved) {
-        setSavedStoryIds(JSON.parse(storedSaved));
+        const parsedSaved = JSON.parse(storedSaved);
+        if (Array.isArray(parsedSaved)) {
+          setSavedStoryIds(parsedSaved.filter((id) => typeof id === "string"));
+        }
       }
     } catch (e) {
-      console.error("Failed to load StoryHour cart state from localStorage", e);
+      console.warn("Failed to load StoryHour cart state from localStorage", e);
     } finally {
       setIsHydrated(true);
     }
+  }, []);
+
+  // Cross-tab storage synchronization (fixes C-08)
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (!e.key || !e.newValue) return;
+      try {
+        if (e.key === CART_STORAGE_KEY) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) setCartItems(parsed);
+        } else if (e.key === UNLOCKED_STORAGE_KEY) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) setUnlockedBookIds(parsed);
+        } else if (e.key === ORDERS_STORAGE_KEY) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) setOrders(parsed);
+        } else if (e.key === SAVED_STORIES_KEY) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) setSavedStoryIds(parsed);
+        }
+      } catch (err) {
+        console.warn("Cross-tab storage parse error", err);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   // Sync state to localStorage on updates after hydration
@@ -195,58 +312,137 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
     }
   }, [savedStoryIds, isHydrated]);
 
+  // Robust toast manager that resets pending timer on new toast (fixes C-08)
   const showToast = useCallback((msg: string) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
     setToastMessage(msg);
-    setTimeout(() => {
+    toastTimerRef.current = setTimeout(() => {
       setToastMessage(null);
-    }, 3500);
+      toastTimerRef.current = null;
+    }, 3000);
   }, []);
 
+  const dismissToast = useCallback(() => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    setToastMessage(null);
+  }, []);
+
+  // Cleanup toast timer on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  // Pure toggleSaveStory: side-effect outside updater, accurate return value (fixes C-08)
   const toggleSaveStory = (storyId: string): boolean => {
-    let nowSaved = false;
-    setSavedStoryIds((prev) => {
-      if (prev.includes(storyId)) {
-        nowSaved = false;
-        showToast("Story removed from your saved library");
-        return prev.filter((id) => id !== storyId);
-      } else {
-        nowSaved = true;
-        showToast("Story saved to your family library");
-        return [...prev, storyId];
-      }
-    });
-    return nowSaved;
+    const isCurrentlySaved = savedStoryIds.includes(storyId);
+    const nextSaved = !isCurrentlySaved;
+
+    if (nextSaved) {
+      setSavedStoryIds((prev) => Array.from(new Set([...prev, storyId])));
+      showToast("Saved to your library");
+    } else {
+      setSavedStoryIds((prev) => prev.filter((id) => id !== storyId));
+      showToast("Removed from your library");
+    }
+    return nextSaved;
   };
 
   const isStorySaved = (storyId: string) => savedStoryIds.includes(storyId);
 
-  const addToCart = (item: AddToCartInput | Product, quantity: number = 1) => {
-    const isProduct = "currency" in item && !("type" in item);
-    const id = item.id;
-    const title = item.title;
-    const price = item.price;
-    const coverImage = item.coverImage;
-    const currency = item.currency || "$";
-    const format = item.format || "Hardcover Edition";
-    const language = item.language || "English";
-    const type: "book" | "audiobook" = (item as AddToCartInput).type || (id.startsWith("ab-") ? "audiobook" : "book");
-    const authorOrNarrator = (item as AddToCartInput).authorOrNarrator || "StoryHour Ensemble";
-    const nativeTitle = item.nativeTitle;
-    const subtitle = (item as AddToCartInput).subtitle;
+  const isUserLoggedIn = useCallback((): boolean => {
+    if (typeof window === "undefined") return false;
+    try {
+      const session = localStorage.getItem("storyhour_user_session");
+      if (!session) return false;
+      const parsed = JSON.parse(session);
+      return !!parsed && !!(parsed.email || parsed.token || parsed.name);
+    } catch {
+      return false;
+    }
+  }, []);
 
-    setCartItems((prev) => {
-      const existingIndex = prev.findIndex((ci) => ci.id === id);
-      if (existingIndex > -1) {
-        const updated = [...prev];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + quantity,
-        };
-        return updated;
+  const redirectToLogin = useCallback((redirectPath?: string, pendingItem?: AddToCartInput | Product) => {
+    if (typeof window !== "undefined") {
+      if (pendingItem) {
+        try {
+          localStorage.setItem("storyhour_pending_cart_item", JSON.stringify(pendingItem));
+        } catch (e) {
+          console.error("Failed to store pending cart item", e);
+        }
+      }
+      const target = redirectPath || window.location.pathname;
+      window.location.href = `/login?redirect=${encodeURIComponent(target)}`;
+    }
+  }, []);
+
+  const openAuthModal = useCallback(
+    (options?: { title?: string; description?: string; pendingItem?: AddToCartInput | Product }) => {
+      redirectToLogin(typeof window !== "undefined" ? window.location.pathname : "/stories", options?.pendingItem);
+    },
+    [redirectToLogin]
+  );
+
+  const closeAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+  }, []);
+
+  const addToCart = useCallback(
+    (item: AddToCartInput | Product, quantity: number = 1): boolean => {
+      if (!isUserLoggedIn()) {
+        redirectToLogin(typeof window !== "undefined" ? window.location.pathname : "/stories", item);
+        return false;
+      }
+
+      const id = item.id;
+      const title = item.title;
+      const price = item.price;
+      const coverImage = item.coverImage;
+      const currency = item.currency || "£";
+      const format = item.format || "Hardcover Edition";
+      const language = item.language || "English";
+      const type: "book" | "audiobook" = (item as AddToCartInput).type || (id.startsWith("ab-") ? "audiobook" : "book");
+      const authorOrNarrator = (item as AddToCartInput).authorOrNarrator || "StoryHour Ensemble";
+      const nativeTitle = item.nativeTitle;
+      const subtitle = (item as AddToCartInput).subtitle;
+
+      // Check if canonical edition maps to existing cart item (canonical ID resolution)
+      const edition = getEditionById(id);
+      const canonicalId = edition ? edition.id : id;
+
+      // Digital item limit rule (fixes FT-14 / C-08): digital editions are capped at quantity 1
+      const isDigital = type === "book" || type === "audiobook" || !format.toLowerCase().includes("physical");
+
+      const existingItem = cartItems.find(
+        (ci) => ci.id === canonicalId || ci.id === id || (edition && ci.id === edition.productId)
+      );
+
+      if (existingItem) {
+        if (isDigital) {
+          showToast(`"${title}" is already in your cart`);
+          return true;
+        }
+        setCartItems((prev) =>
+          prev.map((ci) => {
+            if (ci.id === existingItem.id) {
+              const nextQty = Math.min(ci.quantity + quantity, 5);
+              return { ...ci, quantity: nextQty };
+            }
+            return ci;
+          })
+        );
+        showToast(`Updated "${title}" quantity in cart`);
+        return true;
       }
 
       const newItem: CartItem = {
-        id,
+        id: canonicalId,
         title,
         nativeTitle,
         subtitle,
@@ -257,9 +453,9 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
         format,
         language,
         type,
-        quantity,
+        quantity: isDigital ? 1 : Math.min(Math.max(1, quantity), 5),
         product: {
-          id,
+          id: canonicalId,
           title,
           coverImage,
           price,
@@ -268,30 +464,59 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
           language,
         },
       };
-      return [...prev, newItem];
-    });
 
-    showToast(`Added "${title}" to your cart`);
-  };
+      setCartItems((prev) => [...prev, newItem]);
+      showToast(`Added "${title}" to your cart`);
+      return true;
+    },
+    [isUserLoggedIn, redirectToLogin, cartItems, showToast]
+  );
+
+  // Auto-add pending cart item once user logs in
+  useEffect(() => {
+    if (!isHydrated) return;
+    const checkPending = () => {
+      try {
+        const session = localStorage.getItem("storyhour_user_session");
+        const pending = localStorage.getItem("storyhour_pending_cart_item");
+        if (session && pending) {
+          const itemToAutoAdd = JSON.parse(pending);
+          localStorage.removeItem("storyhour_pending_cart_item");
+          addToCart(itemToAutoAdd);
+        }
+      } catch (e) {
+        console.error("Failed to process pending cart item", e);
+      }
+    };
+    checkPending();
+    window.addEventListener("storage", checkPending);
+    return () => window.removeEventListener("storage", checkPending);
+  }, [isHydrated, addToCart]);
 
   const updateQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(itemId);
       return;
     }
+
     setCartItems((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, quantity } : item))
+      prev.map((item) => {
+        if (item.id === itemId) {
+          const isDigital = item.type === "book" || item.type === "audiobook" || !item.format.toLowerCase().includes("physical");
+          const cappedQuantity = isDigital ? 1 : Math.min(quantity, 5);
+          return { ...item, quantity: cappedQuantity };
+        }
+        return item;
+      })
     );
   };
 
   const removeFromCart = (itemId: string) => {
-    setCartItems((prev) => {
-      const target = prev.find((item) => item.id === itemId);
-      if (target) {
-        showToast(`Removed "${target.title}" from cart`);
-      }
-      return prev.filter((item) => item.id !== itemId);
-    });
+    const target = cartItems.find((item) => item.id === itemId);
+    if (target) {
+      showToast(`Removed "${target.title}" from cart`);
+    }
+    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
   };
 
   const clearCart = () => {
@@ -302,17 +527,35 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
   const cartTotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   const unlockBooks = (bookIds: string[]) => {
+    const resolvedIds: string[] = [];
+    bookIds.forEach((id) => {
+      resolvedIds.push(id);
+      const edition = getEditionById(id);
+      if (edition) {
+        resolvedIds.push(edition.id);
+        if (edition.productId) resolvedIds.push(edition.productId);
+      }
+    });
+
     setUnlockedBookIds((prev) => {
-      const updated = Array.from(new Set([...prev, ...bookIds]));
-      return updated;
+      return Array.from(new Set([...prev, ...resolvedIds]));
     });
   };
 
   const isBookUnlocked = useCallback(
     (bookId: string) => {
-      return unlockedBookIds.includes(bookId);
+      if (!bookId) return false;
+      // Must be logged in to have any unlocked books
+      if (!isUserLoggedIn()) return false;
+      if (unlockedBookIds.includes(bookId)) return true;
+      const edition = getEditionById(bookId);
+      if (edition) {
+        if (unlockedBookIds.includes(edition.id)) return true;
+        if (edition.productId && unlockedBookIds.includes(edition.productId)) return true;
+      }
+      return false;
     },
-    [unlockedBookIds]
+    [unlockedBookIds, isUserLoggedIn]
   );
 
   const createOrder = (orderData: {
@@ -325,8 +568,9 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
     paymentMethod?: string;
   }): Order => {
     const timestamp = Date.now();
-    const orderNumber = `SH-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    const orderId = `order_${timestamp}_${Math.random().toString(36).substring(2, 7)}`;
+    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
+    const orderNumber = `SH-2026-${randomSuffix}`;
+    const orderId = `order_${timestamp}_${Math.random().toString(36).substring(2, 8)}`;
 
     const newOrder: Order = {
       orderId,
@@ -344,7 +588,7 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
 
     setOrders((prev) => [newOrder, ...prev]);
 
-    // Unlock purchased book IDs immediately
+    // Unlock purchased book IDs immediately, ensuring both canonical ID and product ID unlock
     const bookIdsToUnlock = orderData.items.map((it) => it.id);
     unlockBooks(bookIdsToUnlock);
 
@@ -355,29 +599,40 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
   };
 
   const getOrderById = (orderIdOrNumber: string): Order | undefined => {
+    if (!orderIdOrNumber) return undefined;
     return orders.find(
       (o) => o.orderId === orderIdOrNumber || o.orderNumber === orderIdOrNumber
     );
   };
 
-  // Keyboard shortcut for search
+  // Keyboard shortcut for search - safely ignores editable elements (fixes C-08)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        (e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key === "k")) &&
-        !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)
-      ) {
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isEditable =
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT" ||
+          activeEl.isContentEditable);
+
+      if ((e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) && !isEditable) {
         e.preventDefault();
         setIsSearchOpen((prev) => !prev);
       }
+
       if (e.key === "Escape") {
-        setIsSearchOpen(false);
-        setIsCartDrawerOpen(false);
+        if (isSearchOpen) {
+          setIsSearchOpen(false);
+        } else if (isCartDrawerOpen) {
+          setIsCartDrawerOpen(false);
+        }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isSearchOpen, isCartDrawerOpen]);
 
   return (
     <LibraryCartContext.Provider
@@ -404,6 +659,14 @@ export function LibraryCartProvider({ children }: { children: React.ReactNode })
         setIsCartDrawerOpen,
         toastMessage,
         showToast,
+        dismissToast,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        authModalTitle,
+        authModalDescription,
+        openAuthModal,
+        closeAuthModal,
+        isUserLoggedIn,
       }}
     >
       {children}

@@ -349,7 +349,6 @@ export default function ScrollStorytellingSection() {
                     fill
                     sizes="(max-width: 640px) 190px, (max-width: 768px) 240px, 280px"
                     className="object-contain object-bottom"
-                    priority
                   />
                 </div>
 
@@ -394,7 +393,6 @@ export default function ScrollStorytellingSection() {
                     fill
                     sizes="(max-width: 640px) 170px, (max-width: 768px) 220px, 260px"
                     className="object-contain object-bottom"
-                    priority
                   />
                 </div>
 
@@ -433,7 +431,6 @@ export default function ScrollStorytellingSection() {
                     fill
                     sizes="(max-width: 640px) 180px, (max-width: 768px) 230px, 270px"
                     className="object-contain object-bottom"
-                    priority
                   />
                 </div>
 
@@ -469,7 +466,6 @@ export default function ScrollStorytellingSection() {
                     fill
                     sizes="(max-width: 640px) 170px, (max-width: 768px) 220px, 250px"
                     className="object-contain object-bottom"
-                    priority
                   />
                 </div>
 

@@ -5,8 +5,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.config import settings
+
+from app.config import settings, validate_configuration
 from app.core.caching import ResponseCachingMiddleware
 from app.core.logging import logger
 from app.routers import (
@@ -110,179 +112,262 @@ OPENAPI_TAGS = [
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
+    validate_configuration(settings)
+    from app.core.logging import configure_global_logging_filters
+    configure_global_logging_filters()
+
+    # B-08.1: Startup database connectivity diagnostic probe (schema managed exclusively by Alembic)
+    try:
+        from app.database.init_db import init_db
+        db_reachable = init_db()
+        if not db_reachable:
+            logger.warning(
+                "Database connectivity check failed during application startup. "
+                "Service started in degraded state; readiness probe (/health/ready) will report not_ready."
+            )
+    except Exception as exc:
+        logger.warning(f"Database connectivity check encountered an unexpected error during startup: {str(exc)}")
+
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
 
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    description=(
-        "Production-ready FastAPI backend for StoryHour supporting Supabase Auth, "
-        "JWT token verification, user profile extraction (/api/me), and protected audio/library entitlements."
-    ),
-    lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_tags=OPENAPI_TAGS,
-)
 
-# Configure CORS for Next.js frontend (e.g. http://localhost:3000)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# HTTP Response Caching & ETag Validation for Safe Public Content
-app.add_middleware(ResponseCachingMiddleware)
+def _apply_security_headers(headers: dict) -> dict:
+    """Apply standard HTTP security headers (SEC-01)."""
+    headers["X-Content-Type-Options"] = "nosniff"
+    headers["X-Frame-Options"] = "DENY"
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    headers["X-XSS-Protection"] = "1; mode=block"
+    if getattr(settings, "ENABLE_HSTS", False) and getattr(settings, "ENVIRONMENT", "") == "production":
+        headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return headers
 
 
-# Request Context & Correlation ID Middleware
-@app.middleware("http")
-async def request_context_middleware(request: Request, call_next):
-    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
-    request.state.request_id = request_id
-    response = await call_next(request)
-    response.headers["X-Request-ID"] = request_id
-    return response
+def create_app() -> FastAPI:
+    """
+    Application factory constructing and configuring the FastAPI instance.
+    Gates API documentation endpoints (/docs, /redoc, /openapi.json) in production (BT-14).
+    """
+    is_prod = (getattr(settings, "ENVIRONMENT", "") or "").lower() == "production"
+    enable_docs_in_prod = getattr(settings, "ENABLE_DOCS_IN_PROD", False)
+    docs_enabled = not is_prod or bool(enable_docs_in_prod)
 
-
-# Global Exception Handlers for Secure and Consistent Error Responses
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    headers = dict(exc.headers) if exc.headers else {}
-    req_id = getattr(request.state, "request_id", None)
-    if req_id and "X-Request-ID" not in headers:
-        headers["X-Request-ID"] = req_id
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "detail": exc.detail,
-            "status_code": exc.status_code,
-        },
-        headers=headers,
+    app = FastAPI(
+        title=settings.PROJECT_NAME,
+        version=settings.VERSION,
+        description=(
+            "Production-ready FastAPI backend for StoryHour supporting Supabase Auth, "
+            "JWT token verification, user profile extraction (/api/me), and protected audio/library entitlements."
+        ),
+        lifespan=lifespan,
+        docs_url="/docs" if docs_enabled else None,
+        redoc_url="/redoc" if docs_enabled else None,
+        openapi_url="/openapi.json" if docs_enabled else None,
+        openapi_tags=OPENAPI_TAGS,
     )
 
+    def _build_cors_headers(request: Request) -> dict:
+        """Construct CORS response headers dynamically for error responses (B-07)."""
+        origin = request.headers.get("origin")
+        allowed = settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else []
+        cors_headers = {}
+        if origin and (origin in allowed or "*" in allowed):
+            cors_headers["Access-Control-Allow-Origin"] = origin
+            cors_headers["Access-Control-Allow-Credentials"] = "true"
+            cors_headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
+            cors_headers["Access-Control-Allow-Headers"] = (
+                "Authorization, Content-Type, Accept, Origin, User-Agent, X-Request-ID, If-None-Match"
+            )
+        return cors_headers
 
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    # Sanitize validation errors without leaking raw system structures
-    errors = []
-    for err in exc.errors():
-        field = " -> ".join(str(loc) for loc in err.get("loc", []))
-        errors.append({"field": field, "message": err.get("msg")})
-    req_id = getattr(request.state, "request_id", None)
-    headers = {"X-Request-ID": req_id} if req_id else None
-    return JSONResponse(
-        status_code=422,
-        content={
-            "detail": "Request validation failed",
-            "errors": errors,
-            "status_code": 422,
-        },
-        headers=headers,
+    # Configure CORS for Next.js frontend (SEC-03: No wildcard fallback when credentials enabled)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else [],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+        allow_headers=["*"],
+        expose_headers=["ETag", "X-Request-ID"],
     )
 
+    # HTTP Response Caching & ETag Validation for Safe Public Content
+    app.add_middleware(ResponseCachingMiddleware)
 
-@app.exception_handler(SQLAlchemyError)
-async def database_exception_handler(request: Request, exc: SQLAlchemyError):
-    req_id = getattr(request.state, "request_id", "unknown")
-    logger.error(f"[Req {req_id}] Database operation error at {request.method} {request.url.path}: {str(exc)}")
-    headers = {"X-Request-ID": req_id} if req_id != "unknown" else None
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "detail": "Database error occurred. Please try again later.",
-            "status_code": 500,
-        },
-        headers=headers,
-    )
+    # Request Context, Correlation ID, and Security Headers Middleware (SEC-01)
+    @app.middleware("http")
+    async def request_context_middleware(request: Request, call_next):
+        request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        _apply_security_headers(response.headers)
+        return response
+
+    # Global Exception Handlers for Secure and Consistent Error Responses
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        headers = dict(exc.headers) if exc.headers else {}
+        headers.update(_build_cors_headers(request))
+        req_id = getattr(request.state, "request_id", None)
+        if req_id and "X-Request-ID" not in headers:
+            headers["X-Request-ID"] = req_id
+        _apply_security_headers(headers)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "detail": exc.detail,
+                "status_code": exc.status_code,
+            },
+            headers=headers,
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def starlette_http_exception_handler(request: Request, exc: StarletteHTTPException):
+        headers = dict(exc.headers) if exc.headers else {}
+        headers.update(_build_cors_headers(request))
+        req_id = getattr(request.state, "request_id", None)
+        if req_id and "X-Request-ID" not in headers:
+            headers["X-Request-ID"] = req_id
+        _apply_security_headers(headers)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "detail": exc.detail,
+                "status_code": exc.status_code,
+            },
+            headers=headers,
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        errors = []
+        for err in exc.errors():
+            field = " -> ".join(str(loc) for loc in err.get("loc", []))
+            errors.append({"field": field, "message": err.get("msg")})
+        req_id = getattr(request.state, "request_id", None)
+        headers = _build_cors_headers(request)
+        if req_id:
+            headers["X-Request-ID"] = req_id
+        _apply_security_headers(headers)
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": "Request validation failed",
+                "errors": errors,
+                "status_code": 422,
+            },
+            headers=headers,
+        )
+
+    @app.exception_handler(SQLAlchemyError)
+    async def database_exception_handler(request: Request, exc: SQLAlchemyError):
+        req_id = getattr(request.state, "request_id", "unknown")
+        logger.error(f"[Req {req_id}] Database operation error at {request.method} {request.url.path}: {str(exc)}")
+        headers = _build_cors_headers(request)
+        if req_id != "unknown":
+            headers["X-Request-ID"] = req_id
+        _apply_security_headers(headers)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "detail": "Database error occurred. Please try again later.",
+                "status_code": 500,
+            },
+            headers=headers,
+        )
+
+    @app.exception_handler(Exception)
+    async def generic_exception_handler(request: Request, exc: Exception):
+        req_id = getattr(request.state, "request_id", "unknown")
+        logger.error(f"[Req {req_id}] Unhandled server error at {request.method} {request.url.path}: {str(exc)}")
+        headers = _build_cors_headers(request)
+        if req_id != "unknown":
+            headers["X-Request-ID"] = req_id
+        _apply_security_headers(headers)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "detail": "Internal server error. Please try again later.",
+                "status_code": 500,
+            },
+            headers=headers,
+        )
+
+    # Mount API Routers
+    app.include_router(auth.router, prefix=settings.API_V1_STR)
+    app.include_router(me.router, prefix=settings.API_V1_STR)
+    app.include_router(health.router, prefix=settings.API_V1_STR)
+    app.include_router(entitlements.router, prefix=settings.API_V1_STR)
 
 
-@app.exception_handler(Exception)
-async def generic_exception_handler(request: Request, exc: Exception):
-    req_id = getattr(request.state, "request_id", "unknown")
-    logger.error(f"[Req {req_id}] Unhandled server error at {request.method} {request.url.path}: {str(exc)}")
-    headers = {"X-Request-ID": req_id} if req_id != "unknown" else None
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "detail": "Internal server error. Please try again later.",
-            "status_code": 500,
-        },
-        headers=headers,
-    )
+    # Story & Content Routers (supporting both /api/v1 and /api prefix conventions)
+    app.include_router(stories.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(stories.router, prefix=settings.API_V1_STR, include_in_schema=False)
+    app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(categories.router, prefix=settings.API_V1_STR, include_in_schema=False)
+    app.include_router(languages.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(languages.router, prefix=settings.API_V1_STR, include_in_schema=False)
+
+    app.include_router(products.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(cart.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(orders.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(payments.router, prefix=f"{settings.API_V1_STR}/v1")
+
+    # Phase 3 Audio, Progress, and User Library Routers
+    app.include_router(audio.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(audio.router, prefix=settings.API_V1_STR, include_in_schema=False)
+    app.include_router(progress.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(progress.router, prefix=settings.API_V1_STR, include_in_schema=False)
+    app.include_router(library.router, prefix=f"{settings.API_V1_STR}/v1")
+
+    # Phase 4 Events, Journal, and Contact Routers
+    app.include_router(events.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(events.router, prefix=settings.API_V1_STR, include_in_schema=False)
+    app.include_router(journal.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(journal.router, prefix=settings.API_V1_STR, include_in_schema=False)
+    app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(contact.router, prefix=settings.API_V1_STR, include_in_schema=False)
+
+    # Phase 5 Admin & CMS, Media Management, and Analytics Routers
+    app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(admin.router, prefix=settings.API_V1_STR, include_in_schema=False)
+    app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/v1")
+    app.include_router(analytics.router, prefix=settings.API_V1_STR, include_in_schema=False)
+
+    @app.get("/", tags=["Health & Status"])
+    def root():
+        """Root health and discovery endpoint."""
+        discovery = {
+            "status": "online",
+            "service": settings.PROJECT_NAME,
+            "version": settings.VERSION,
+            "endpoints": {
+                "health": f"{settings.API_V1_STR}/health",
+                "signup": f"{settings.API_V1_STR}/auth/signup",
+                "login": f"{settings.API_V1_STR}/auth/login",
+                "me": f"{settings.API_V1_STR}/me",
+                "library": f"{settings.API_V1_STR}/library/me",
+                "stories": f"{settings.API_V1_STR}/v1/stories",
+                "categories": f"{settings.API_V1_STR}/v1/categories",
+                "languages": f"{settings.API_V1_STR}/v1/languages",
+                "events": f"{settings.API_V1_STR}/v1/events",
+                "journal": f"{settings.API_V1_STR}/v1/journal",
+                "contact": f"{settings.API_V1_STR}/v1/contact",
+                "admin": f"{settings.API_V1_STR}/v1/admin",
+                "analytics": f"{settings.API_V1_STR}/v1/analytics/events",
+            },
+        }
+        if docs_enabled:
+            discovery["docs"] = "/docs"
+            discovery["redoc"] = "/redoc"
+        return discovery
+
+    return app
 
 
-# Mount API Routers
-app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(me.router, prefix=settings.API_V1_STR)
-app.include_router(health.router, prefix=settings.API_V1_STR)
-app.include_router(entitlements.router, prefix=settings.API_V1_STR)
-
-# Story & Content Routers (supporting both /api/v1 and /api prefix conventions)
-app.include_router(stories.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(stories.router, prefix=settings.API_V1_STR, include_in_schema=False)
-app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(categories.router, prefix=settings.API_V1_STR, include_in_schema=False)
-app.include_router(languages.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(languages.router, prefix=settings.API_V1_STR, include_in_schema=False)
-
-
-app.include_router(products.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(cart.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(orders.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(payments.router, prefix=f"{settings.API_V1_STR}/v1")
-
-# Phase 3 Audio, Progress, and User Library Routers
-app.include_router(audio.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(audio.router, prefix=settings.API_V1_STR, include_in_schema=False)
-app.include_router(progress.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(progress.router, prefix=settings.API_V1_STR, include_in_schema=False)
-app.include_router(library.router, prefix=f"{settings.API_V1_STR}/v1")
-
-# Phase 4 Events, Journal, and Contact Routers
-app.include_router(events.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(events.router, prefix=settings.API_V1_STR, include_in_schema=False)
-app.include_router(journal.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(journal.router, prefix=settings.API_V1_STR, include_in_schema=False)
-app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(contact.router, prefix=settings.API_V1_STR, include_in_schema=False)
-
-# Phase 5 Admin & CMS, Media Management, and Analytics Routers
-app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(admin.router, prefix=settings.API_V1_STR, include_in_schema=False)
-app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/v1")
-app.include_router(analytics.router, prefix=settings.API_V1_STR, include_in_schema=False)
-
-@app.get("/", tags=["Health & Status"])
-def root():
-    """Root health and discovery endpoint."""
-    return {
-        "status": "online",
-        "service": settings.PROJECT_NAME,
-        "version": settings.VERSION,
-        "docs": "/docs",
-        "redoc": "/redoc",
-        "endpoints": {
-            "health": f"{settings.API_V1_STR}/health",
-            "signup": f"{settings.API_V1_STR}/auth/signup",
-            "login": f"{settings.API_V1_STR}/auth/login",
-            "me": f"{settings.API_V1_STR}/me",
-            "library": f"{settings.API_V1_STR}/library/me",
-            "stories": f"{settings.API_V1_STR}/v1/stories",
-            "categories": f"{settings.API_V1_STR}/v1/categories",
-            "languages": f"{settings.API_V1_STR}/v1/languages",
-            "events": f"{settings.API_V1_STR}/v1/events",
-            "journal": f"{settings.API_V1_STR}/v1/journal",
-            "contact": f"{settings.API_V1_STR}/v1/contact",
-            "admin": f"{settings.API_V1_STR}/v1/admin",
-            "analytics": f"{settings.API_V1_STR}/v1/analytics/events",
-        },
-    }
+# Root FastAPI instance for Uvicorn and standard imports
+app = create_app()
 
 
 
@@ -292,5 +377,6 @@ if __name__ == "__main__":
         "app.main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=True,
+        reload=(settings.ENVIRONMENT.lower() == "development"),
     )
+

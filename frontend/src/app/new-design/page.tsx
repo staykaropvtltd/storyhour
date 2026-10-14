@@ -1,7 +1,7 @@
 import React from "react";
 import PapumbaHeader from "@/components/new-design/PapumbaHeader";
 import PapumbaHero from "@/components/new-design/PapumbaHero";
-import PapumbaFooter from "@/components/new-design/PapumbaFooter";
+import SiteFooter from "@/components/SiteFooter";
 import ScrollStorytellingSection from "@/components/new-design/ScrollStorytellingSection";
 
 export const metadata = {
@@ -24,8 +24,8 @@ export default function NewDesignPage() {
         <ScrollStorytellingSection />
       </main>
 
-      {/* 3. Papumba-Inspired Footer */}
-      <PapumbaFooter />
+      {/* 3. SiteFooter */}
+      <SiteFooter />
     </div>
   );
 }

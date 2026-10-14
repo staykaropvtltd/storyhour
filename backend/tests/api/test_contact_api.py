@@ -62,7 +62,7 @@ def test_submit_contact_missing_name_fails(api_client):
         "message": "I am sending a message without a name field provided.",
     }
     res = api_client.post("/api/v1/contact", json=payload)
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 def test_submit_contact_short_name_fails(api_client):
@@ -73,7 +73,7 @@ def test_submit_contact_short_name_fails(api_client):
         "message": "Valid length message requesting collaboration details.",
     }
     res = api_client.post("/api/v1/contact", json=payload)
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 def test_submit_contact_missing_email_fails(api_client):
@@ -83,7 +83,7 @@ def test_submit_contact_missing_email_fails(api_client):
         "message": "Hello, I would like to enquire about upcoming workshops.",
     }
     res = api_client.post("/api/v1/contact", json=payload)
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 def test_submit_contact_invalid_email_fails(api_client):
@@ -94,7 +94,7 @@ def test_submit_contact_invalid_email_fails(api_client):
         "message": "Hello, I would like to enquire about upcoming workshops.",
     }
     res = api_client.post("/api/v1/contact", json=payload)
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 def test_submit_contact_missing_message_fails(api_client):
@@ -104,7 +104,7 @@ def test_submit_contact_missing_message_fails(api_client):
         "email": "jane@example.com",
     }
     res = api_client.post("/api/v1/contact", json=payload)
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 def test_submit_contact_short_message_fails(api_client):
@@ -115,7 +115,7 @@ def test_submit_contact_short_message_fails(api_client):
         "message": "Too short",
     }
     res = api_client.post("/api/v1/contact", json=payload)
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
 
 
 def test_contact_api_convenience_alias(api_client, api_db: Session):

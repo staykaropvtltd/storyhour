@@ -1,50 +1,89 @@
+from unittest.mock import MagicMock
 import pytest
 from fastapi import status
+from sqlalchemy.orm import sessionmaker
 from app.services.supabase_service import supabase_service
 
 
-@pytest.fixture(scope="module")
-def registered_user():
+@pytest.fixture
+def registered_user(db_session, make_token, monkeypatch):
     """
-    Creates a temporary verified test user in Supabase Auth,
-    yields the test credentials, and deletes the test user upon completion.
+    B-11.1 REMEDIATION:
+    Provides an isolated test user and mocks Supabase Auth client to guarantee
+    zero external network access and zero account mutations on live Supabase.
     """
-    admin = supabase_service.admin_client
-    if not admin:
-        pytest.skip("Supabase admin client not configured for live user tests")
-
     test_email = "test-matrix-runner@storyhour.com"
     test_password = "SecurePassword123!"
+    test_user_id = "test-matrix-runner-uuid-0001"
 
-    # Clean up any residual test user
-    try:
-        users = admin.auth.admin.list_users()
-        for u in users:
-            if getattr(u, "email", "") == test_email:
-                admin.auth.admin.delete_user(u.id)
-    except Exception:
-        pass
+    # Pre-seed UserProfile in isolated in-memory test database
+    from app.database.models.profile import UserProfile
+    existing = db_session.query(UserProfile).filter(UserProfile.user_id == test_user_id).first()
+    if not existing:
+        db_session.add(UserProfile(
+            user_id=test_user_id,
+            email=test_email,
+            full_name="Test Matrix Runner",
+            subscription_tier="free",
+            is_active=True,
+            is_deleted=False,
+        ))
+        db_session.commit()
 
-    # Create test user
-    created = admin.auth.admin.create_user({
+    # Create mock Supabase Auth client with simulated authentication logic
+    class MockAuthClient:
+        def sign_in_with_password(self, credentials):
+            email = (credentials.get("email") or "").strip().lower()
+            password = credentials.get("password") or ""
+            if email == test_email and password == test_password:
+                token = make_token(
+                    sub=test_user_id,
+                    email=test_email,
+                    role="authenticated",
+                    user_metadata={"full_name": "Test Matrix Runner"},
+                )
+                session = MagicMock()
+                session.access_token = token
+                session.refresh_token = "mock-refresh-token"
+                session.expires_in = 3600
+
+                user = MagicMock()
+                user.id = test_user_id
+                user.email = test_email
+                user.role = "authenticated"
+                user.user_metadata = {"full_name": "Test Matrix Runner"}
+                user.app_metadata = {}
+
+                res = MagicMock()
+                res.session = session
+                res.user = user
+                return res
+
+            # Simulate Supabase Auth failure on incorrect credentials
+            raise Exception("Invalid login credentials")
+
+    fake_anon = MagicMock()
+    fake_anon.auth = MockAuthClient()
+    monkeypatch.setattr(supabase_service, "anon_client", fake_anon)
+    TestingSession = sessionmaker(bind=db_session.bind, autocommit=False, autoflush=False)
+    monkeypatch.setattr("app.database.session.SessionLocal", TestingSession)
+
+    # Strictly ensure admin client account mutation APIs are NEVER called
+    mock_admin = MagicMock()
+    mock_admin.auth.admin.create_user.side_effect = RuntimeError(
+        "CRITICAL SAFETY VIOLATION: create_user called during unit tests"
+    )
+    mock_admin.auth.admin.delete_user.side_effect = RuntimeError(
+        "CRITICAL SAFETY VIOLATION: delete_user called during unit tests"
+    )
+    monkeypatch.setattr(supabase_service, "admin_client", mock_admin)
+
+    return {
         "email": test_email,
         "password": test_password,
-        "email_confirm": True,
-        "user_metadata": {"full_name": "Test Matrix Runner"},
-    })
-    user_id = str(created.user.id)
-
-    yield {
-        "email": test_email,
-        "password": test_password,
-        "user_id": user_id,
+        "user_id": test_user_id,
     }
 
-    # Teardown: delete test user from Supabase
-    try:
-        admin.auth.admin.delete_user(user_id)
-    except Exception:
-        pass
 
 
 # ==============================================================================
@@ -100,15 +139,12 @@ def test_case_2_wrong_password(client, registered_user):
     assert "access_token" not in data
 
 
-def test_case_3_unregistered_email(client):
+def test_case_3_unregistered_email(client, registered_user):
     """
     Test Case 3: Unregistered email
     Input: Email doesn't exist + any password
     Expected: Login rejected (401 Unauthorized) with identical error; does not reveal whether account exists.
     """
-    if not supabase_service.anon_client:
-        pytest.skip("Supabase client not configured for live auth tests")
-
     response = client.post(
         "/api/auth/login",
         json={
@@ -121,6 +157,7 @@ def test_case_3_unregistered_email(client):
     # Anti-enumeration assertion: error message must be identical to wrong password error
     assert data["detail"] == "Invalid email or password"
     assert "access_token" not in data
+
 
 
 def test_case_4_empty_email(client):
@@ -223,3 +260,17 @@ def test_case_8_leading_trailing_whitespace(client, registered_user):
     data = response.json()
     assert "access_token" in data
     assert data["user"]["email"] == registered_user["email"].strip().lower()
+
+
+def test_b11_1_admin_client_account_mutation_never_invoked(registered_user):
+    """
+    B-11.1 REGRESSION TEST:
+    Explicitly assert that Supabase administrative account mutation APIs
+    (admin.auth.admin.create_user and admin.auth.admin.delete_user) were never
+    invoked during test execution.
+    """
+    admin = supabase_service.admin_client
+    assert admin is not None
+    admin.auth.admin.create_user.assert_not_called()
+    admin.auth.admin.delete_user.assert_not_called()
+
