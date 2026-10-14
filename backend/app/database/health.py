@@ -6,18 +6,50 @@ from app.core.logging import logger
 from app.database.session import engine
 
 
-def check_database_health() -> bool:
+import threading
+
+_health_cache_lock = threading.Lock()
+_last_health_check_time: float = 0.0
+_cached_health_status: bool = False
+_HEALTH_CACHE_TTL_SECONDS: float = 5.0
+
+
+def reset_database_health_cache() -> None:
+    """Reset the database health cache (useful for test isolation)."""
+    global _last_health_check_time, _cached_health_status
+    with _health_cache_lock:
+        _last_health_check_time = 0.0
+        _cached_health_status = False
+
+
+def check_database_health(force_refresh: bool = False) -> bool:
     """
-    Lightweight health check verifying Supabase PostgreSQL connectivity.
+    Lightweight health check verifying database connectivity.
+    Employs a 5-second TTL cache to prevent connection pool exhaustion
+    from high-frequency health probe queries (B-04 remediation).
     Returns True if database is reachable and can execute queries.
     """
+    global _last_health_check_time, _cached_health_status
+
+    now = time.perf_counter()
+    with _health_cache_lock:
+        if not force_refresh and (now - _last_health_check_time) < _HEALTH_CACHE_TTL_SECONDS:
+            return _cached_health_status
+
+    is_healthy = False
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            return True
+            is_healthy = True
     except Exception as exc:
         logger.error(f"Database health check probe failed: {str(exc)}")
-        return False
+        is_healthy = False
+
+    with _health_cache_lock:
+        _cached_health_status = is_healthy
+        _last_health_check_time = time.perf_counter()
+
+    return is_healthy
 
 
 def get_database_diagnostics() -> Dict[str, Any]:

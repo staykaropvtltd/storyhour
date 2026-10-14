@@ -5,6 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 
 from app.config import settings, validate_configuration
 from app.core.caching import ResponseCachingMiddleware
@@ -165,13 +167,28 @@ def create_app() -> FastAPI:
         openapi_tags=OPENAPI_TAGS,
     )
 
+    def _build_cors_headers(request: Request) -> dict:
+        """Construct CORS response headers dynamically for error responses (B-07)."""
+        origin = request.headers.get("origin")
+        allowed = settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else []
+        cors_headers = {}
+        if origin and (origin in allowed or "*" in allowed):
+            cors_headers["Access-Control-Allow-Origin"] = origin
+            cors_headers["Access-Control-Allow-Credentials"] = "true"
+            cors_headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
+            cors_headers["Access-Control-Allow-Headers"] = (
+                "Authorization, Content-Type, Accept, Origin, User-Agent, X-Request-ID, If-None-Match"
+            )
+        return cors_headers
+
     # Configure CORS for Next.js frontend (SEC-03: No wildcard fallback when credentials enabled)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else [],
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
         allow_headers=["*"],
+        expose_headers=["ETag", "X-Request-ID"],
     )
 
     # HTTP Response Caching & ETag Validation for Safe Public Content
@@ -191,6 +208,24 @@ def create_app() -> FastAPI:
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
         headers = dict(exc.headers) if exc.headers else {}
+        headers.update(_build_cors_headers(request))
+        req_id = getattr(request.state, "request_id", None)
+        if req_id and "X-Request-ID" not in headers:
+            headers["X-Request-ID"] = req_id
+        _apply_security_headers(headers)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "detail": exc.detail,
+                "status_code": exc.status_code,
+            },
+            headers=headers,
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def starlette_http_exception_handler(request: Request, exc: StarletteHTTPException):
+        headers = dict(exc.headers) if exc.headers else {}
+        headers.update(_build_cors_headers(request))
         req_id = getattr(request.state, "request_id", None)
         if req_id and "X-Request-ID" not in headers:
             headers["X-Request-ID"] = req_id
@@ -211,7 +246,9 @@ def create_app() -> FastAPI:
             field = " -> ".join(str(loc) for loc in err.get("loc", []))
             errors.append({"field": field, "message": err.get("msg")})
         req_id = getattr(request.state, "request_id", None)
-        headers = {"X-Request-ID": req_id} if req_id else {}
+        headers = _build_cors_headers(request)
+        if req_id:
+            headers["X-Request-ID"] = req_id
         _apply_security_headers(headers)
         return JSONResponse(
             status_code=422,
@@ -227,7 +264,9 @@ def create_app() -> FastAPI:
     async def database_exception_handler(request: Request, exc: SQLAlchemyError):
         req_id = getattr(request.state, "request_id", "unknown")
         logger.error(f"[Req {req_id}] Database operation error at {request.method} {request.url.path}: {str(exc)}")
-        headers = {"X-Request-ID": req_id} if req_id != "unknown" else {}
+        headers = _build_cors_headers(request)
+        if req_id != "unknown":
+            headers["X-Request-ID"] = req_id
         _apply_security_headers(headers)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -242,7 +281,9 @@ def create_app() -> FastAPI:
     async def generic_exception_handler(request: Request, exc: Exception):
         req_id = getattr(request.state, "request_id", "unknown")
         logger.error(f"[Req {req_id}] Unhandled server error at {request.method} {request.url.path}: {str(exc)}")
-        headers = {"X-Request-ID": req_id} if req_id != "unknown" else {}
+        headers = _build_cors_headers(request)
+        if req_id != "unknown":
+            headers["X-Request-ID"] = req_id
         _apply_security_headers(headers)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -258,6 +299,7 @@ def create_app() -> FastAPI:
     app.include_router(me.router, prefix=settings.API_V1_STR)
     app.include_router(health.router, prefix=settings.API_V1_STR)
     app.include_router(entitlements.router, prefix=settings.API_V1_STR)
+
 
     # Story & Content Routers (supporting both /api/v1 and /api prefix conventions)
     app.include_router(stories.router, prefix=f"{settings.API_V1_STR}/v1")
@@ -335,5 +377,6 @@ if __name__ == "__main__":
         "app.main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=True,
+        reload=(settings.ENVIRONMENT.lower() == "development"),
     )
+

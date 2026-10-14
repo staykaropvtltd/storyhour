@@ -5,10 +5,18 @@ from app.core.rate_limit import (
     auth_rate_limiter,
     auth_signup_limiter,
 )
+from app.dependencies import require_active_user
+from app.schemas.user import AuthenticatedUser
 from app.schemas.auth import (
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
     LoginRequest,
     LoginResponse,
     LogoutResponse,
+    MessageResponse,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
+    ResetPasswordRequest,
     SignUpRequest,
     SignUpResponse,
 )
@@ -129,3 +137,70 @@ def logout() -> LogoutResponse:
 def logout_alias() -> LogoutResponse:
     """Convenience alias for /api/logout."""
     return logout()
+
+
+@router.post(
+    "/auth/refresh",
+    response_model=RefreshTokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Refresh access token (B-10)",
+    dependencies=[Depends(auth_rate_limiter)],
+    description="Exchanges a valid refresh token for a fresh access token without re-prompting credentials.",
+)
+def refresh_token(payload: RefreshTokenRequest) -> RefreshTokenResponse:
+    """Refreshes an expired or expiring access token."""
+    result = supabase_service.refresh_session(refresh_token=payload.refresh_token)
+    return RefreshTokenResponse(**result)
+
+
+@router.post(
+    "/auth/forgot-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Request password reset link (B-10)",
+    dependencies=[Depends(auth_rate_limiter)],
+    description="Sends a password recovery email. Always returns a generic message to prevent email enumeration.",
+)
+def forgot_password(payload: ForgotPasswordRequest) -> MessageResponse:
+    """Initiates password reset flow."""
+    result = supabase_service.forgot_password(email=payload.email)
+    return MessageResponse(**result)
+
+
+@router.post(
+    "/auth/reset-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reset password with recovery token (B-10)",
+    dependencies=[Depends(auth_rate_limiter)],
+    description="Updates user password using the temporary recovery access token received in recovery email.",
+)
+def reset_password(payload: ResetPasswordRequest) -> MessageResponse:
+    """Completes password reset using recovery token."""
+    result = supabase_service.reset_password(
+        access_token=payload.access_token,
+        new_password=payload.new_password,
+    )
+    return MessageResponse(**result)
+
+
+@router.post(
+    "/auth/change-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Change password (Authenticated) (B-10)",
+    dependencies=[Depends(auth_rate_limiter)],
+    description="Allows authenticated active users to change their password after verifying current credentials.",
+)
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: AuthenticatedUser = Depends(require_active_user),
+) -> MessageResponse:
+    """Updates password for authenticated active user."""
+    result = supabase_service.change_password(
+        email=current_user.email,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+    )
+    return MessageResponse(**result)
+

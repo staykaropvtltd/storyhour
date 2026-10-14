@@ -21,6 +21,7 @@ from app.database.base import (
 from app.database.health import (
     check_database_health,
     get_database_diagnostics,
+    reset_database_health_cache,
 )
 from app.database.repository import (
     BaseRepository,
@@ -48,6 +49,7 @@ __all__ = [
     # Health Diagnostics
     "check_database_health",
     "get_database_diagnostics",
+    "reset_database_health_cache",
     # Repository Pattern
     "BaseRepository",
     # Bootstrap

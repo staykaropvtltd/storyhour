@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Generator
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session
 
 from app.config import settings
 from app.core.logging import logger

@@ -389,6 +389,138 @@ class SupabaseAuthService:
             "detail": "Session terminated. Client application should discard local tokens.",
         }
 
+    def refresh_session(self, refresh_token: str) -> Dict[str, Any]:
+        """
+        Refreshes an expired access token using a valid refresh token.
+        """
+        if not refresh_token or not refresh_token.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Refresh token is required",
+            )
+
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                res = self.anon_client.auth.refresh_session(refresh_token)
+                if not res or not res.session:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid or expired refresh token",
+                    )
+                return {
+                    "access_token": res.session.access_token,
+                    "token_type": "bearer",
+                    "expires_in": getattr(res.session, "expires_in", 3600),
+                    "refresh_token": getattr(res.session, "refresh_token", None),
+                }
+            except HTTPException:
+                raise
+            except Exception as exc:
+                logger.warning(f"Token refresh failed: {str(exc)}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or expired refresh token",
+                )
+        else:
+            # Local mode implementation for offline dev/tests
+            import time
+            token_payload = {
+                "sub": "refreshed-user-id",
+                "email": "user@storyhour.com",
+                "role": "authenticated",
+                "aud": "authenticated",
+                "iat": int(time.time()),
+                "exp": int(time.time()) + 3600,
+            }
+            secret = settings.SUPABASE_JWT_SECRET or "local-test-secret-at-least-32-chars"
+            alg = settings.SUPABASE_JWT_ALGORITHM or "HS256"
+            new_token = jwt.encode(token_payload, secret, algorithm=alg)
+            return {
+                "access_token": new_token,
+                "token_type": "bearer",
+                "expires_in": 3600,
+                "refresh_token": refresh_token,
+            }
+
+    def forgot_password(self, email: str) -> Dict[str, Any]:
+        """
+        Initiates password recovery email.
+        Always returns generic success to prevent email enumeration.
+        """
+        email = email.strip().lower()
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                self.anon_client.auth.reset_password_for_email(email)
+            except Exception as exc:
+                logger.warning(f"Password reset request notice for email: {str(exc)}")
+
+        return {
+            "message": "If an account with that email exists, a password reset link has been sent.",
+            "detail": "Please check your email inbox and spam folder.",
+        }
+
+    def reset_password(self, access_token: str, new_password: str) -> Dict[str, Any]:
+        """
+        Resets user password using recovery access token.
+        """
+        if not access_token or not new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token and new password are required",
+            )
+
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                self.anon_client.auth.set_session(access_token=access_token, refresh_token=access_token)
+                self.anon_client.auth.update_user({"password": new_password})
+            except Exception as exc:
+                logger.warning(f"Password reset failed: {str(exc)}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid or expired password reset token",
+                )
+
+        return {
+            "message": "Password has been successfully reset.",
+            "detail": "You may now log in with your new password.",
+        }
+
+    def change_password(self, email: str, current_password: str, new_password: str) -> Dict[str, Any]:
+        """
+        Authenticated password change verifying current password first.
+        """
+        mode = self.auth_mode
+        if mode == "supabase" and self.anon_client is not None:
+            try:
+                # 1. Verify current credentials
+                login_res = self.anon_client.auth.sign_in_with_password({
+                    "email": email,
+                    "password": current_password,
+                })
+                if not login_res or not login_res.session:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Current password is incorrect",
+                    )
+                # 2. Update to new password
+                self.anon_client.auth.update_user({"password": new_password})
+            except HTTPException:
+                raise
+            except Exception as exc:
+                logger.warning(f"Password update failed: {str(exc)}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Password update failed. Please check your credentials.",
+                )
+
+        return {
+            "message": "Password updated successfully.",
+        }
+
+
     def _sync_user_profile(self, user: Any) -> Optional[Any]:
         """Helper to ensure user profile exists in public.user_profiles."""
         from app.database.session import SessionLocal
@@ -410,8 +542,13 @@ class SupabaseAuthService:
                             f"Profile synchronization bypassed: user {user.id} is marked inactive or soft-deleted."
                         )
                         return existing
+                    updates = {}
                     if full_name and existing.full_name != full_name:
-                        repo.update(db, db_obj=existing, obj_in={"full_name": full_name})
+                        updates["full_name"] = full_name
+                    if getattr(user, "email", None) and existing.email != str(user.email).strip().lower():
+                        updates["email"] = str(user.email).strip().lower()
+                    if updates:
+                        repo.update(db, db_obj=existing, obj_in=updates)
                         db.commit()
                         db.refresh(existing)
                     return existing
