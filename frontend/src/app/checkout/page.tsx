@@ -153,6 +153,10 @@ export default function CheckoutPage() {
     setErrorMessage(null);
     setIsProcessing(true);
 
+    // PCI-DSS state hygiene: purge sensitive card digits and CVC from component memory immediately
+    setCardNumber("");
+    setCardCvc("");
+
     // Prepare order items
     const orderItems = cartItems.map((ci) => ({
       id: ci.id,
@@ -521,7 +525,7 @@ export default function CheckoutPage() {
                       Safe Test Payment Mode (Sandbox)
                     </p>
                     <p className="mt-0.5 text-[#0E1638]/80">
-                      This prototype is in safe sandbox test mode. No real credit card is charged. Entering demo card info or clicking complete will simulate a successful transaction and instantly unlock your purchased books.
+                      This prototype is in safe sandbox test mode. No real credit card is charged. Please do not enter real debit or credit card details. Entering demo card info or clicking complete will simulate a successful transaction and instantly unlock your purchased books.
                     </p>
                   </div>
                 </div>

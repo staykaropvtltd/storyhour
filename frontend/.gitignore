@@ -34,4 +34,5 @@ next-env.d.ts
 /scratch/
 .agents/.kilo/
 testskill.md
-
+# Reports & Documentation Exports
+StoryHour_Frontend_*_Report.*

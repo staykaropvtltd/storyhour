@@ -1,7 +1,33 @@
 import { NextResponse } from "next/server";
+import {
+  checkContactRateLimit,
+  maskEmail,
+  maskPhone,
+} from "@/lib/security";
 
 export async function POST(request: Request) {
   try {
+    // 0. Extract client IP and apply rate limiting (Fix #6: DoS and quota abuse defense)
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      request.headers.get("x-real-ip") ||
+      "127.0.0.1";
+
+    if (!checkContactRateLimit(clientIp)) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many contact enquiries from this network. Please wait a few minutes before submitting another enquiry.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": "600",
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { name, email, phone, enquiryType, message, honeypot } = body || {};
 
@@ -42,18 +68,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Structured enquiry payload
-    const enquiry = {
-      name: trimmedName,
-      email: trimmedEmail,
-      phone: trimmedPhone,
+    // 3. Privacy-safe audit log (Fix #8: Anonymized metadata, zero raw PII in logs, CWE-532 & GDPR)
+    console.log("[StoryHour Contact API] New Enquiry Received:", {
       enquiryType: trimmedType,
-      message: trimmedMessage,
+      maskedEmail: maskEmail(trimmedEmail),
+      maskedPhone: maskPhone(trimmedPhone),
+      messageLength: trimmedMessage.length,
       receivedAt: new Date().toISOString(),
-    };
-
-    // Log structured message for audit and operations
-    console.log("[StoryHour Contact API] New Enquiry Received:", enquiry);
+    });
 
     // 4. Provider Dispatch Check (Resend REST API)
     let delivered = false;
@@ -66,6 +88,7 @@ export async function POST(request: Request) {
             Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
             "Content-Type": "application/json",
           },
+          signal: AbortSignal.timeout(8000),
           body: JSON.stringify({
             from: "StoryHour Contact <onboarding@resend.dev>",
             to: [toEmail],

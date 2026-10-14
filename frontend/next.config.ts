@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: path.resolve(__dirname),
+  outputFileTracingRoot: path.resolve(process.cwd()),
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    const isProd = process.env.NODE_ENV === "production";
     return [
       {
         source: "/(.*)",
@@ -40,7 +41,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "X-Frame-Options",
-            value: "SAMEORIGIN",
+            value: "DENY",
           },
           {
             key: "Referrer-Policy",
@@ -50,21 +51,28 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
+          ...(isProd
+            ? [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=31536000",
+                },
+              ]
+            : []),
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.youtube-nocookie.com",
+              "base-uri 'self'",
+              "object-src 'none'",
+              "frame-ancestors 'none'",
+              `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} https://www.youtube.com https://www.youtube-nocookie.com`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: blob: https://storyhour.co.uk https://images.unsplash.com https://img.fablecdn.net https://i.ytimg.com",
               "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
               "media-src 'self' data: blob: https://storyhour.co.uk",
-              "connect-src 'self' ws: wss: https://storyhour.co.uk https://*.supabase.co",
+              `connect-src 'self'${isProd ? "" : " ws: wss:"} https://storyhour.co.uk https://*.supabase.co https://api.resend.com`,
             ].join("; "),
           },
         ],

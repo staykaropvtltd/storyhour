@@ -1,6 +1,6 @@
 import { test, describe, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import {
   generateAdminToken,
   isValidAdminToken,
@@ -186,4 +186,140 @@ describe("Admin Authentication & Cryptographic Security", () => {
       assert.equal(await verifyAdminRequest(req), false);
     });
   });
+
+  describe("Credential Verification & Timing Attack Side-Channel Defense", () => {
+    // Pure validator simulating constant-time password check from auth route
+    function verifyCredentialsSafe(
+      inputEmail,
+      inputPassword,
+      configuredEmail,
+      configuredPassword
+    ) {
+      if (!inputEmail || !inputPassword || !configuredEmail || !configuredPassword) {
+        return false;
+      }
+      const emailMatches =
+        String(inputEmail).trim().toLowerCase() === String(configuredEmail).trim().toLowerCase();
+      const inputBuffer = Buffer.from(String(inputPassword).trim(), "utf8");
+      const configBuffer = Buffer.from(String(configuredPassword).trim(), "utf8");
+
+      const passwordMatches =
+        inputBuffer.length === configBuffer.length &&
+        timingSafeEqual(inputBuffer, configBuffer);
+
+      return emailMatches && passwordMatches;
+    }
+
+    test("authorizes correct email and password with constant-time equality", () => {
+      assert.equal(
+        verifyCredentialsSafe(
+          "Admin@StoryHour.co.uk ",
+          "correct_secure_pass_2026!",
+          "admin@storyhour.co.uk",
+          "correct_secure_pass_2026!"
+        ),
+        true
+      );
+    });
+
+    test("rejects wrong password without leaking character matches via timing", () => {
+      assert.equal(
+        verifyCredentialsSafe(
+          "admin@storyhour.co.uk",
+          "wrong_password_attempt!",
+          "admin@storyhour.co.uk",
+          "correct_secure_pass_2026!"
+        ),
+        false
+      );
+    });
+
+    test("rejects password with different length immediately and safely", () => {
+      assert.equal(
+        verifyCredentialsSafe(
+          "admin@storyhour.co.uk",
+          "short",
+          "admin@storyhour.co.uk",
+          "correct_secure_pass_2026!"
+        ),
+        false
+      );
+    });
+
+    test("rejects wrong email even if password is correct", () => {
+      assert.equal(
+        verifyCredentialsSafe(
+          "intruder@evil.com",
+          "correct_secure_pass_2026!",
+          "admin@storyhour.co.uk",
+          "correct_secure_pass_2026!"
+        ),
+        false
+      );
+    });
+
+    test("fails closed when configured credentials are empty or null", () => {
+      assert.equal(
+        verifyCredentialsSafe("admin@storyhour.co.uk", "pass", null, null),
+        false
+      );
+      assert.equal(
+        verifyCredentialsSafe("admin@storyhour.co.uk", "pass", "", ""),
+        false
+      );
+    });
+  });
+
+  describe("Open Redirect Security Regression Tests", () => {
+    // Exact validator implemented in login/page.tsx and signup/page.tsx
+    function sanitizeRedirectParam(param) {
+      let dest = "/account";
+      if (
+        param &&
+        typeof param === "string" &&
+        param.startsWith("/") &&
+        !param.startsWith("//") &&
+        !param.includes("\\")
+      ) {
+        dest = param;
+      }
+      return dest;
+    }
+
+    test("accepts legitimate relative application routes", () => {
+      assert.equal(sanitizeRedirectParam("/account"), "/account");
+      assert.equal(sanitizeRedirectParam("/admin"), "/admin");
+      assert.equal(sanitizeRedirectParam("/stories"), "/stories");
+      assert.equal(sanitizeRedirectParam("/cart?step=2"), "/cart?step=2");
+    });
+
+    test("rejects protocol-relative URL attempts (//evil.com)", () => {
+      assert.equal(sanitizeRedirectParam("//evil.com"), "/account");
+      assert.equal(sanitizeRedirectParam("//attacker.com/login"), "/account");
+      assert.equal(sanitizeRedirectParam("///phishing.org"), "/account");
+    });
+
+    test("rejects backslash evasion attempts (\\evil.com)", () => {
+      assert.equal(sanitizeRedirectParam("\\evil.com"), "/account");
+      assert.equal(sanitizeRedirectParam("/\\evil.com"), "/account");
+      assert.equal(sanitizeRedirectParam("/path\\evil.com"), "/account");
+    });
+
+    test("rejects absolute external URLs (https://, http://)", () => {
+      assert.equal(sanitizeRedirectParam("https://evil.com"), "/account");
+      assert.equal(sanitizeRedirectParam("http://malicious.org/phish"), "/account");
+    });
+
+    test("rejects javascript: and data: pseudo-protocols", () => {
+      assert.equal(sanitizeRedirectParam("javascript:alert(1)"), "/account");
+      assert.equal(sanitizeRedirectParam("data:text/html,<script>alert(1)</script>"), "/account");
+    });
+
+    test("defaults safely to /account when param is missing, empty, or non-string", () => {
+      assert.equal(sanitizeRedirectParam(null), "/account");
+      assert.equal(sanitizeRedirectParam(undefined), "/account");
+      assert.equal(sanitizeRedirectParam(""), "/account");
+    });
+  });
 });
+

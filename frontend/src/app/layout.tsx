@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Fraunces, Inter, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { AudioProvider } from "@/context/AudioContext";
 import { LibraryCartProvider } from "@/context/LibraryCartContext";
@@ -15,24 +15,21 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-plus-jakarta",
   display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
   display: "swap",
+  fallback: ["Georgia", "serif"],
 });
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
@@ -85,7 +82,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakarta.variable} ${fraunces.variable} ${inter.variable} ${geistMono.variable}`}
+      className={`${plusJakarta.variable} ${fraunces.variable} ${inter.variable}`}
     >
       <body className={`${plusJakarta.className} bg-[#FAF8F3] text-[#0f0f0f] antialiased selection:bg-[#C9281D] selection:text-white min-h-screen flex flex-col overflow-x-hidden font-sans`}>
         <SmoothScrollProvider>

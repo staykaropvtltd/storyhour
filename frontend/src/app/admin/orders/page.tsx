@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 import { Order } from "@/context/LibraryCartContext";
+import { sanitizeCsvCell } from "@/lib/security";
 
 export default function AdminOrdersPage() {
   const { orders, updateOrderStatus, addMockOrder } = useAdmin();
@@ -42,9 +43,16 @@ export default function AdminOrdersPage() {
   const exportOrdersCSV = () => {
     const headers = "Order Number,Customer Name,Email,Phone,Total (£),Status,Created At\n";
     const rows = filteredOrders
-      .map(
-        (o) =>
-          `"${o.orderNumber}","${o.customer.fullName}","${o.customer.email}","${o.customer.phone || ""}","${o.total}","${o.status}","${o.createdAt}"`
+      .map((o) =>
+        [
+          sanitizeCsvCell(o.orderNumber),
+          sanitizeCsvCell(o.customer.fullName),
+          sanitizeCsvCell(o.customer.email),
+          sanitizeCsvCell(o.customer.phone || ""),
+          sanitizeCsvCell(o.total),
+          sanitizeCsvCell(o.status),
+          sanitizeCsvCell(o.createdAt),
+        ].join(",")
       )
       .join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
